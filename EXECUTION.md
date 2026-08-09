@@ -39,9 +39,23 @@ anum_docs #194
 
 - завершать triune execution/context/reference/effect gates `#122`;
 - canonical Integer/value model (`#128/#163`);
-- canonical Text (`#180`);
-- native duplet JSON boundary (`#169/#173`);
-- frozen jsonRVM corpus/migrator (`#174`).
+- native duplet JSON boundary (`#169`), при этом canonical Text и leaf resolver (`#180/#173`) уже закрыты;
+- deterministic foreach и projection/effect-order contract (`#187 → #188`);
+- frozen jsonRVM semantic migrator (`#174`) после необходимых contracts выше.
+
+Уточнённый migration path:
+
+```text
+#187 deterministic foreach
+        ↓
+#188 projection/effect-order contract
+        ↓
+#174 semantic migrator
+        ↓
+#131 differential end-to-end slice
+```
+
+`#128/#163` развивается параллельно и является prerequisite для arithmetic/value constructs внутри `#174`.
 
 Финальный gate — `#131` differential end-to-end slice. Если он требует нового accepted МТС contract, ждать exact upstream acceptance, а не дублировать semantics в AVM.
 
