@@ -5,9 +5,9 @@
 - Owner: `netkeep80`
 - Registered repositories: **24**
 - Verified child roadmap backlinks: **23/23**
-- Last successful GitHub check: **2026-08-09T10:15:29.325Z**
-- Latest observed GitHub change in snapshot: **2026-08-09T10:14:50Z**
-- State hash (excluding check time): `87ae7421bd3cf0b223dbb795caee404a7b2298f7e9a3f81d34e5842e8dc9bc94`
+- Last successful GitHub check: **2026-08-09T10:20:00.718Z**
+- Latest observed GitHub change in snapshot: **2026-08-09T10:19:44Z**
+- State hash (excluding check time): `8640f9919adda99fe572b04a85efdd8dd7f998fb6f7095a32d5a13a7185b72b7`
 
 ## Control-plane health
 
@@ -19,7 +19,7 @@
 | Priority | Workstream | Declared status | GitHub state | Next gate |
 |---:|---|---|---|---|
 | **P0** | [#2](https://github.com/netkeep80/roadmap/issues/2) PMM → pjson persistent data stack | `active` | 🟡 open | PMM readiness → pjson pin/object storage → pjson 1.0 extraction |
-| **P0** | [#3](https://github.com/netkeep80/roadmap/issues/3) МТС → AVM → aprover | `active` | 🟡 open | anum_docs #200 → #201 → #202 foundation reset decision, затем rewrite/revalidate #194–#199; AVM #131 remains downstream differential gate |
+| **P0** | [#3](https://github.com/netkeep80/roadmap/issues/3) МТС → AVM → aprover | `active` | 🟡 open | anum_docs #200 → #201 → #202 foundation reset decision, затем rewrite/revalidate #194–#199; AVM frontend-neutral path #187 → #188 → #174 → #131 |
 | **P0** | [#4](https://github.com/netkeep80/roadmap/issues/4) mast-calculator physical verification | `active` | 🟡 open | dynamic SP20 + erection stages + independent verification passport |
 | **P1** | [#5](https://github.com/netkeep80/roadmap/issues/5) isocubic / God Mode / MetaMode boundary | `active` | 🟡 open | isocubic Phase 15 core gates then provenance/consumer decision |
 | **P1** | [#6](https://github.com/netkeep80/roadmap/issues/6) repo-guard shared governance rollout | `active` | 🟡 open | Tier A reproducible immutable-pinned baseline |
@@ -34,8 +34,8 @@
 
 | Priority | Repository | Lifecycle | Current objective | Next portfolio gate | GitHub | Roadmap |
 |---:|---|---|---|---|---|---|
-| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | разрешить foundation reset v2 через 5-связное semantic kernel и единый Anum/general interpreter, затем перепроверить production migration | #200 → #201 → #202 → explicit decision/rewrite of #194–#199 | 30 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
-| **P0** | [`avm`](https://github.com/netkeep80/avm) | `active` | закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая candidate МТС semantics | #122: #128/#163/#169/#174 → #131; #173/#180 completed; MTS-dependent frontend decisions wait for accepted #200–#202 outcome | 19 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | разрешить foundation reset v2 через 5-связное semantic kernel и единый Anum/general interpreter, затем перепроверить production migration | #200 → #201 → #202 → explicit decision/rewrite of #194–#199 | 30 issues / 3 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`avm`](https://github.com/netkeep80/avm) | `active` | закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая candidate МТС semantics | #122: #128/#163 + #169; #187 → #188 → #174 → #131; MTS-dependent frontend decisions wait for accepted #200–#202 outcome | 19 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `active` | закрыть физическую и нормативную верификацию dynamic wind и erection stages до дальнейшего feature growth | modal/eigen → #97/#102 dynamic SP20 → #72/#98 erection → verification passport | 11 issues / 1 PRs | [#4](https://github.com/netkeep80/roadmap/issues/4) |
 | **P0** | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `active` | закрыть consumer-shaped readiness для native persistent object storage pjson | #410/#415/#416/#426 → #421 | 14 issues / 6 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
 | **P0** | [`pjson`](https://github.com/netkeep80/pjson) | `blocked` | довести pjson 1.0 до native PMM-backed JSON без private storage workaround | после PMM#421: #55 → #34, затем #35..#44 | 16 issues / 0 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
@@ -43,7 +43,7 @@
 | **P1** | [`aes`](https://github.com/netkeep80/aes) | `active` | перевести проект от design assumptions к проверенному commissioning и as-built состоянию | design freeze → staged commissioning → measured as-built | 0 issues / 0 PRs | [#7](https://github.com/netkeep80/roadmap/issues/7) |
 | **P1** | [`isocubic`](https://github.com/netkeep80/isocubic) | `active` | восстановить test-first product core и завершить dev-tool extraction boundary | #300 → #301 → #302/#303/#304 → #305 → #306/#307 | 12 issues / 1 PRs | [#5](https://github.com/netkeep80/roadmap/issues/5) |
 | **P1** | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `active` | раскатывать consumer-driven governance baseline без speculative DSL growth | Tier A active repos use reproducible immutable-pinned policy | 0 issues / 0 PRs | [#6](https://github.com/netkeep80/roadmap/issues/6) |
-| **P1** | [`roadmap`](https://github.com/netkeep80/roadmap) | `control-plane` | быть единой точкой входа для актуального состояния, зависимостей, решений и направления развития всего portfolio | ongoing: поддерживать live control loop и явно reconciliate detected semantic drift | 9 issues / 1 PRs | [#1](https://github.com/netkeep80/roadmap/issues/1), [#13](https://github.com/netkeep80/roadmap/issues/13), [#16](https://github.com/netkeep80/roadmap/issues/16) |
+| **P1** | [`roadmap`](https://github.com/netkeep80/roadmap) | `control-plane` | быть единой точкой входа для актуального состояния, зависимостей, решений и направления развития всего portfolio | ongoing: поддерживать live control loop и явно reconciliate detected semantic drift | 9 issues / 0 PRs | [#1](https://github.com/netkeep80/roadmap/issues/1), [#13](https://github.com/netkeep80/roadmap/issues/13), [#16](https://github.com/netkeep80/roadmap/issues/16) |
 | **P1** | [`termowood`](https://github.com/netkeep80/termowood) | `active` | закрыть failure-mode, independent cutoff, calibration, HIL/bench и OTA recovery evidence | safe-state matrix → protection → calibration/HIL → measured evidence | 0 issues / 0 PRs | [#7](https://github.com/netkeep80/roadmap/issues/7) |
 | **P1/P2** | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `transitional` | отдать persistent JSON ownership pjson, сохранить mature fixtures как migration evidence и оставить diff/sync responsibilities | pjson#41/#44 migration, затем удалить duplicate persistent-JSON implementation | 6 issues / 0 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2), [#8](https://github.com/netkeep80/roadmap/issues/8) |
 | **P1/P2** | [`god-mode`](https://github.com/netkeep80/god-mode) | `incubation` | разрешить точное отношение God Mode / MetaMode / isocubic consumer boundary до нового feature growth | provenance + consumer decision in roadmap#5 | 0 issues / 0 PRs | [#5](https://github.com/netkeep80/roadmap/issues/5) |
@@ -81,16 +81,17 @@
 
 **Objective:** закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая candidate МТС semantics
 
-**Next gate:** #122: #128/#163/#169/#174 → #131; #173/#180 completed; MTS-dependent frontend decisions wait for accepted #200–#202 outcome
+**Next gate:** #122: #128/#163 + #169; #187 → #188 → #174 → #131; MTS-dependent frontend decisions wait for accepted #200–#202 outcome
 
 **Depends on:** [`anum_docs`](https://github.com/netkeep80/anum_docs)
 
 - 🟡 [#122](https://github.com/netkeep80/avm/issues/122) `open` — [Epic] AVM 1.5 — перенести семантику Relations Model из jsonRVM в link-native AVM
+- 🟡 [#127](https://github.com/netkeep80/avm/issues/127) `open` — AVM 1.5 / 5 — sequence/lambda/projection semantics и детерминированный порядок эффектов
 - 🟡 [#128](https://github.com/netkeep80/avm/issues/128) `open` — AVM 1.5 / 6 — canonical value denotation и перенос pure vocabulary без JSON runtime values
 - 🟡 [#163](https://github.com/netkeep80/avm/issues/163) `open` — AVM 1.5 / 6.1 — canonical signed integer v0.1 и минимальная arithmetic vocabulary
 - 🟡 [#169](https://github.com/netkeep80/avm/issues/169) `open` — AVM Native JSON — каноническая дуплетная нотация и миграция формата jsonRVM
-- ✅ [#173](https://github.com/netkeep80/avm/issues/173) `closed` — AVM Native JSON / 4 — leaf/value/symbol resolver без скрытой identity
-- ✅ [#180](https://github.com/netkeep80/avm/issues/180) `closed` — AVM 1.5 / canonical Text — frontend-neutral денотация текста связями
+- 🟡 [#187](https://github.com/netkeep80/avm/issues/187) `open` — AVM 1.5 / 5.1 — deterministic foreach по ordered link-list
+- 🟡 [#188](https://github.com/netkeep80/avm/issues/188) `open` — AVM 1.5 / 5.2 — projection/lambda и deterministic effect-order contract
 - 🟡 [#174](https://github.com/netkeep80/avm/issues/174) `open` — AVM Native JSON / 5 — semantic migrator jsonRVM program → AVM duplet program
 - 🟡 [#131](https://github.com/netkeep80/avm/issues/131) `open` — AVM 1.5 / 9 — end-to-end migration slice и differential equivalence с jsonRVM
 
@@ -157,8 +158,8 @@
 
 | Repository | Branch | Archived | Last push | Open issues | Open PRs |
 |---|---|---:|---|---:|---:|
-| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-09T10:14:43Z | 30 | 2 |
-| [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-09T10:10:02Z | 19 | 2 |
+| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-09T10:16:25Z | 30 | 3 |
+| [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-09T10:18:13Z | 19 | 2 |
 | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `main` | no | 2026-08-09T10:09:18Z | 11 | 1 |
 | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-09T09:56:41Z | 14 | 6 |
 | [`pjson`](https://github.com/netkeep80/pjson) | `main` | no | 2026-08-09T09:56:53Z | 16 | 0 |
@@ -166,7 +167,7 @@
 | [`aes`](https://github.com/netkeep80/aes) | `main` | no | 2026-08-09T09:58:37Z | 0 | 0 |
 | [`isocubic`](https://github.com/netkeep80/isocubic) | `main` | no | 2026-08-09T09:58:08Z | 12 | 1 |
 | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-09T09:57:47Z | 0 | 0 |
-| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-09T10:14:50Z | 9 | 1 |
+| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-09T10:19:26Z | 9 | 0 |
 | [`termowood`](https://github.com/netkeep80/termowood) | `main` | no | 2026-08-09T09:58:27Z | 0 | 0 |
 | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `main` | no | 2026-08-09T09:57:59Z | 6 | 0 |
 | [`god-mode`](https://github.com/netkeep80/god-mode) | `main` | no | 2026-08-09T09:58:17Z | 0 | 0 |
@@ -199,11 +200,12 @@
 ### avm
 
 - 🟡 [#122](https://github.com/netkeep80/avm/issues/122) `open` — [Epic] AVM 1.5 — перенести семантику Relations Model из jsonRVM в link-native AVM
+- 🟡 [#127](https://github.com/netkeep80/avm/issues/127) `open` — AVM 1.5 / 5 — sequence/lambda/projection semantics и детерминированный порядок эффектов
 - 🟡 [#128](https://github.com/netkeep80/avm/issues/128) `open` — AVM 1.5 / 6 — canonical value denotation и перенос pure vocabulary без JSON runtime values
 - 🟡 [#163](https://github.com/netkeep80/avm/issues/163) `open` — AVM 1.5 / 6.1 — canonical signed integer v0.1 и минимальная arithmetic vocabulary
 - 🟡 [#169](https://github.com/netkeep80/avm/issues/169) `open` — AVM Native JSON — каноническая дуплетная нотация и миграция формата jsonRVM
-- ✅ [#173](https://github.com/netkeep80/avm/issues/173) `closed` — AVM Native JSON / 4 — leaf/value/symbol resolver без скрытой identity
-- ✅ [#180](https://github.com/netkeep80/avm/issues/180) `closed` — AVM 1.5 / canonical Text — frontend-neutral денотация текста связями
+- 🟡 [#187](https://github.com/netkeep80/avm/issues/187) `open` — AVM 1.5 / 5.1 — deterministic foreach по ordered link-list
+- 🟡 [#188](https://github.com/netkeep80/avm/issues/188) `open` — AVM 1.5 / 5.2 — projection/lambda и deterministic effect-order contract
 - 🟡 [#174](https://github.com/netkeep80/avm/issues/174) `open` — AVM Native JSON / 5 — semantic migrator jsonRVM program → AVM duplet program
 - 🟡 [#131](https://github.com/netkeep80/avm/issues/131) `open` — AVM 1.5 / 9 — end-to-end migration slice и differential equivalence с jsonRVM
 

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-09T10:14:50Z",
+  "latest_observed_github_change": "2026-08-09T10:19:44Z",
   "repository_count": 24,
   "child_repository_count": 23,
   "verified_child_backlinks": 23,
@@ -21,7 +21,7 @@
       "title": "[P0] МТС → AVM → aprover: один нормативный и один runtime path",
       "state": "open",
       "state_reason": null,
-      "updated_at": "2026-08-09T09:53:40Z",
+      "updated_at": "2026-08-09T10:19:44Z",
       "html_url": "https://github.com/netkeep80/roadmap/issues/3",
       "is_pull_request": false
     },
@@ -114,10 +114,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T10:14:50Z",
-      "updated_at": "2026-08-09T10:10:26Z",
+      "pushed_at": "2026-08-09T10:19:26Z",
+      "updated_at": "2026-08-09T10:15:34Z",
       "open_issues": 9,
-      "open_pull_requests": 1,
+      "open_pull_requests": 0,
       "tracked_issues": [
         {
           "number": 13,
@@ -324,10 +324,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T10:14:43Z",
+      "pushed_at": "2026-08-09T10:16:25Z",
       "updated_at": "2026-08-09T10:11:59Z",
       "open_issues": 30,
-      "open_pull_requests": 2,
+      "open_pull_requests": 3,
       "tracked_issues": [
         {
           "number": 200,
@@ -418,7 +418,7 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T10:10:02Z",
+      "pushed_at": "2026-08-09T10:18:13Z",
       "updated_at": "2026-08-09T09:57:19Z",
       "open_issues": 19,
       "open_pull_requests": 2,
@@ -430,6 +430,15 @@
           "state_reason": null,
           "updated_at": "2026-08-08T17:06:52Z",
           "html_url": "https://github.com/netkeep80/avm/issues/122",
+          "is_pull_request": false
+        },
+        {
+          "number": 127,
+          "title": "AVM 1.5 / 5 — sequence/lambda/projection semantics и детерминированный порядок эффектов",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T17:05:06Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/127",
           "is_pull_request": false
         },
         {
@@ -460,21 +469,21 @@
           "is_pull_request": false
         },
         {
-          "number": 173,
-          "title": "AVM Native JSON / 4 — leaf/value/symbol resolver без скрытой identity",
-          "state": "closed",
-          "state_reason": "completed",
-          "updated_at": "2026-08-09T08:46:22Z",
-          "html_url": "https://github.com/netkeep80/avm/issues/173",
+          "number": 187,
+          "title": "AVM 1.5 / 5.1 — deterministic foreach по ordered link-list",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:43:25Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/187",
           "is_pull_request": false
         },
         {
-          "number": 180,
-          "title": "AVM 1.5 / canonical Text — frontend-neutral денотация текста связями",
-          "state": "closed",
-          "state_reason": "completed",
-          "updated_at": "2026-08-09T08:35:05Z",
-          "html_url": "https://github.com/netkeep80/avm/issues/180",
+          "number": 188,
+          "title": "AVM 1.5 / 5.2 — projection/lambda и deterministic effect-order contract",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:43:51Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/188",
           "is_pull_request": false
         },
         {
@@ -991,6 +1000,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-09T10:15:29.325Z",
-  "state_hash": "87ae7421bd3cf0b223dbb795caee404a7b2298f7e9a3f81d34e5842e8dc9bc94"
+  "checked_at": "2026-08-09T10:20:00.718Z",
+  "state_hash": "8640f9919adda99fe572b04a85efdd8dd7f998fb6f7095a32d5a13a7185b72b7"
 }
