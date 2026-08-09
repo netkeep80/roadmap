@@ -102,9 +102,13 @@ async function github(pathname) {
   return response.json();
 }
 
-async function searchCount(owner, repo, kind) {
-  const q = encodeURIComponent(`repo:${owner}/${repo} is:${kind} is:open`);
-  return (await github(`/search/issues?q=${q}&per_page=1`)).total_count;
+async function openPullRequestCount(owner, repo) {
+  let total = 0;
+  for (let page = 1; ; page += 1) {
+    const batch = await github(`/repos/${owner}/${repo}/pulls?state=open&per_page=100&page=${page}`);
+    total += batch.length;
+    if (batch.length < 100) return total;
+  }
 }
 
 async function fetchTrackedIssues(owner, repo, numbers) {
@@ -152,11 +156,12 @@ async function collectLiveState(registry) {
   const stateRepos = [];
   for (const semantic of registry.repositories) {
     const live = discovered.find((r) => r.name === semantic.name) ?? await github(`/repos/${owner}/${semantic.name}`);
-    const [openIssues, openPrs, trackedIssues] = await Promise.all([
-      searchCount(owner, semantic.name, "issue"),
-      searchCount(owner, semantic.name, "pr"),
+    const [openPrs, trackedIssues] = await Promise.all([
+      openPullRequestCount(owner, semantic.name),
       fetchTrackedIssues(owner, semantic.name, semantic.tracked_issues)
     ]);
+    const combinedOpenIssuesAndPrs = Number(live.open_issues_count ?? 0);
+    const openIssues = Math.max(0, combinedOpenIssuesAndPrs - openPrs);
     stateRepos.push({
       name:semantic.name,
       html_url:live.html_url,
@@ -172,6 +177,11 @@ async function collectLiveState(registry) {
   }
 
   const workstreams = await fetchTrackedIssues(owner, registry.control_repository, registry.workstreams.map((w) => w.issue));
+  const brokenTracked = stateRepos.flatMap((r) => r.tracked_issues.filter((i) => i.state === "missing").map((i) => `${r.name}#${i.number}`));
+  const brokenWorkstreams = workstreams.filter((i) => i.state === "missing").map((i) => `${registry.control_repository}#${i.number}`);
+  const brokenRefs = [...brokenTracked, ...brokenWorkstreams];
+  if (brokenRefs.length) throw new Error(`broken tracked issue references: ${brokenRefs.join(", ")}`);
+
   const latestObserved = [
     ...stateRepos.flatMap((r) => [r.pushed_at,r.updated_at,...r.tracked_issues.map((i) => i.updated_at)]),
     ...workstreams.map((i) => i.updated_at)
