@@ -47,9 +47,11 @@ function validateRegistry(registry) {
 
   const allowedPriorities = new Set(["P0","P0/P1","P1","P1/P2","P2","P3"]);
   const allowedLifecycle = new Set(["active","blocked","transitional","research","oracle","maintenance","incubation","archive-candidate","control-plane"]);
+  const allowedWorkstreamStatus = new Set(["active","completed"]);
   const nameSet = new Set(names);
   const workstreamIssues = registry.workstreams.map((w) => w.issue);
   if (uniq(workstreamIssues).length !== workstreamIssues.length) errors.push("workstream issue numbers must be unique");
+  const workstreamIssueSet = new Set(workstreamIssues);
 
   for (const workstream of registry.workstreams) {
     if (!Number.isInteger(workstream.issue) || workstream.issue <= 0) errors.push(`workstream: invalid issue ${workstream.issue}`);
@@ -57,7 +59,8 @@ function validateRegistry(registry) {
       if (!workstream[key] || typeof workstream[key] !== "string") errors.push(`workstream#${workstream.issue}: ${key} is required`);
     }
     if (!allowedPriorities.has(workstream.priority)) errors.push(`workstream#${workstream.issue}: unsupported priority ${workstream.priority}`);
-    if (!Array.isArray(workstream.repositories)) errors.push(`workstream#${workstream.issue}: repositories must be an array`);
+    if (!allowedWorkstreamStatus.has(workstream.status)) errors.push(`workstream#${workstream.issue}: unsupported status ${workstream.status}`);
+    if (!Array.isArray(workstream.repositories) || workstream.repositories.length === 0) errors.push(`workstream#${workstream.issue}: repositories must be a non-empty array`);
     for (const repoName of workstream.repositories || []) {
       if (!nameSet.has(repoName)) errors.push(`workstream#${workstream.issue}: unknown repository ${repoName}`);
     }
@@ -76,8 +79,14 @@ function validateRegistry(registry) {
       if (!nameSet.has(dep)) errors.push(`${repo.name}: unknown dependency ${dep}`);
       if (dep === repo.name) errors.push(`${repo.name}: self-dependency is not allowed`);
     }
+    if (repo.lifecycle === "blocked" && (repo.depends_on || []).length === 0) {
+      errors.push(`${repo.name}: blocked lifecycle requires at least one dependency`);
+    }
     for (const number of [...(repo.roadmap_issues || []), ...(repo.local_epics || []), ...(repo.tracked_issues || [])]) {
       if (!Number.isInteger(number) || number <= 0) errors.push(`${repo.name}: invalid issue number ${number}`);
+    }
+    for (const number of repo.roadmap_issues || []) {
+      if (number !== 1 && !workstreamIssueSet.has(number)) errors.push(`${repo.name}: roadmap issue #${number} is not a registered workstream or meta-epic #1`);
     }
   }
   return errors;
@@ -187,7 +196,7 @@ async function collectLiveState(registry) {
     ...workstreams.map((i) => i.updated_at)
   ].filter(Boolean).sort().at(-1) ?? null;
 
-  const facts = {
+  const coreFacts = {
     schema_version:1,
     owner,
     registry_schema_version:registry.schema_version,
@@ -196,8 +205,12 @@ async function collectLiveState(registry) {
     workstreams,
     repositories:stateRepos
   };
-  facts.state_hash = crypto.createHash("sha256").update(JSON.stringify(facts)).digest("hex");
-  return facts;
+  const stateHash = crypto.createHash("sha256").update(JSON.stringify(coreFacts)).digest("hex");
+  return {
+    ...coreFacts,
+    checked_at:new Date().toISOString(),
+    state_hash:stateHash
+  };
 }
 
 function mdEscape(value) { return String(value ?? "").replaceAll("|","\\|").replace(/\s+/g," ").trim(); }
@@ -208,18 +221,44 @@ function issueBadge(issue) {
   return "⚪";
 }
 
+function workstreamDrift(registry, liveWorkstreams) {
+  const drift = [];
+  for (const workstream of registry.workstreams) {
+    const live = liveWorkstreams.get(workstream.issue);
+    if (!live) continue;
+    if (workstream.status === "completed" && live.state !== "closed") {
+      drift.push(`#${workstream.issue}: registry=completed, GitHub=${live.state}`);
+    }
+    if (workstream.status === "active" && live.state === "closed") {
+      drift.push(`#${workstream.issue}: registry=active, GitHub=closed`);
+    }
+  }
+  return drift;
+}
+
 function renderStatus(registry, facts) {
   const owner = registry.owner;
   const liveByName = new Map(facts.repositories.map((r) => [r.name,r]));
   const liveWorkstreams = new Map(facts.workstreams.map((i) => [i.number,i]));
+  const drift = workstreamDrift(registry, liveWorkstreams);
   const ordered = [...registry.repositories].sort((a,b) => priorityRank(a.priority)-priorityRank(b.priority) || a.name.localeCompare(b.name));
   const lines = [];
   lines.push("# Current portfolio status","");
   lines.push("> **GENERATED FILE — DO NOT EDIT.** Semantic decisions come from [`data/portfolio.json`](data/portfolio.json); factual GitHub state is collected by `scripts/sync-roadmap.mjs`.","");
   lines.push(`- Owner: \`${owner}\``);
   lines.push(`- Registered repositories: **${facts.repository_count}**`);
+  lines.push(`- Last successful GitHub check: **${facts.checked_at}**`);
   lines.push(`- Latest observed GitHub change in snapshot: **${facts.latest_observed_github_change ?? "n/a"}**`);
-  lines.push(`- State hash: \`${facts.state_hash}\``,"");
+  lines.push(`- State hash (excluding check time): \`${facts.state_hash}\``,"");
+
+  lines.push("## Control-plane health","");
+  if (drift.length === 0) {
+    lines.push("- ✅ No declared workstream-status drift detected.","");
+  } else {
+    lines.push("The following semantic-vs-GitHub mismatches require an explicit portfolio decision:","");
+    for (const item of drift) lines.push(`- ⚠️ ${item}`);
+    lines.push("");
+  }
 
   lines.push("## Portfolio workstreams","");
   lines.push("| Priority | Workstream | Declared status | GitHub state | Next gate |","|---:|---|---|---|---|");
@@ -267,6 +306,7 @@ function renderStatus(registry, facts) {
   lines.push("## How to read this file","");
   lines.push("- `objective`, `next gate`, `priority`, `lifecycle`, dependencies and ownership are **portfolio decisions** from `data/portfolio.json`.");
   lines.push("- issue/PR counts, archive/default-branch state, timestamps and tracked-issue states are **GitHub facts**.");
+  lines.push("- `Last successful GitHub check` proves snapshot freshness even when nothing changed in the child repositories.");
   lines.push("- closing a tracked local issue updates this status automatically; changing portfolio priority or the next strategic gate requires an explicit roadmap change.");
   lines.push("- implementation details remain in local repositories; this file is the control board, not a duplicate backlog.","");
   return lines.join("\n");
