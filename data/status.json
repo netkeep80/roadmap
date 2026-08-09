@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-09T10:19:44Z",
+  "latest_observed_github_change": "2026-08-09T11:10:40Z",
   "repository_count": 24,
   "child_repository_count": 23,
   "verified_child_backlinks": 23,
@@ -21,7 +21,7 @@
       "title": "[P0] МТС → AVM → aprover: один нормативный и один runtime path",
       "state": "open",
       "state_reason": null,
-      "updated_at": "2026-08-09T10:19:44Z",
+      "updated_at": "2026-08-09T10:59:05Z",
       "html_url": "https://github.com/netkeep80/roadmap/issues/3",
       "is_pull_request": false
     },
@@ -114,8 +114,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T10:19:26Z",
-      "updated_at": "2026-08-09T10:15:34Z",
+      "pushed_at": "2026-08-09T11:10:40Z",
+      "updated_at": "2026-08-09T10:20:45Z",
       "open_issues": 9,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -324,10 +324,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T10:16:25Z",
-      "updated_at": "2026-08-09T10:11:59Z",
-      "open_issues": 30,
-      "open_pull_requests": 3,
+      "pushed_at": "2026-08-09T11:07:52Z",
+      "updated_at": "2026-08-09T11:05:51Z",
+      "open_issues": 34,
+      "open_pull_requests": 2,
       "tracked_issues": [
         {
           "number": 200,
@@ -352,7 +352,7 @@
           "title": "[Foundation v2] Универсальный ассоциативный интерпретатор: словарь смыслов, астроки и сеть аксиом",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-09T10:10:55Z",
+          "updated_at": "2026-08-09T10:30:04Z",
           "html_url": "https://github.com/netkeep80/anum_docs/issues/202",
           "is_pull_request": false
         },
@@ -418,10 +418,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T10:18:13Z",
-      "updated_at": "2026-08-09T09:57:19Z",
-      "open_issues": 19,
-      "open_pull_requests": 2,
+      "pushed_at": "2026-08-09T11:08:33Z",
+      "updated_at": "2026-08-09T11:08:52Z",
+      "open_issues": 14,
+      "open_pull_requests": 1,
       "tracked_issues": [
         {
           "number": 122,
@@ -433,57 +433,12 @@
           "is_pull_request": false
         },
         {
-          "number": 127,
-          "title": "AVM 1.5 / 5 — sequence/lambda/projection semantics и детерминированный порядок эффектов",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-08T17:05:06Z",
-          "html_url": "https://github.com/netkeep80/avm/issues/127",
-          "is_pull_request": false
-        },
-        {
-          "number": 128,
-          "title": "AVM 1.5 / 6 — canonical value denotation и перенос pure vocabulary без JSON runtime values",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-08T17:05:28Z",
-          "html_url": "https://github.com/netkeep80/avm/issues/128",
-          "is_pull_request": false
-        },
-        {
-          "number": 163,
-          "title": "AVM 1.5 / 6.1 — canonical signed integer v0.1 и минимальная arithmetic vocabulary",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-08T21:54:45Z",
-          "html_url": "https://github.com/netkeep80/avm/issues/163",
-          "is_pull_request": false
-        },
-        {
           "number": 169,
           "title": "AVM Native JSON — каноническая дуплетная нотация и миграция формата jsonRVM",
           "state": "open",
           "state_reason": null,
           "updated_at": "2026-08-08T23:57:31Z",
           "html_url": "https://github.com/netkeep80/avm/issues/169",
-          "is_pull_request": false
-        },
-        {
-          "number": 187,
-          "title": "AVM 1.5 / 5.1 — deterministic foreach по ordered link-list",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T09:43:25Z",
-          "html_url": "https://github.com/netkeep80/avm/issues/187",
-          "is_pull_request": false
-        },
-        {
-          "number": 188,
-          "title": "AVM 1.5 / 5.2 — projection/lambda и deterministic effect-order contract",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T09:43:51Z",
-          "html_url": "https://github.com/netkeep80/avm/issues/188",
           "is_pull_request": false
         },
         {
@@ -543,7 +498,7 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T10:09:18Z",
+      "pushed_at": "2026-08-09T10:25:45Z",
       "updated_at": "2026-08-09T09:58:06Z",
       "open_issues": 11,
       "open_pull_requests": 1,
@@ -1000,6 +955,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-09T10:20:00.718Z",
-  "state_hash": "8640f9919adda99fe572b04a85efdd8dd7f998fb6f7095a32d5a13a7185b72b7"
+  "checked_at": "2026-08-09T11:11:06.827Z",
+  "state_hash": "660fa4b2490d9724b858729fc4c5a1bf85f37fd2a586ffe45bd8afd169cb2068"
 }
