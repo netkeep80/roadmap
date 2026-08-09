@@ -5,9 +5,9 @@
 - Owner: `netkeep80`
 - Registered repositories: **24**
 - Verified child roadmap backlinks: **23/23**
-- Last successful GitHub check: **2026-08-09T12:07:55.311Z**
-- Latest observed GitHub change in snapshot: **2026-08-09T12:07:33Z**
-- State hash (excluding check time): `acc1954c127135be7f564839127bfb978dd6428c976c0a82fde8c9a66d5ad1fb`
+- Last successful GitHub check: **2026-08-09T13:16:54.000Z**
+- Latest observed GitHub change in snapshot: **2026-08-09T12:49:15Z**
+- State hash (excluding check time): `f81777afe2885899f174ed1c2cb7210a46fa17099bcca6b6c152a119d56af9a2`
 
 ## Control-plane health
 
@@ -34,7 +34,7 @@
 
 | Priority | Repository | Lifecycle | Current objective | Next portfolio gate | GitHub | Roadmap |
 |---:|---|---|---|---|---|---|
-| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | завершить верхний интеграционный слой Foundation v2 поверх закрытого root/meaning foundation и подготовить единственную production migration | #213 canonical astring topology → #202 end-to-end UTF-8→astring→D→T→act→K' coherence → fresh Gate P production migration; retire obsolete #194–#199 only when replacement Gate P exists | 14 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | завершить верхний интеграционный слой Foundation v2 поверх закрытого root/meaning foundation и подготовить единственную production migration | #213 canonical astring topology → #202 end-to-end UTF-8→astring→D→T→act→K' coherence → fresh Gate P production migration; retire obsolete #194–#199 only when replacement Gate P exists | 7 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`avm`](https://github.com/netkeep80/avm) | `active` | закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая candidate МТС semantics | #174 semantic migrator → #131 differential end-to-end; #169 remains Native JSON umbrella; MTS-dependent frontend decisions wait for integrated accepted Foundation v2 outcome and new production contract | 15 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `active` | закрыть физическую и нормативную верификацию dynamic wind и erection stages до дальнейшего feature growth | modal/eigen → #97/#102 dynamic SP20 → #72/#98 erection → verification passport | 11 issues / 1 PRs | [#4](https://github.com/netkeep80/roadmap/issues/4) |
 | **P0** | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `active` | закрыть consumer-shaped readiness для native persistent object storage pjson | #410/#415/#416/#426 → #421 | 14 issues / 6 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
@@ -67,8 +67,8 @@
 
 **Next gate:** #213 canonical astring topology → #202 end-to-end UTF-8→astring→D→T→act→K' coherence → fresh Gate P production migration; retire obsolete #194–#199 only when replacement Gate P exists
 
-- 🟡 [#213](https://github.com/netkeep80/anum_docs/issues/213) `open` — [Foundation v2] Canonical astring topology поверх exact UTF-8 byte transport
-- 🟡 [#202](https://github.com/netkeep80/anum_docs/issues/202) `open` — [Foundation v2] Универсальный ассоциативный интерпретатор: словарь смыслов, астроки и сеть аксиом
+- ✅ [#213](https://github.com/netkeep80/anum_docs/issues/213) `closed` — [Foundation v2] Canonical astring topology поверх exact UTF-8 byte transport
+- ✅ [#202](https://github.com/netkeep80/anum_docs/issues/202) `closed` — [Foundation v2] Универсальный ассоциативный интерпретатор: словарь смыслов, астроки и сеть аксиом
 
 ### avm — active
 
@@ -146,7 +146,7 @@
 
 | Repository | Branch | Archived | Last push | Open issues | Open PRs |
 |---|---|---:|---|---:|---:|
-| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-09T12:01:30Z | 14 | 0 |
+| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-09T12:48:59Z | 7 | 0 |
 | [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-09T11:14:36Z | 15 | 2 |
 | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `main` | no | 2026-08-09T10:25:45Z | 11 | 1 |
 | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-09T09:56:41Z | 14 | 6 |
@@ -155,7 +155,7 @@
 | [`aes`](https://github.com/netkeep80/aes) | `main` | no | 2026-08-09T09:58:37Z | 0 | 0 |
 | [`isocubic`](https://github.com/netkeep80/isocubic) | `main` | no | 2026-08-09T09:58:08Z | 12 | 1 |
 | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-09T09:57:47Z | 0 | 0 |
-| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-09T12:07:33Z | 9 | 0 |
+| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-09T12:07:56Z | 9 | 0 |
 | [`termowood`](https://github.com/netkeep80/termowood) | `main` | no | 2026-08-09T09:58:27Z | 0 | 0 |
 | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `main` | no | 2026-08-09T09:57:59Z | 6 | 0 |
 | [`god-mode`](https://github.com/netkeep80/god-mode) | `main` | no | 2026-08-09T09:58:17Z | 0 | 0 |
@@ -175,8 +175,8 @@
 
 ### anum_docs
 
-- 🟡 [#213](https://github.com/netkeep80/anum_docs/issues/213) `open` — [Foundation v2] Canonical astring topology поверх exact UTF-8 byte transport
-- 🟡 [#202](https://github.com/netkeep80/anum_docs/issues/202) `open` — [Foundation v2] Универсальный ассоциативный интерпретатор: словарь смыслов, астроки и сеть аксиом
+- ✅ [#213](https://github.com/netkeep80/anum_docs/issues/213) `closed` — [Foundation v2] Canonical astring topology поверх exact UTF-8 byte transport
+- ✅ [#202](https://github.com/netkeep80/anum_docs/issues/202) `closed` — [Foundation v2] Универсальный ассоциативный интерпретатор: словарь смыслов, астроки и сеть аксиом
 
 ### avm
 
