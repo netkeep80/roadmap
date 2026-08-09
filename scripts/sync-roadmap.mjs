@@ -151,6 +151,26 @@ async function listPublicOwnerRepos(owner) {
   return repos;
 }
 
+async function verifyChildBacklink(owner, controlRepository, repo) {
+  try {
+    const item = await github(`/repos/${owner}/${repo}/contents/PORTFOLIO.md`);
+    if (Array.isArray(item) || item.type !== "file" || !item.content) {
+      return {name:repo, valid:false, reason:"PORTFOLIO.md is not a readable file"};
+    }
+    const text = Buffer.from(String(item.content).replace(/\s/g,""), "base64").toString("utf8");
+    const centralUrl = `https://github.com/${owner}/${controlRepository}`;
+    if (!text.includes(centralUrl)) {
+      return {name:repo, valid:false, reason:`PORTFOLIO.md does not point to ${centralUrl}`};
+    }
+    if (!text.includes("STATUS.md")) {
+      return {name:repo, valid:false, reason:"PORTFOLIO.md does not point to central STATUS.md"};
+    }
+    return {name:repo, valid:true, html_url:item.html_url ?? `${repoUrl(owner,repo)}/blob/HEAD/PORTFOLIO.md`};
+  } catch (error) {
+    return {name:repo, valid:false, reason:String(error.message || error)};
+  }
+}
+
 async function collectLiveState(registry) {
   if (!process.env.GITHUB_TOKEN) console.warn("WARN: GITHUB_TOKEN is not set; public API rate limits may apply.");
   const owner = registry.owner;
@@ -161,6 +181,16 @@ async function collectLiveState(registry) {
   const missing = registeredNames.filter((name) => !discoveredNames.includes(name));
   if (unregistered.length) throw new Error(`unregistered repositories: ${unregistered.join(", ")}`);
   if (missing.length) throw new Error(`registered repositories missing from public owner scope: ${missing.join(", ")}`);
+
+  const childRepositories = registry.repositories.filter((r) => r.name !== registry.control_repository);
+  const backlinks = [];
+  for (const child of childRepositories) {
+    backlinks.push(await verifyChildBacklink(owner, registry.control_repository, child.name));
+  }
+  const brokenBacklinks = backlinks.filter((b) => !b.valid);
+  if (brokenBacklinks.length) {
+    throw new Error(`invalid child portfolio backlinks: ${brokenBacklinks.map((b) => `${b.name} (${b.reason})`).join("; ")}`);
+  }
 
   const stateRepos = [];
   for (const semantic of registry.repositories) {
@@ -202,6 +232,8 @@ async function collectLiveState(registry) {
     registry_schema_version:registry.schema_version,
     latest_observed_github_change:latestObserved,
     repository_count:stateRepos.length,
+    child_repository_count:childRepositories.length,
+    verified_child_backlinks:backlinks.length,
     workstreams,
     repositories:stateRepos
   };
@@ -247,16 +279,18 @@ function renderStatus(registry, facts) {
   lines.push("> **GENERATED FILE — DO NOT EDIT.** Semantic decisions come from [`data/portfolio.json`](data/portfolio.json); factual GitHub state is collected by `scripts/sync-roadmap.mjs`.","");
   lines.push(`- Owner: \`${owner}\``);
   lines.push(`- Registered repositories: **${facts.repository_count}**`);
+  lines.push(`- Verified child roadmap backlinks: **${facts.verified_child_backlinks}/${facts.child_repository_count}**`);
   lines.push(`- Last successful GitHub check: **${facts.checked_at}**`);
   lines.push(`- Latest observed GitHub change in snapshot: **${facts.latest_observed_github_change ?? "n/a"}**`);
   lines.push(`- State hash (excluding check time): \`${facts.state_hash}\``,"");
 
   lines.push("## Control-plane health","");
+  lines.push(`- ✅ Child backlink coverage: ${facts.verified_child_backlinks}/${facts.child_repository_count}.`);
   if (drift.length === 0) {
     lines.push("- ✅ No declared workstream-status drift detected.","");
   } else {
-    lines.push("The following semantic-vs-GitHub mismatches require an explicit portfolio decision:","");
-    for (const item of drift) lines.push(`- ⚠️ ${item}`);
+    lines.push("- ⚠️ The following semantic-vs-GitHub mismatches require an explicit portfolio decision:","");
+    for (const item of drift) lines.push(`  - ${item}`);
     lines.push("");
   }
 
@@ -306,6 +340,7 @@ function renderStatus(registry, facts) {
   lines.push("## How to read this file","");
   lines.push("- `objective`, `next gate`, `priority`, `lifecycle`, dependencies and ownership are **portfolio decisions** from `data/portfolio.json`.");
   lines.push("- issue/PR counts, archive/default-branch state, timestamps and tracked-issue states are **GitHub facts**.");
+  lines.push("- child `PORTFOLIO.md` coverage is verified live; a missing/invalid central backlink makes validation/sync fail.");
   lines.push("- `Last successful GitHub check` proves snapshot freshness even when nothing changed in the child repositories.");
   lines.push("- closing a tracked local issue updates this status automatically; changing portfolio priority or the next strategic gate requires an explicit roadmap change.");
   lines.push("- implementation details remain in local repositories; this file is the control board, not a duplicate backlog.","");
@@ -333,7 +368,7 @@ async function main() {
     return;
   }
   const facts = await collectLiveState(registry);
-  console.log(`live coverage ok: ${facts.repository_count} repositories`);
+  console.log(`live coverage ok: ${facts.repository_count} repositories, ${facts.verified_child_backlinks}/${facts.child_repository_count} child backlinks`);
   if (mode === "validate-live") return;
   const jsonChanged = await writeIfChanged(STATUS_JSON_PATH, JSON.stringify(facts,null,2)+"\n");
   const mdChanged = await writeIfChanged(STATUS_MD_PATH, renderStatus(registry,facts)+"\n");
