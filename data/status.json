@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-09T10:00:50Z",
+  "latest_observed_github_change": "2026-08-09T10:09:43Z",
   "repository_count": 24,
   "workstreams": [
     {
@@ -89,18 +89,18 @@
     {
       "number": 13,
       "title": "[Control Plane] Сделать roadmap главным источником актуального состояния portfolio",
-      "state": "open",
-      "state_reason": "reopened",
-      "updated_at": "2026-08-09T09:50:12Z",
+      "state": "closed",
+      "state_reason": "completed",
+      "updated_at": "2026-08-09T10:04:28Z",
       "html_url": "https://github.com/netkeep80/roadmap/issues/13",
       "is_pull_request": false
     },
     {
       "number": 16,
       "title": "[Control Plane] Backlink rollout: все дочерние repos указывают на central roadmap",
-      "state": "open",
-      "state_reason": null,
-      "updated_at": "2026-08-09T09:51:34Z",
+      "state": "closed",
+      "state_reason": "completed",
+      "updated_at": "2026-08-09T10:03:23Z",
       "html_url": "https://github.com/netkeep80/roadmap/issues/16",
       "is_pull_request": false
     }
@@ -112,26 +112,26 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T10:00:50Z",
-      "updated_at": "2026-08-09T09:52:32Z",
-      "open_issues": 11,
+      "pushed_at": "2026-08-09T10:09:43Z",
+      "updated_at": "2026-08-09T10:01:50Z",
+      "open_issues": 9,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
           "number": 13,
           "title": "[Control Plane] Сделать roadmap главным источником актуального состояния portfolio",
-          "state": "open",
-          "state_reason": "reopened",
-          "updated_at": "2026-08-09T09:50:12Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-09T10:04:28Z",
           "html_url": "https://github.com/netkeep80/roadmap/issues/13",
           "is_pull_request": false
         },
         {
           "number": 16,
           "title": "[Control Plane] Backlink rollout: все дочерние repos указывают на central roadmap",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T09:51:34Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-09T10:03:23Z",
           "html_url": "https://github.com/netkeep80/roadmap/issues/16",
           "is_pull_request": false
         }
@@ -322,10 +322,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T09:58:28Z",
-      "updated_at": "2026-08-09T09:57:09Z",
+      "pushed_at": "2026-08-09T10:08:47Z",
+      "updated_at": "2026-08-09T10:07:33Z",
       "open_issues": 29,
-      "open_pull_requests": 3,
+      "open_pull_requests": 2,
       "tracked_issues": [
         {
           "number": 200,
@@ -416,7 +416,7 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T09:57:45Z",
+      "pushed_at": "2026-08-09T10:09:29Z",
       "updated_at": "2026-08-09T09:57:19Z",
       "open_issues": 19,
       "open_pull_requests": 2,
@@ -532,7 +532,7 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T09:57:39Z",
+      "pushed_at": "2026-08-09T10:09:18Z",
       "updated_at": "2026-08-09T09:58:06Z",
       "open_issues": 11,
       "open_pull_requests": 1,
@@ -989,5 +989,6 @@
       "tracked_issues": []
     }
   ],
-  "state_hash": "723cec48eada5c016ce9416cc7bdcbd7ce766203e0853a6903ec20ff42fffe2a"
+  "checked_at": "2026-08-09T10:10:05.422Z",
+  "state_hash": "09d976412f9a81e76a61e417b2abaed36e85192a3829bdf63d433c0269f5e024"
 }
