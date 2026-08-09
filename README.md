@@ -6,6 +6,37 @@
 
 Цель этого репозитория — не копировать локальные backlog-и, а показывать **границы ответственности, зависимости, блокеры и порядок принятия решений между проектами**.
 
+## Общий замысел
+
+За отдельными репозиториями стоит более общий исследовательский вопрос:
+
+> Можно ли построить вычислительную среду, где связь является универсальным структурным примитивом, ассоциативный поиск — базовой операцией, память персистентна по замыслу, а программы, данные, контекст и состояние выражаются разными ролями одной связевой структуры?
+
+Текущие проекты можно читать как последовательные эксперименты над разными слоями этой идеи:
+
+```text
+МТС / anum_docs
+  что означает связевая модель и где проходят semantic boundaries
+        ↓
+AVM
+  как canonical links становятся исполняемой Relations Model
+        ↕
+PersistMemoryManager
+  как долговременно существует relocatable persistent address space
+        ↓
+pjson
+  как этот persistence substrate ведёт себя на практических structured data
+
+aprover / jsonRVM / tooling
+  proof, differential oracle, inspection, migration evidence
+```
+
+Цель не состоит в механическом переписывании всех приложений «на графы». Более сильный критерий: **может ли небольшой набор relational primitives реально заменить несколько независимых representations, storage layers, query paths и execution-specific structures**.
+
+Ближайшая реалистичная цель — не новый физический процессор, а **persistent associative runtime**: canonical LinkStore + link-native execution + explicit effects + долговременное program/data/state space. Custom hardware рассматривается только как более дальняя специализация после измерений реальных workloads.
+
+Полное описание: [`VISION.md`](VISION.md). Варианты дальнейшей архитектуры — от software VM и persistent single-space до associative coprocessor, dataflow execution, distributed fabric и link-oriented hardware — в [`ASSOCIATIVE_COMPUTING.md`](ASSOCIATIVE_COMPUTING.md).
+
 ## Главные решения
 
 1. **Persistent data stack:** `PersistMemoryManager` остаётся storage kernel, `pjson` — единственным владельцем persistent JSON semantics. Сначала закрывается PMM→pjson readiness gate, затем развивается JSON/API/codec слой. См. #2.
@@ -16,6 +47,7 @@
 6. **Physical systems:** `termowood` и `aes` идут через safety/commissioning/as-built gates прежде feature growth. См. #7.
 7. **Legacy не конкурирует с current:** oracle/history/archive/placeholder роли помечаются явно. См. #8.
 8. **Research остаётся research:** `NNets`, `meta_rm`, `mts-genesis` получают проверяемые exit criteria вместо бесконечного feature growth. См. #9.
+9. **Long-term associative computing:** общий замысел и будущие software/hardware trajectories являются отдельным vision track и не обходят текущие correctness gates. См. #11.
 
 ## Приоритеты
 
@@ -65,7 +97,8 @@
 - #6 — repo-guard rollout;
 - #7 — termowood + aes safety/commissioning;
 - #8 — legacy/archive/placeholder hygiene;
-- #9 — research incubation.
+- #9 — research incubation;
+- #11 — общий vision и траектории ассоциативной вычислительной архитектуры.
 
 ## Как поддерживать roadmap
 
