@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "bootstrap": true,
+  "message": "Generated factual snapshot will replace this bootstrap on the first portfolio-sync run."
+}
