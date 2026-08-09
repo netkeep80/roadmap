@@ -57,32 +57,43 @@ accepted production/reference migration
 
 AVM может идти параллельно МТС foundation там, где contract frontend-neutral и не зависит от candidate denotation.
 
+Завершённый foundation текущей migration-линии:
+
+- `#125` — immutable semantic contexts и functional state lineage;
+- `#126` — canonical references + adapter-компилятор `$ent/$$obj/...` без runtime JSON-pointer;
+- `#127` — sequence/projection/foreach semantics и детерминированный порядок эффектов;
+- `#128` — минимальный value-denotation v1: singleton identities, canonical Integer, byte-string Text и ordered link-list;
+- `#173` — Native JSON leaf/value resolver;
+- `#187` — deterministic foreach по canonical ordered link-list;
+- `#188` — independent execution projection и deterministic effect-order contract;
+- `#191` — устранён скрытый `$rel := result` в pure Integer arithmetic.
+
 Текущий tracked slice:
 
 - `#122` — основной AVM 1.5 epic;
-- `#128/#163` — canonical value/integer;
-- `#169` — native duplet JSON boundary;
-- `#127` — sequence/projection/foreach semantics; ordered sequence/state-threading уже существуют, remaining path уточнён как `#187 → #188`;
-- `#187` — deterministic foreach по canonical ordered link-list;
-- `#188` — projection/lambda и deterministic effect-order contract;
-- `#174` — semantic migrator из frozen jsonRVM corpus, зависящий от `#127` и использующий `foreach-object-context` в стартовом differential corpus;
-- `#173` — **completed**;
-- `#180` — **completed**;
+- `#169` — umbrella Native Duplet JSON boundary и migration work;
+- `#174` — semantic migrator из frozen jsonRVM corpus;
 - `#131` — финальный differential end-to-end gate.
 
-Уточнённый frontend-neutral migration path:
+Текущий frontend-neutral migration path:
 
 ```text
-#187 deterministic foreach
-        ↓
-#188 projection/effect-order contract
-        ↓
 #174 semantic migrator
         ↓
 #131 differential end-to-end slice
 ```
 
-`#128/#163` развивается параллельно и остаётся prerequisite для arithmetic/value constructs внутри `#174`.
+`#174` обязан использовать уже принятые contracts, а не возвращать старую mutable JSON VM:
+
+- canonical Integer/Text/value denotations;
+- explicit result vs semantic-state transition;
+- canonical references;
+- ordered sequence;
+- deterministic foreach;
+- independent projection;
+- frozen jsonRVM oracle как behavioral evidence.
+
+Поддержка migrator-а расширяется construct-by-construct только вместе с oracle fixture/evidence. Float/Object/Map/BigInt и другие value domains не реализуются speculative заранее: новый domain добавляется отдельным gate только когда migration corpus или реальный consumer доказывает необходимость.
 
 Если оставшийся AVM шаг требует нового accepted МТС/Anum contract из `#200–#202`, ждать exact upstream acceptance, а не дублировать semantics внутри AVM.
 
@@ -132,12 +143,14 @@ Web UI 2.0 может развиваться параллельно, если н
 
 ### Central control plane
 
-`roadmap` уже имеет live registry validation и generated status. Оставшийся bootstrap/discoverability gate — `roadmap#16`:
+`roadmap` уже имеет live registry validation, generated status и непрерывно проверяемые backlinks всех child repositories.
 
 ```text
 23 child repositories
 → stable PORTFOLIO.md pointer
 → central roadmap discoverable from every repo
+→ portfolio-sync detects factual drift
+→ semantic drift reconciled отдельным portfolio decision
 ```
 
 Файл в child repo не копирует priority/lifecycle/next gate: эти данные остаются только в central control-plane.
@@ -196,6 +209,6 @@ Roadmap намеренно ориентирован на gates, а не на п�
 5. isocubic Phase 15 core recovery;
 6. termowood/aes commissioning work;
 7. repo-guard consumer rollout;
-8. portfolio backlink rollout.
+8. central portfolio drift reconciliation.
 
 Главная оптимизация portfolio — **не запускать downstream workaround, когда blocker уже локализован upstream**.
