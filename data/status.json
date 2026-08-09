@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-09T09:51:47Z",
+  "latest_observed_github_change": "2026-08-09T10:00:50Z",
   "repository_count": 24,
   "workstreams": [
     {
@@ -19,7 +19,7 @@
       "title": "[P0] МТС → AVM → aprover: один нормативный и один runtime path",
       "state": "open",
       "state_reason": null,
-      "updated_at": "2026-08-09T08:31:19Z",
+      "updated_at": "2026-08-09T09:53:40Z",
       "html_url": "https://github.com/netkeep80/roadmap/issues/3",
       "is_pull_request": false
     },
@@ -94,6 +94,15 @@
       "updated_at": "2026-08-09T09:50:12Z",
       "html_url": "https://github.com/netkeep80/roadmap/issues/13",
       "is_pull_request": false
+    },
+    {
+      "number": 16,
+      "title": "[Control Plane] Backlink rollout: все дочерние repos указывают на central roadmap",
+      "state": "open",
+      "state_reason": null,
+      "updated_at": "2026-08-09T09:51:34Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/16",
+      "is_pull_request": false
     }
   ],
   "repositories": [
@@ -103,8 +112,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T09:51:47Z",
-      "updated_at": "2026-08-09T09:47:39Z",
+      "pushed_at": "2026-08-09T10:00:50Z",
+      "updated_at": "2026-08-09T09:52:32Z",
       "open_issues": 11,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -116,6 +125,15 @@
           "updated_at": "2026-08-09T09:50:12Z",
           "html_url": "https://github.com/netkeep80/roadmap/issues/13",
           "is_pull_request": false
+        },
+        {
+          "number": 16,
+          "title": "[Control Plane] Backlink rollout: все дочерние repos указывают на central roadmap",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:51:34Z",
+          "html_url": "https://github.com/netkeep80/roadmap/issues/16",
+          "is_pull_request": false
         }
       ]
     },
@@ -125,8 +143,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-08T19:26:17Z",
-      "updated_at": "2026-08-08T19:10:25Z",
+      "pushed_at": "2026-08-09T09:56:41Z",
+      "updated_at": "2026-08-09T09:56:44Z",
       "open_issues": 14,
       "open_pull_requests": 6,
       "tracked_issues": [
@@ -183,8 +201,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-08T15:06:47Z",
-      "updated_at": "2026-08-08T15:06:53Z",
+      "pushed_at": "2026-08-09T09:56:53Z",
+      "updated_at": "2026-08-09T09:57:23Z",
       "open_issues": 16,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -304,11 +322,38 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T09:49:51Z",
-      "updated_at": "2026-08-09T09:48:19Z",
-      "open_issues": 27,
+      "pushed_at": "2026-08-09T09:58:28Z",
+      "updated_at": "2026-08-09T09:57:09Z",
+      "open_issues": 29,
       "open_pull_requests": 3,
       "tracked_issues": [
+        {
+          "number": 200,
+          "title": "[Foundation reset v2] Акорень как смысл смысла: вывести 5-связное semantic kernel МТС",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:37:53Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/200",
+          "is_pull_request": false
+        },
+        {
+          "number": 201,
+          "title": "[Foundation v2] Четверичный десериализатор как минимальный интерпретатор МТС и стек контекстов",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:26:04Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/201",
+          "is_pull_request": false
+        },
+        {
+          "number": 202,
+          "title": "[Foundation v2] Универсальный ассоциативный интерпретатор: словарь смыслов, астроки и сеть аксиом",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:43:23Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/202",
+          "is_pull_request": false
+        },
         {
           "number": 194,
           "title": "[BLOCKED by #200–#202] МТС v0.6 production/reference migration epic",
@@ -371,10 +416,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T09:48:06Z",
-      "updated_at": "2026-08-09T09:37:11Z",
+      "pushed_at": "2026-08-09T09:57:45Z",
+      "updated_at": "2026-08-09T09:57:19Z",
       "open_issues": 19,
-      "open_pull_requests": 1,
+      "open_pull_requests": 2,
       "tracked_issues": [
         {
           "number": 122,
@@ -456,8 +501,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-08T22:56:11Z",
-      "updated_at": "2026-08-08T20:41:45Z",
+      "pushed_at": "2026-08-09T09:57:26Z",
+      "updated_at": "2026-08-09T09:57:48Z",
       "open_issues": 2,
       "open_pull_requests": 1,
       "tracked_issues": [
@@ -487,8 +532,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T09:51:33Z",
-      "updated_at": "2026-08-09T09:36:30Z",
+      "pushed_at": "2026-08-09T09:57:39Z",
+      "updated_at": "2026-08-09T09:58:06Z",
       "open_issues": 11,
       "open_pull_requests": 1,
       "tracked_issues": [
@@ -572,8 +617,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-08T14:53:49Z",
-      "updated_at": "2026-08-08T14:53:56Z",
+      "pushed_at": "2026-08-09T09:57:47Z",
+      "updated_at": "2026-08-09T09:57:51Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -584,8 +629,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-03-22T13:45:48Z",
-      "updated_at": "2026-03-22T13:45:55Z",
+      "pushed_at": "2026-08-09T09:57:59Z",
+      "updated_at": "2026-08-09T09:58:03Z",
       "open_issues": 6,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -651,8 +696,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-08T07:24:33Z",
-      "updated_at": "2026-08-08T07:16:58Z",
+      "pushed_at": "2026-08-09T09:58:08Z",
+      "updated_at": "2026-08-09T09:59:24Z",
       "open_issues": 12,
       "open_pull_requests": 1,
       "tracked_issues": [
@@ -781,8 +826,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-01-30T21:48:43Z",
-      "updated_at": "2026-01-30T21:48:47Z",
+      "pushed_at": "2026-08-09T09:58:17Z",
+      "updated_at": "2026-08-09T09:58:22Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -793,8 +838,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-04-16T22:14:34Z",
-      "updated_at": "2026-04-16T22:14:39Z",
+      "pushed_at": "2026-08-09T09:58:27Z",
+      "updated_at": "2026-08-09T09:58:31Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -805,8 +850,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-07-21T23:54:52Z",
-      "updated_at": "2026-07-21T23:54:56Z",
+      "pushed_at": "2026-08-09T09:58:37Z",
+      "updated_at": "2026-08-09T09:59:16Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -817,8 +862,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-01-28T16:11:41Z",
-      "updated_at": "2026-01-28T16:11:46Z",
+      "pushed_at": "2026-08-09T09:58:46Z",
+      "updated_at": "2026-08-09T09:58:49Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -829,8 +874,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-04-21T20:56:05Z",
-      "updated_at": "2026-04-21T20:56:09Z",
+      "pushed_at": "2026-08-09T09:58:55Z",
+      "updated_at": "2026-08-09T09:58:58Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -841,8 +886,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-08T22:55:31Z",
-      "updated_at": "2026-08-08T22:55:35Z",
+      "pushed_at": "2026-08-09T09:59:08Z",
+      "updated_at": "2026-08-09T09:59:12Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -853,8 +898,8 @@
       "default_branch": "master",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-02-26T10:45:27Z",
-      "updated_at": "2026-02-26T10:45:07Z",
+      "pushed_at": "2026-08-09T09:59:38Z",
+      "updated_at": "2026-08-09T09:59:31Z",
       "open_issues": 0,
       "open_pull_requests": 1,
       "tracked_issues": []
@@ -865,8 +910,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-01-28T17:26:54Z",
-      "updated_at": "2026-01-28T17:33:07Z",
+      "pushed_at": "2026-08-09T09:59:31Z",
+      "updated_at": "2026-08-09T09:59:41Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -877,8 +922,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2023-08-05T13:59:38Z",
-      "updated_at": "2023-08-05T11:20:32Z",
+      "pushed_at": "2026-08-09T09:59:38Z",
+      "updated_at": "2026-08-09T10:00:39Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -889,8 +934,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2024-10-15T21:44:26Z",
-      "updated_at": "2024-10-15T21:44:29Z",
+      "pushed_at": "2026-08-09T09:59:46Z",
+      "updated_at": "2026-08-09T09:59:50Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -901,8 +946,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-01-29T11:22:56Z",
-      "updated_at": "2026-01-29T11:23:00Z",
+      "pushed_at": "2026-08-09T09:59:55Z",
+      "updated_at": "2026-08-09T10:00:40Z",
       "open_issues": 1,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -913,8 +958,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2021-01-31T18:03:46Z",
-      "updated_at": "2021-05-30T06:13:40Z",
+      "pushed_at": "2026-08-09T10:00:06Z",
+      "updated_at": "2026-08-09T10:00:18Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -925,8 +970,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-02-26T13:52:05Z",
-      "updated_at": "2026-02-26T13:52:09Z",
+      "pushed_at": "2026-08-09T10:00:15Z",
+      "updated_at": "2026-08-09T10:00:31Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -937,12 +982,12 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-02-26T13:53:08Z",
-      "updated_at": "2026-02-26T13:53:11Z",
+      "pushed_at": "2026-08-09T10:00:27Z",
+      "updated_at": "2026-08-09T10:00:39Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
     }
   ],
-  "state_hash": "8b05cda4548e01bdebcfc72b0339107400e4e8a846d28f5f358cef31824319c1"
+  "state_hash": "723cec48eada5c016ce9416cc7bdcbd7ce766203e0853a6903ec20ff42fffe2a"
 }
