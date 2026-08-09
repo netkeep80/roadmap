@@ -1,114 +1,184 @@
-# netkeep80 roadmap
+# netkeep80 roadmap — portfolio control plane
 
-Единая дорожная карта по репозиториям [`netkeep80`](https://github.com/netkeep80).
+[![Portfolio validate](https://github.com/netkeep80/roadmap/actions/workflows/portfolio-validate.yml/badge.svg)](https://github.com/netkeep80/roadmap/actions/workflows/portfolio-validate.yml)
+[![Portfolio sync](https://github.com/netkeep80/roadmap/actions/workflows/portfolio-sync.yml/badge.svg)](https://github.com/netkeep80/roadmap/actions/workflows/portfolio-sync.yml)
 
-**Срез:** 2026-08-09. В аккаунте 24 репозитория, включая этот `roadmap`; ниже классифицированы 23 project/source repositories и сам portfolio-control repo.
+**Это главный центр управления и развития репозиториев [`netkeep80`](https://github.com/netkeep80).**
 
-Цель этого репозитория — не копировать локальные backlog-и, а показывать **границы ответственности, зависимости, блокеры и порядок принятия решений между проектами**.
+Если нужно понять, **что сейчас происходит, что важнее, что заблокировано, какой проект владеет каким слоем и что делать следующим**, начинать нужно отсюда.
+
+## Start here
+
+| Что нужно узнать | Куда смотреть |
+|---|---|
+| **Что происходит прямо сейчас** | [`STATUS.md`](STATUS.md) — generated live portfolio board |
+| **Что делать раньше/позже** | [`EXECUTION.md`](EXECUTION.md) — dependency lanes and gates |
+| **Зачем существует вся программа** | [`VISION.md`](VISION.md) |
+| **Кто чем владеет и как связаны слои** | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| **Подробная роль каждого repository** | [`REPOSITORIES.md`](REPOSITORIES.md) |
+| **Куда может развиваться ассоциативная архитектура** | [`ASSOCIATIVE_COMPUTING.md`](ASSOCIATIVE_COMPUTING.md) |
+| **Как поддерживается актуальность** | [`OPERATING_MODEL.md`](OPERATING_MODEL.md) |
+| **Почему были приняты ключевые решения** | [`DECISIONS.md`](DECISIONS.md) |
+| **Machine-readable portfolio intent** | [`data/portfolio.json`](data/portfolio.json) |
+| **Machine-readable observed GitHub state** | [`data/status.json`](data/status.json) |
+
+## Authority model
+
+В portfolio разделены **решения** и **факты**.
+
+```text
+human / architectural decision
+        ↓
+data/portfolio.json
+(priority, lifecycle, ownership, objective, next gate, dependencies)
+        ↓
+roadmap documents / workstreams
+        ↓
+local repository epics
+        ↓
+implementation
+
+GitHub API
+        ↓
+STATUS.md + data/status.json
+(open/closed issues, PRs, timestamps, archive/default branch)
+```
+
+Это означает:
+
+- `roadmap` владеет **portfolio direction**;
+- local repositories владеют **implementation backlog**;
+- GitHub API владеет наблюдаемыми фактами;
+- автоматика **не меняет архитектурные приоритеты сама**;
+- новый public repository, не зарегистрированный в `data/portfolio.json`, считается control-plane drift.
+
+Подробно: [`OPERATING_MODEL.md`](OPERATING_MODEL.md).
 
 ## Общий замысел
 
-За отдельными репозиториями стоит более общий исследовательский вопрос:
+За отдельными репозиториями стоит один более широкий исследовательский вопрос:
 
 > Можно ли построить вычислительную среду, где связь является универсальным структурным примитивом, ассоциативный поиск — базовой операцией, память персистентна по замыслу, а программы, данные, контекст и состояние выражаются разными ролями одной связевой структуры?
 
-Текущие проекты можно читать как последовательные эксперименты над разными слоями этой идеи:
+Ключевая исследовательская вертикаль:
 
 ```text
 МТС / anum_docs
-  что означает связевая модель и где проходят semantic boundaries
+  normative semantics and denotation boundaries
         ↓
 AVM
-  как canonical links становятся исполняемой Relations Model
+  canonical link-native execution
         ↕
-PersistMemoryManager
-  как долговременно существует relocatable persistent address space
+persistent LinkStore / PMM-class substrate
         ↓
-pjson
-  как этот persistence substrate ведёт себя на практических structured data
+long-lived program + data + state space
 
 aprover / jsonRVM / tooling
   proof, differential oracle, inspection, migration evidence
 ```
 
-Цель не состоит в механическом переписывании всех приложений «на графы». Более сильный критерий: **может ли небольшой набор relational primitives реально заменить несколько независимых representations, storage layers, query paths и execution-specific structures**.
+`pjson` является важным практическим consumer persistent substrate, но не объявляется конечным внутренним форматом будущей ассоциативной машины.
 
-Ближайшая реалистичная цель — не новый физический процессор, а **persistent associative runtime**: canonical LinkStore + link-native execution + explicit effects + долговременное program/data/state space. Custom hardware рассматривается только как более дальняя специализация после измерений реальных workloads.
+Наиболее реалистичная следующая архитектурная цель:
 
-Полное описание: [`VISION.md`](VISION.md). Варианты дальнейшей архитектуры — от software VM и persistent single-space до associative coprocessor, dataflow execution, distributed fabric и link-oriented hardware — в [`ASSOCIATIVE_COMPUTING.md`](ASSOCIATIVE_COMPUTING.md).
+```text
+software semantics
+→ persistent associative runtime
+→ realistic workload
+→ associative scheduler / self-hosting
+→ profiling
+→ accelerator
+→ only then possible custom hardware
+```
 
-## Главные решения
+Подробнее: [`VISION.md`](VISION.md) и [`ASSOCIATIVE_COMPUTING.md`](ASSOCIATIVE_COMPUTING.md).
 
-1. **Persistent data stack:** `PersistMemoryManager` остаётся storage kernel, `pjson` — единственным владельцем persistent JSON semantics. Сначала закрывается PMM→pjson readiness gate, затем развивается JSON/API/codec слой. См. #2.
-2. **МТС / Relations Model:** `anum_docs` — normative source; `avm` — будущий canonical link-native runtime; `aprover` — downstream proof/search consumer; `jsonRVM` — frozen oracle для differential migration, а не второй будущий runtime. См. #3.
-3. **Инженерные расчёты:** у `mast-calculator` следующий главный риск — физическая/нормативная верификация dynamic wind и erection stages, а не новая UI-функциональность. См. #4.
-4. **Product recovery:** `isocubic` следует Phase 15 core-first roadmap; связь `god-mode` / MetaMode / legacy dev-tool surface должна быть явно разрешена до дальнейшего extraction. См. #5.
-5. **Shared governance:** `repo-guard` развивается от реальных consumer cases и постепенно становится baseline активных репозиториев. См. #6.
-6. **Physical systems:** `termowood` и `aes` идут через safety/commissioning/as-built gates прежде feature growth. См. #7.
-7. **Legacy не конкурирует с current:** oracle/history/archive/placeholder роли помечаются явно. См. #8.
-8. **Research остаётся research:** `NNets`, `meta_rm`, `mts-genesis` получают проверяемые exit criteria вместо бесконечного feature growth. См. #9.
-9. **Long-term associative computing:** общий замысел и будущие software/hardware trajectories являются отдельным vision track и не обходят текущие correctness gates. См. #11.
+## Portfolio control loops
 
-## Приоритеты
+### 1. Strategic loop
 
-- **P0 — blocking foundations / high-consequence correctness.** Закрытие этих gates меняет возможность безопасно развивать зависимые проекты.
-- **P1 — active consolidation.** Делать параллельно с P0, когда нет зависимости от незакрытого foundation.
-- **P2 — research, migration cleanup, portfolio hygiene.** Важно, но не должно оттеснять blocking foundations.
-- **P3 — incubation/maintenance.** Разработка только при появлении конкретного consumer/charter.
+```text
+vision
+→ accepted architecture decision
+→ portfolio priority / next gate
+→ local implementation
+→ evidence
+→ update or keep decision
+```
 
-## Portfolio dashboard
+### 2. Factual loop
 
-| Репозиторий | Роль | Priority | Следующий milestone |
-|---|---|---:|---|
-| `PersistMemoryManager` | persistent storage kernel | **P0** | закрыть `#410/#415/#416/#426 → #421` для pjson object storage |
-| `pjson` | persistent JSON semantics | **P0** | после `PMM#421`: `#55 → #34`, затем traversal/path/CRUD/codec/persistence chain |
-| `anum_docs` | normative МТС/Anum contracts | **P0** | v0.6 candidate `#194 → #195..#199`; production cutover только после acceptance |
-| `avm` | link-native Relations Model runtime | **P0** | AVM 1.5 `#122`; canonical values/native duplet frontend/differential jsonRVM migration |
-| `aprover` | trusted-replay consumer + untrusted search/UI | **P0/P1** | не опережать accepted `anum_docs`; exact repin и multi-step consumer после upstream gate |
-| `mast-calculator` | engineering calculation product | **P0** | dynamic SP20/modal + erection-stage validation (`#71/#97/#102/#72/#98`) |
-| `repo-guard` | shared executable governance | **P1** | consumer-driven rollout и immutable pins across active repos |
-| `BinDiffSynchronizer` | sync/diff product + pjson migration oracle | **P1/P2** | портировать pjson fixtures; после `pjson#44` удалить duplicate persistent-JSON stack |
-| `isocubic` | parametric cube/editor/rendering product | **P1** | Phase 15 `#299`: strict CI → domain → rendering/FFT/editor → browser E2E |
-| `god-mode` | standalone dev-tool React library | **P1/P2** | определить relation to isocubic MetaMode; затем consumer-driven package backlog |
-| `termowood` | embedded thermostat / physical controller | **P1** | fail-safe matrix, calibration, HIL/bench commissioning, OTA recovery |
-| `aes` | home autonomous-energy engineering docs | **P1** | reviewed wiring freeze → staged commissioning → measured as-built documentation |
-| `NNets` | experimental self-structuring NN library | **P2** | reproducible benchmark/evidence milestone before new algorithms |
-| `meta_rm` | C++ compile-time relations research | **P2** | freeze tiny kernel; 2–3 use cases + compile-cost evidence; promote/archive decision |
-| `mts-genesis` | conceptual/publication layer | **P2** | keep self-contained; route formalizable claims into `anum_docs` research gates |
-| `jsonRVM` | frozen Relations Model semantic oracle | **P2** | corpus/provenance only until AVM differential migration closes; no new runtime architecture |
-| `phprvm` | historical Relations Model predecessor | **P3/archive** | status banner/provenance; archive after useful migration references are linked |
-| `associative_proofs` | historical pointer to moved proofs | **P3/archive** | mark archive/read-only; canonical work remains in destination/current theory repos |
-| `a-num-` | historical Anum associative-DB example | **P3/archive** | point to canonical current theory/examples; no parallel semantic development |
-| `usefull` | small generic Python utilities | **P3/maintenance** | maintenance only for demonstrated consumers; otherwise freeze |
-| `sample_cmake` | placeholder | **P3/incubation** | charter with consumer + acceptance test, or archive |
-| `jgit` | placeholder | **P3/incubation** | charter with problem/consumer/dependencies, or archive |
-| `jhub` | placeholder | **P3/incubation** | charter with problem/consumer/dependencies, or archive |
-| `roadmap` | portfolio control plane | **P1** | maintain dependency map + cross-repo gates; never duplicate local implementation backlog |
+```text
+GitHub repositories/issues/PRs
+→ portfolio-sync
+→ STATUS.md + data/status.json
+```
 
-Подробный разбор каждого репозитория: [`REPOSITORIES.md`](REPOSITORIES.md). Архитектурные границы и dependency graph: [`ARCHITECTURE.md`](ARCHITECTURE.md). Порядок исполнения: [`EXECUTION.md`](EXECUTION.md).
+### 3. Dependency loop
+
+```text
+upstream gate closes
+→ generated status records the fact
+→ evaluate downstream unblock
+→ explicit portfolio decision if priority/gate changes
+→ consumer migration
+→ legacy deletion
+```
 
 ## Cross-repo workstreams
 
-- #1 — portfolio epic;
-- #2 — PMM → pjson;
+Главные workstreams живут как issues этого repository и одновременно зарегистрированы в `data/portfolio.json`:
+
+- #2 — PMM → pjson persistent data stack;
 - #3 — МТС → AVM → aprover;
-- #4 — mast-calculator verification;
-- #5 — isocubic / god-mode / MetaMode boundary;
-- #6 — repo-guard rollout;
+- #4 — mast-calculator physical/normative verification;
+- #5 — isocubic / God Mode / MetaMode boundary;
+- #6 — repo-guard governance rollout;
 - #7 — termowood + aes safety/commissioning;
-- #8 — legacy/archive/placeholder hygiene;
+- #8 — legacy/oracle/archive/incubation hygiene;
 - #9 — research incubation;
-- #11 — общий vision и траектории ассоциативной вычислительной архитектуры.
+- #11 — общий vision и associative-computing trajectories;
+- #13 — portfolio control plane.
 
-## Как поддерживать roadmap
+**Актуальное open/closed состояние этих workstreams не поддерживается вручную здесь — оно находится в [`STATUS.md`](STATUS.md).**
 
-Обновлять central roadmap нужно **по событию**, а не переписывать его после каждого локального PR:
+## Главные архитектурные правила
 
-- принят/изменён cross-repo contract;
-- закрылся blocking readiness gate;
-- canonical owner слоя изменился;
-- legacy consumer полностью мигрирован и старый implementation можно удалить;
-- research hypothesis получила acceptance/rejection;
-- проект перешёл между `active / oracle / maintenance / incubation / archive`.
+1. **One canonical owner per layer.**
+2. **Git is the archive.** После migration obsolete implementation удаляется.
+3. **No compatibility layer without a named removal gate.**
+4. **Research ≠ accepted production contract.**
+5. **Persistence identity ≠ process address.**
+6. **Frontend syntax ≠ runtime semantic universe.**
+7. **Interpret/find/inspect ≠ realize/mutate.**
+8. **Engineering and physical safety evidence outranks feature growth.**
+9. **Optimization/hardware ≠ second semantics.**
+10. **Future vision never bypasses current correctness gates.**
 
-Локальные детали реализации остаются в issues соответствующего репозитория. Git хранит историю; central roadmap описывает только актуальную систему.
+## Актуальность
+
+`portfolio-sync` запускается:
+
+- после изменения control-plane inputs на `main`;
+- каждые 6 часов;
+- вручную через `workflow_dispatch`.
+
+Он сверяет registry со всем public owner scope `netkeep80`, проверяет tracked issues и обновляет generated status только при изменении фактического состояния.
+
+Если sync красный, factual snapshot следует считать потенциально stale и исправлять это как **control-plane incident**.
+
+## Для автоматических агентов
+
+Не исследовать весь GitHub account заново, если задача требует portfolio orientation.
+
+Сначала читать:
+
+```text
+data/portfolio.json
+data/status.json
+EXECUTION.md
+```
+
+Затем переходить в указанный local epic/issue.
+
+Если observed state противоречит записанному `next_gate`, не менять priority автоматически: оформить/сделать explicit portfolio update в этом repository.
