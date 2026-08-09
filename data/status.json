@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-09T11:10:40Z",
+  "latest_observed_github_change": "2026-08-09T11:51:33Z",
   "repository_count": 24,
   "child_repository_count": 23,
   "verified_child_backlinks": 23,
@@ -114,8 +114,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T11:10:40Z",
-      "updated_at": "2026-08-09T10:20:45Z",
+      "pushed_at": "2026-08-09T11:51:29Z",
+      "updated_at": "2026-08-09T11:51:33Z",
       "open_issues": 9,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -324,10 +324,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T11:07:52Z",
-      "updated_at": "2026-08-09T11:05:51Z",
-      "open_issues": 34,
-      "open_pull_requests": 2,
+      "pushed_at": "2026-08-09T11:48:38Z",
+      "updated_at": "2026-08-09T11:48:44Z",
+      "open_issues": 22,
+      "open_pull_requests": 0,
       "tracked_issues": [
         {
           "number": 200,
@@ -357,57 +357,66 @@
           "is_pull_request": false
         },
         {
-          "number": 194,
-          "title": "[BLOCKED by #200–#202] МТС v0.6 production/reference migration epic",
+          "number": 205,
+          "title": "[Foundation v2] Вывести link-only состояние контекстов Anum-интерпретатора и точный смысл `↑`",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-09T09:07:05Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/194",
+          "updated_at": "2026-08-09T09:52:39Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/205",
           "is_pull_request": false
         },
         {
-          "number": 195,
-          "title": "v0.6 migration P1: typed storage-neutral link/current substrate",
+          "number": 206,
+          "title": "[Foundation v2] Проверить гипотезу: ачисло как корневое смысловое разложение связи без `Meaning(x)`",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-09T09:07:20Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/195",
+          "updated_at": "2026-08-09T09:48:02Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/206",
           "is_pull_request": false
         },
         {
-          "number": 196,
-          "title": "v0.6 migration P2: target AST/grammar без primitive `◁/▷` и parent-depth",
+          "number": 208,
+          "title": "[Foundation v2] Четыре формы различённости бинарной связи: `∞ / ♂e / b♀ / b⟼e`",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-09T09:07:31Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/196",
+          "updated_at": "2026-08-09T09:40:54Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/208",
           "is_pull_request": false
         },
         {
-          "number": 197,
-          "title": "v0.6 migration P3: candidate reference interpreter over current link",
+          "number": 211,
+          "title": "[Foundation v2] Контекст интерпретатора как самозамкнутое начало `K = K ⟼ (parent ⟼ current)`",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-09T09:07:46Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/197",
+          "updated_at": "2026-08-09T09:52:28Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/211",
           "is_pull_request": false
         },
         {
-          "number": 198,
-          "title": "v0.6 migration P4: candidate root + Anum production-facing conformance",
+          "number": 213,
+          "title": "[Foundation v2] Строковые ачисла: точный UTF-8 → абитовый bootstrap без смешения с recursive Anum grammar",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-09T09:07:58Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/198",
+          "updated_at": "2026-08-09T10:03:30Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/213",
           "is_pull_request": false
         },
         {
-          "number": 199,
-          "title": "v0.6 migration P5: integrated acceptance gate и atomic production cutover plan",
+          "number": 215,
+          "title": "[Foundation v2] Словарь форм как scoped link network: `source Anum → form` без host-map",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-09T09:08:16Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/199",
+          "updated_at": "2026-08-09T10:07:42Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/215",
+          "is_pull_request": false
+        },
+        {
+          "number": 216,
+          "title": "[Foundation v2] Система аксиом как explicit theory network и её использование интерпретатором",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T10:12:08Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/216",
           "is_pull_request": false
         }
       ]
@@ -418,10 +427,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T11:08:33Z",
+      "pushed_at": "2026-08-09T11:14:36Z",
       "updated_at": "2026-08-09T11:08:52Z",
-      "open_issues": 14,
-      "open_pull_requests": 1,
+      "open_issues": 15,
+      "open_pull_requests": 2,
       "tracked_issues": [
         {
           "number": 122,
@@ -955,6 +964,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-09T11:11:06.827Z",
-  "state_hash": "660fa4b2490d9724b858729fc4c5a1bf85f37fd2a586ffe45bd8afd169cb2068"
+  "checked_at": "2026-08-09T11:52:03.875Z",
+  "state_hash": "afadfbe9d930b633657ecdb9e81e69344132a85bc1a49aac8335ccbad1ad76dc"
 }

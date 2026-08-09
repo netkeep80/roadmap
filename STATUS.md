@@ -5,9 +5,9 @@
 - Owner: `netkeep80`
 - Registered repositories: **24**
 - Verified child roadmap backlinks: **23/23**
-- Last successful GitHub check: **2026-08-09T11:11:06.827Z**
-- Latest observed GitHub change in snapshot: **2026-08-09T11:10:40Z**
-- State hash (excluding check time): `660fa4b2490d9724b858729fc4c5a1bf85f37fd2a586ffe45bd8afd169cb2068`
+- Last successful GitHub check: **2026-08-09T11:52:03.875Z**
+- Latest observed GitHub change in snapshot: **2026-08-09T11:51:33Z**
+- State hash (excluding check time): `afadfbe9d930b633657ecdb9e81e69344132a85bc1a49aac8335ccbad1ad76dc`
 
 ## Control-plane health
 
@@ -19,7 +19,7 @@
 | Priority | Workstream | Declared status | GitHub state | Next gate |
 |---:|---|---|---|---|
 | **P0** | [#2](https://github.com/netkeep80/roadmap/issues/2) PMM → pjson persistent data stack | `active` | 🟡 open | PMM readiness → pjson pin/object storage → pjson 1.0 extraction |
-| **P0** | [#3](https://github.com/netkeep80/roadmap/issues/3) МТС → AVM → aprover | `active` | 🟡 open | anum_docs #200 → #201 → #202 foundation reset decision, затем rewrite/revalidate #194–#199; AVM frontend-neutral path #174 → #131 |
+| **P0** | [#3](https://github.com/netkeep80/roadmap/issues/3) МТС → AVM → aprover | `active` | 🟡 open | anum_docs #200/#206 shared/cyclic meaning/reference boundary → #202 source-to-acts coherence → fresh Gate P; Gate R/L/:/= research decisions are closed; AVM frontend-neutral #174 → #131 may continue, MTS-dependent frontend and aprover repin remain blocked |
 | **P0** | [#4](https://github.com/netkeep80/roadmap/issues/4) mast-calculator physical verification | `active` | 🟡 open | dynamic SP20 + erection stages + independent verification passport |
 | **P1** | [#5](https://github.com/netkeep80/roadmap/issues/5) isocubic / God Mode / MetaMode boundary | `active` | 🟡 open | isocubic Phase 15 core gates then provenance/consumer decision |
 | **P1** | [#6](https://github.com/netkeep80/roadmap/issues/6) repo-guard shared governance rollout | `active` | 🟡 open | Tier A reproducible immutable-pinned baseline |
@@ -34,12 +34,12 @@
 
 | Priority | Repository | Lifecycle | Current objective | Next portfolio gate | GitHub | Roadmap |
 |---:|---|---|---|---|---|---|
-| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | разрешить foundation reset v2 через 5-связное semantic kernel и единый Anum/general interpreter, затем перепроверить production migration | #200 → #201 → #202 → explicit decision/rewrite of #194–#199 | 34 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
-| **P0** | [`avm`](https://github.com/netkeep80/avm) | `active` | закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая candidate МТС semantics | #174 semantic migrator → #131 differential end-to-end; #169 remains Native JSON umbrella; MTS-dependent frontend decisions wait for accepted #200–#202 outcome | 14 issues / 1 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | разрешить foundation reset v2 через 5-связное semantic kernel и единый Anum/general interpreter, затем перепроверить production migration | #200/#206 shared/cyclic meaning/reference boundary → #202 end-to-end source→acts coherence → fresh Gate P production migration; retire obsolete #194–#199 only when replacement Gate P exists | 22 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`avm`](https://github.com/netkeep80/avm) | `active` | закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая candidate МТС semantics | #174 semantic migrator → #131 differential end-to-end; #169 remains Native JSON umbrella; MTS-dependent frontend decisions wait for integrated accepted Foundation v2 outcome and new production contract | 15 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `active` | закрыть физическую и нормативную верификацию dynamic wind и erection stages до дальнейшего feature growth | modal/eigen → #97/#102 dynamic SP20 → #72/#98 erection → verification passport | 11 issues / 1 PRs | [#4](https://github.com/netkeep80/roadmap/issues/4) |
 | **P0** | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `active` | закрыть consumer-shaped readiness для native persistent object storage pjson | #410/#415/#416/#426 → #421 | 14 issues / 6 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
 | **P0** | [`pjson`](https://github.com/netkeep80/pjson) | `blocked` | довести pjson 1.0 до native PMM-backed JSON без private storage workaround | после PMM#421: #55 → #34, затем #35..#44 | 16 issues / 0 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
-| **P0/P1** | [`aprover`](https://github.com/netkeep80/aprover) | `blocked` | оставаться exact consumer accepted anum_docs contracts и развивать search только поверх trusted replay | repin только после accepted foundation-reset outcome and rewritten production contract | 2 issues / 1 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0/P1** | [`aprover`](https://github.com/netkeep80/aprover) | `blocked` | оставаться exact consumer accepted anum_docs contracts и развивать search только поверх trusted replay | repin only after integrated accepted Foundation v2 outcome and new production contract; do not pin candidate Gate R/L/:/= research | 2 issues / 1 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P1** | [`aes`](https://github.com/netkeep80/aes) | `active` | перевести проект от design assumptions к проверенному commissioning и as-built состоянию | design freeze → staged commissioning → measured as-built | 0 issues / 0 PRs | [#7](https://github.com/netkeep80/roadmap/issues/7) |
 | **P1** | [`isocubic`](https://github.com/netkeep80/isocubic) | `active` | восстановить test-first product core и завершить dev-tool extraction boundary | #300 → #301 → #302/#303/#304 → #305 → #306/#307 | 12 issues / 1 PRs | [#5](https://github.com/netkeep80/roadmap/issues/5) |
 | **P1** | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `active` | раскатывать consumer-driven governance baseline без speculative DSL growth | Tier A active repos use reproducible immutable-pinned policy | 0 issues / 0 PRs | [#6](https://github.com/netkeep80/roadmap/issues/6) |
@@ -65,23 +65,24 @@
 
 **Objective:** разрешить foundation reset v2 через 5-связное semantic kernel и единый Anum/general interpreter, затем перепроверить production migration
 
-**Next gate:** #200 → #201 → #202 → explicit decision/rewrite of #194–#199
+**Next gate:** #200/#206 shared/cyclic meaning/reference boundary → #202 end-to-end source→acts coherence → fresh Gate P production migration; retire obsolete #194–#199 only when replacement Gate P exists
 
 - 🟡 [#200](https://github.com/netkeep80/anum_docs/issues/200) `open` — [Foundation reset v2] Акорень как смысл смысла: вывести 5-связное semantic kernel МТС
 - 🟡 [#201](https://github.com/netkeep80/anum_docs/issues/201) `open` — [Foundation v2] Четверичный десериализатор как минимальный интерпретатор МТС и стек контекстов
 - 🟡 [#202](https://github.com/netkeep80/anum_docs/issues/202) `open` — [Foundation v2] Универсальный ассоциативный интерпретатор: словарь смыслов, астроки и сеть аксиом
-- 🟡 [#194](https://github.com/netkeep80/anum_docs/issues/194) `open` — [BLOCKED by #200–#202] МТС v0.6 production/reference migration epic
-- 🟡 [#195](https://github.com/netkeep80/anum_docs/issues/195) `open` — v0.6 migration P1: typed storage-neutral link/current substrate
-- 🟡 [#196](https://github.com/netkeep80/anum_docs/issues/196) `open` — v0.6 migration P2: target AST/grammar без primitive `◁/▷` и parent-depth
-- 🟡 [#197](https://github.com/netkeep80/anum_docs/issues/197) `open` — v0.6 migration P3: candidate reference interpreter over current link
-- 🟡 [#198](https://github.com/netkeep80/anum_docs/issues/198) `open` — v0.6 migration P4: candidate root + Anum production-facing conformance
-- 🟡 [#199](https://github.com/netkeep80/anum_docs/issues/199) `open` — v0.6 migration P5: integrated acceptance gate и atomic production cutover plan
+- 🟡 [#205](https://github.com/netkeep80/anum_docs/issues/205) `open` — [Foundation v2] Вывести link-only состояние контекстов Anum-интерпретатора и точный смысл `↑`
+- 🟡 [#206](https://github.com/netkeep80/anum_docs/issues/206) `open` — [Foundation v2] Проверить гипотезу: ачисло как корневое смысловое разложение связи без `Meaning(x)`
+- 🟡 [#208](https://github.com/netkeep80/anum_docs/issues/208) `open` — [Foundation v2] Четыре формы различённости бинарной связи: `∞ / ♂e / b♀ / b⟼e`
+- 🟡 [#211](https://github.com/netkeep80/anum_docs/issues/211) `open` — [Foundation v2] Контекст интерпретатора как самозамкнутое начало `K = K ⟼ (parent ⟼ current)`
+- 🟡 [#213](https://github.com/netkeep80/anum_docs/issues/213) `open` — [Foundation v2] Строковые ачисла: точный UTF-8 → абитовый bootstrap без смешения с recursive Anum grammar
+- 🟡 [#215](https://github.com/netkeep80/anum_docs/issues/215) `open` — [Foundation v2] Словарь форм как scoped link network: `source Anum → form` без host-map
+- 🟡 [#216](https://github.com/netkeep80/anum_docs/issues/216) `open` — [Foundation v2] Система аксиом как explicit theory network и её использование интерпретатором
 
 ### avm — active
 
 **Objective:** закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая candidate МТС semantics
 
-**Next gate:** #174 semantic migrator → #131 differential end-to-end; #169 remains Native JSON umbrella; MTS-dependent frontend decisions wait for accepted #200–#202 outcome
+**Next gate:** #174 semantic migrator → #131 differential end-to-end; #169 remains Native JSON umbrella; MTS-dependent frontend decisions wait for integrated accepted Foundation v2 outcome and new production contract
 
 **Depends on:** [`anum_docs`](https://github.com/netkeep80/anum_docs)
 
@@ -142,7 +143,7 @@
 
 **Objective:** оставаться exact consumer accepted anum_docs contracts и развивать search только поверх trusted replay
 
-**Next gate:** repin только после accepted foundation-reset outcome and rewritten production contract
+**Next gate:** repin only after integrated accepted Foundation v2 outcome and new production contract; do not pin candidate Gate R/L/:/= research
 
 **Depends on:** [`anum_docs`](https://github.com/netkeep80/anum_docs)
 
@@ -153,8 +154,8 @@
 
 | Repository | Branch | Archived | Last push | Open issues | Open PRs |
 |---|---|---:|---|---:|---:|
-| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-09T11:07:52Z | 34 | 2 |
-| [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-09T11:08:33Z | 14 | 1 |
+| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-09T11:48:38Z | 22 | 0 |
+| [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-09T11:14:36Z | 15 | 2 |
 | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `main` | no | 2026-08-09T10:25:45Z | 11 | 1 |
 | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-09T09:56:41Z | 14 | 6 |
 | [`pjson`](https://github.com/netkeep80/pjson) | `main` | no | 2026-08-09T09:56:53Z | 16 | 0 |
@@ -162,7 +163,7 @@
 | [`aes`](https://github.com/netkeep80/aes) | `main` | no | 2026-08-09T09:58:37Z | 0 | 0 |
 | [`isocubic`](https://github.com/netkeep80/isocubic) | `main` | no | 2026-08-09T09:58:08Z | 12 | 1 |
 | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-09T09:57:47Z | 0 | 0 |
-| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-09T11:10:40Z | 9 | 0 |
+| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-09T11:51:29Z | 9 | 0 |
 | [`termowood`](https://github.com/netkeep80/termowood) | `main` | no | 2026-08-09T09:58:27Z | 0 | 0 |
 | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `main` | no | 2026-08-09T09:57:59Z | 6 | 0 |
 | [`god-mode`](https://github.com/netkeep80/god-mode) | `main` | no | 2026-08-09T09:58:17Z | 0 | 0 |
@@ -185,12 +186,13 @@
 - 🟡 [#200](https://github.com/netkeep80/anum_docs/issues/200) `open` — [Foundation reset v2] Акорень как смысл смысла: вывести 5-связное semantic kernel МТС
 - 🟡 [#201](https://github.com/netkeep80/anum_docs/issues/201) `open` — [Foundation v2] Четверичный десериализатор как минимальный интерпретатор МТС и стек контекстов
 - 🟡 [#202](https://github.com/netkeep80/anum_docs/issues/202) `open` — [Foundation v2] Универсальный ассоциативный интерпретатор: словарь смыслов, астроки и сеть аксиом
-- 🟡 [#194](https://github.com/netkeep80/anum_docs/issues/194) `open` — [BLOCKED by #200–#202] МТС v0.6 production/reference migration epic
-- 🟡 [#195](https://github.com/netkeep80/anum_docs/issues/195) `open` — v0.6 migration P1: typed storage-neutral link/current substrate
-- 🟡 [#196](https://github.com/netkeep80/anum_docs/issues/196) `open` — v0.6 migration P2: target AST/grammar без primitive `◁/▷` и parent-depth
-- 🟡 [#197](https://github.com/netkeep80/anum_docs/issues/197) `open` — v0.6 migration P3: candidate reference interpreter over current link
-- 🟡 [#198](https://github.com/netkeep80/anum_docs/issues/198) `open` — v0.6 migration P4: candidate root + Anum production-facing conformance
-- 🟡 [#199](https://github.com/netkeep80/anum_docs/issues/199) `open` — v0.6 migration P5: integrated acceptance gate и atomic production cutover plan
+- 🟡 [#205](https://github.com/netkeep80/anum_docs/issues/205) `open` — [Foundation v2] Вывести link-only состояние контекстов Anum-интерпретатора и точный смысл `↑`
+- 🟡 [#206](https://github.com/netkeep80/anum_docs/issues/206) `open` — [Foundation v2] Проверить гипотезу: ачисло как корневое смысловое разложение связи без `Meaning(x)`
+- 🟡 [#208](https://github.com/netkeep80/anum_docs/issues/208) `open` — [Foundation v2] Четыре формы различённости бинарной связи: `∞ / ♂e / b♀ / b⟼e`
+- 🟡 [#211](https://github.com/netkeep80/anum_docs/issues/211) `open` — [Foundation v2] Контекст интерпретатора как самозамкнутое начало `K = K ⟼ (parent ⟼ current)`
+- 🟡 [#213](https://github.com/netkeep80/anum_docs/issues/213) `open` — [Foundation v2] Строковые ачисла: точный UTF-8 → абитовый bootstrap без смешения с recursive Anum grammar
+- 🟡 [#215](https://github.com/netkeep80/anum_docs/issues/215) `open` — [Foundation v2] Словарь форм как scoped link network: `source Anum → form` без host-map
+- 🟡 [#216](https://github.com/netkeep80/anum_docs/issues/216) `open` — [Foundation v2] Система аксиом как explicit theory network и её использование интерпретатором
 
 ### avm
 
