@@ -54,7 +54,7 @@ Hardware specialization должна реализовывать тот же obse
 
 **Статус:** accepted  
 **Дата:** 2026-08-09  
-**Связано:** roadmap #13
+**Связано:** roadmap #13, PR #14, PR #15
 
 Решение:
 
@@ -66,6 +66,37 @@ Hardware specialization должна реализовывать тот же obse
 - автоматизация может обновлять факты, но не имеет права самостоятельно менять portfolio decisions.
 
 **Следствие:** актуальность roadmap поддерживается не ручным копированием GitHub state, а разделением semantic intent и generated facts.
+
+## D-005 — MTS foundation reset v2 предшествует прежней v0.6 production migration
+
+**Статус:** accepted как текущий P0 ordering  
+**Дата:** 2026-08-09  
+**Связано:** roadmap #3, `anum_docs#200`, `#201`, `#202`, прежний `#194–#199`
+
+Live control-plane выявил, что `anum_docs#194` теперь прямо заблокирован новым foundation reset. Поэтому portfolio больше не считает `#195` непосредственным следующим production шагом.
+
+Текущий порядок:
+
+```text
+#200  5-link semantic kernel / meaning-of-meaning
+  ↓
+#201  minimal quaternary Anum streaming interpreter + context network
+  ↓
+#202  dictionary-driven universal associative interpreter / theory network
+  ↓
+explicit decision about surviving v0.6 assumptions
+  ↓
+rewrite/revalidate #194–#199
+  ↓
+accepted production/reference migration
+```
+
+**Следствия:**
+
+- `aprover` не repin-ится на foundation-reset candidate;
+- AVM продолжает только те gates, которые frontend-neutral и не требуют нового candidate MTS contract;
+- старый `#194–#199` план не считается автоматически валидным после `#202` — он должен быть переписан/перепроверен;
+- `anum_docs` остаётся единственным normative owner, поэтому AVM/aprover не создают локальную alternative semantics, пока upstream foundation решается.
 
 ## Как добавлять следующее решение
 

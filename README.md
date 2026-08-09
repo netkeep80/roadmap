@@ -22,6 +22,8 @@
 | **Machine-readable portfolio intent** | [`data/portfolio.json`](data/portfolio.json) |
 | **Machine-readable observed GitHub state** | [`data/status.json`](data/status.json) |
 
+> `STATUS.md` — единственный человекочитаемый источник **текущих open/closed GitHub facts**. Статические документы не должны вручную дублировать состояние issue/PR.
+
 ## Authority model
 
 В portfolio разделены **решения** и **факты**.
@@ -117,13 +119,15 @@ GitHub repositories/issues/PRs
 ### 3. Dependency loop
 
 ```text
-upstream gate closes
+upstream gate closes / new blocker appears
 → generated status records the fact
-→ evaluate downstream unblock
-→ explicit portfolio decision if priority/gate changes
+→ evaluate portfolio impact
+→ explicit decision updates registry/execution order
 → consumer migration
 → legacy deletion
 ```
+
+Именно этот цикл уже обнаружил новый `anum_docs#200–#202` foundation reset и привёл к явному обновлению P0 ordering вместо скрытого рассинхрона.
 
 ## Cross-repo workstreams
 
@@ -138,7 +142,8 @@ upstream gate closes
 - #8 — legacy/oracle/archive/incubation hygiene;
 - #9 — research incubation;
 - #11 — общий vision и associative-computing trajectories;
-- #13 — portfolio control plane.
+- #13 — portfolio control plane bootstrap/live sync;
+- #16 — backlink rollout во все дочерние repositories.
 
 **Актуальное open/closed состояние этих workstreams не поддерживается вручную здесь — оно находится в [`STATUS.md`](STATUS.md).**
 
@@ -165,6 +170,8 @@ upstream gate closes
 
 Он сверяет registry со всем public owner scope `netkeep80`, проверяет tracked issues и обновляет generated status только при изменении фактического состояния.
 
+`portfolio-validate` на PR дополнительно проверяет live GitHub coverage и разрешимость tracked gates до merge.
+
 Если sync красный, factual snapshot следует считать потенциально stale и исправлять это как **control-plane incident**.
 
 ## Для автоматических агентов
@@ -181,4 +188,4 @@ EXECUTION.md
 
 Затем переходить в указанный local epic/issue.
 
-Если observed state противоречит записанному `next_gate`, не менять priority автоматически: оформить/сделать explicit portfolio update в этом repository.
+Если observed state противоречит записанному `next_gate`, не менять priority автоматически: оформить explicit portfolio update в этом repository.

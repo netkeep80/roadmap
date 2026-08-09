@@ -4,6 +4,8 @@
 
 Центральный roadmap не означает, что вся работа сериализована. Ниже выделены независимые lanes и hard dependency gates.
 
+> **Актуальность:** factual open/closed state всегда читать в [`STATUS.md`](STATUS.md). Этот документ хранит **осознанный порядок исполнения**. Если live status выявляет новый blocker, `data/portfolio.json` и этот документ обновляются отдельным portfolio decision.
+
 ## NOW — blocking foundations
 
 ### Lane A — PMM → pjson
@@ -20,30 +22,52 @@ pjson #55 → #34
 
 **Hard rule:** пока `PMM#421` не закрыт, не реализовывать pjson object storage через временный compatibility container.
 
-### Lane B — МТС foundation
+### Lane B — МТС foundation reset v2
+
+Прежняя production/reference цепочка `#194 → #195..#199` сейчас **не является непосредственным next step**. `anum_docs#194` заблокирован новым foundation reset:
 
 ```text
-anum_docs #194
-   ├─ #195 typed substrate
-   ├─ #196 target grammar/AST
-   ├─ #197 candidate interpreter
-   ├─ #198 root + Anum conformance
-   └─ #199 integrated acceptance
+#200
+5-link semantic kernel / акорень как смысл смысла
+        ↓
+#201
+четверичный Anum streaming interpreter
++ link-only context chain
+        ↓
+#202
+универсальный dictionary-driven associative interpreter
++ explicit theory/axiom network
+        ↓
+explicit decision:
+что survives from old v0.6 direction
+        ↓
+rewrite/revalidate #194–#199
+        ↓
+accepted production/reference migration
 ```
 
-До `#199` downstream consumer не должен принимать candidate v0.6 как production semantics.
+**Hard rules:** 
+
+- не продолжать parser/AST production migration через `#195–#199`, пока `#200–#202` не завершены;
+- после `#202` не считать старый #194 plan автоматически действительным — нужен explicit rewrite/revalidation;
+- `aprover` и другие downstream consumers не repin-ятся на foundation-reset candidate;
+- historical v0.2–v0.5 остаются replayable, но accepted production path в итоге должен быть один.
 
 ### Lane C — AVM 1.5
 
-Работа может идти параллельно МТС foundation там, где contract уже frontend-neutral и не зависит от candidate L2:
+AVM может идти параллельно МТС foundation там, где contract frontend-neutral и не зависит от candidate denotation.
 
-- завершать triune execution/context/reference/effect gates `#122`;
-- canonical Integer/value model (`#128/#163`);
-- canonical Text (`#180`);
-- native duplet JSON boundary (`#169/#173`);
-- frozen jsonRVM corpus/migrator (`#174`).
+Текущий tracked slice:
 
-Финальный gate — `#131` differential end-to-end slice. Если он требует нового accepted МТС contract, ждать exact upstream acceptance, а не дублировать semantics в AVM.
+- `#122` — основной AVM 1.5 epic;
+- `#128/#163` — canonical value/integer;
+- `#169` — native duplet JSON boundary;
+- `#174` — semantic migrator из frozen jsonRVM corpus;
+- `#173` — **completed**;
+- `#180` — **completed**;
+- `#131` — финальный differential end-to-end gate.
+
+Если оставшийся AVM шаг требует нового accepted МТС/Anum contract из `#200–#202`, ждать exact upstream acceptance, а не дублировать semantics внутри AVM.
 
 ### Lane D — mast-calculator physics
 
@@ -69,7 +93,7 @@ Web UI 2.0 может развиваться параллельно, если н
 
 ### MTS consumers
 
-После accepted foundation/proof contract:
+После **нового accepted foundation contract**, выведенного через `#200–#202` и перепроверенный production migration plan:
 - exact repin `aprover`;
 - replay upstream conformance directly;
 - только затем multi-step untrusted search/UI;
@@ -88,6 +112,18 @@ Web UI 2.0 может развиваться параллельно, если н
 ```
 
 ## CONTINUOUS — portfolio quality
+
+### Central control plane
+
+`roadmap` уже имеет live registry validation и generated status. Оставшийся bootstrap/discoverability gate — `roadmap#16`:
+
+```text
+23 child repositories
+→ stable PORTFOLIO.md pointer
+→ central roadmap discoverable from every repo
+```
+
+Файл в child repo не копирует priority/lifecycle/next gate: эти данные остаются только в central control-plane.
 
 ### repo-guard rollout
 
@@ -137,11 +173,12 @@ Roadmap намеренно ориентирован на gates, а не на п�
 Следующие lanes в основном независимы и могут идти параллельно:
 
 1. PMM/pjson foundation;
-2. anum_docs foundation research;
+2. anum_docs foundation reset v2 (`#200–#202`);
 3. AVM gates, не зависящие от candidate MTS semantics;
 4. mast-calculator physical validation;
 5. isocubic Phase 15 core recovery;
 6. termowood/aes commissioning work;
-7. repo-guard consumer rollout.
+7. repo-guard consumer rollout;
+8. portfolio backlink rollout.
 
 Главная оптимизация portfolio — **не запускать downstream workaround, когда blocker уже локализован upstream**.
