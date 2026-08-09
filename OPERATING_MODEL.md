@@ -17,6 +17,7 @@
 | Какие cross-repo workstreams активны? | roadmap issues + `data/portfolio.json` |
 | Что фактически открыто/закрыто на GitHub? | generated `STATUS.md` / `data/status.json` |
 | Когда GitHub state последний раз успешно проверялся? | `STATUS.md: Last successful GitHub check` |
+| Все ли child repos всё ещё ссылаются на central roadmap? | `STATUS.md: Verified child roadmap backlinks` |
 | Каков порядок исполнения между lanes? | `EXECUTION.md` |
 | Что конкретно реализовать в одном проекте? | local epic/issues соответствующего repository |
 | Почему изменилось portfolio-level решение? | `DECISIONS.md` + соответствующий PR/issue |
@@ -49,7 +50,7 @@ GitHub API reports facts.
 
 Эти поля нельзя менять автоматически только потому, что закрылся issue. Закрытие issue — факт; вывод «теперь следующий приоритет другой» — архитектурное решение.
 
-## 3. Что генерируется автоматически
+## 3. Что генерируется и проверяется автоматически
 
 `scripts/sync-roadmap.mjs` получает из GitHub:
 
@@ -58,7 +59,8 @@ GitHub API reports facts.
 - timestamps;
 - количество открытых issues и PR;
 - состояния tracked issues;
-- состояния portfolio workstream issues.
+- состояния portfolio workstream issues;
+- наличие и содержимое root `PORTFOLIO.md` во всех child repositories.
 
 Результат:
 
@@ -72,7 +74,9 @@ Snapshot содержит два разных времени:
 
 Это позволяет отличить «ничего не менялось, но всё только что проверено» от «sync давно не работал».
 
-Эти файлы **не редактируются вручную**.
+`verified_child_backlinks / child_repository_count` показывает, что двусторонняя discoverability не только однажды внедрена, но и продолжает соблюдаться.
+
+Generated files **не редактируются вручную**.
 
 ## 4. Drift policy
 
@@ -91,9 +95,17 @@ Snapshot содержит два разных времени:
 7. canonical ownership, если он что-либо канонизирует;
 8. portfolio workstream либо явная причина его отсутствия.
 
+После регистрации child repository обязан иметь root `PORTFOLIO.md`, ведущий обратно в central `netkeep80/roadmap` и его `STATUS.md`.
+
 ### Исчезнувший repository
 
 Если зарегистрированный public repository исчез или стал недоступен, sync также падает. Нельзя тихо удалять его из карты: сначала нужно принять portfolio decision — rename/move/private/archive/delete.
+
+### Backlink drift
+
+Если в child repository удалён `PORTFOLIO.md`, ссылка перестала вести на `netkeep80/roadmap` или файл больше не указывает на central `STATUS.md`, live validation/sync завершается ошибкой.
+
+Это hard failure, потому что repository перестаёт быть двусторонне подключён к управляющему контуру.
 
 ### Workstream status drift
 
@@ -171,7 +183,8 @@ Portfolio issue в `roadmap` описывает только:
 - blocked lifecycle имеет upstream dependency;
 - roadmap issue refs зарегистрированы как workstreams/meta-epic;
 - live public-owner coverage;
-- существование tracked issues/workstreams.
+- существование tracked issues/workstreams;
+- **23/23 child repositories имеют валидный `PORTFOLIO.md` backlink на central roadmap/STATUS**.
 
 ### `portfolio-sync.yml`
 
@@ -181,6 +194,7 @@ Portfolio issue в `roadmap` описывает только:
 - запускается по расписанию каждые 6 часов;
 - доступен через `workflow_dispatch`;
 - сверяет registry с public GitHub owner scope;
+- проверяет child backlink coverage;
 - генерирует `STATUS.md` и `data/status.json`;
 - записывает `checked_at` и поэтому сохраняет подтверждение свежести каждого successful scheduled check;
 - коммитит factual snapshot bot-коммитом.
@@ -203,6 +217,7 @@ Workflow не меняет `data/portfolio.json`.
 
 - unregistered repository;
 - missing registered repository;
+- missing/invalid child `PORTFOLIO.md` backlink;
 - GitHub API failure;
 - broken tracked issue reference;
 - script/schema failure.
@@ -236,6 +251,8 @@ child repository
 → live STATUS
 ```
 
+Это теперь live invariant: validator регулярно проверяет все child repositories и fail-ит при потере ссылки.
+
 Local README/epics остаются свободны описывать локальный продукт и implementation plan.
 
 ## 13. Как пользоваться repository
@@ -268,7 +285,7 @@ DECISIONS.md
 
 ```text
 data/portfolio.json   — intent / semantics
-data/status.json      — observed facts + checked_at
+data/status.json      — observed facts + checked_at + backlink coverage
 ```
 
 Это разделение позволяет использовать `roadmap` и человеку, и автоматическому агенту без необходимости каждый раз заново исследовать весь GitHub account.
