@@ -1,0 +1,46 @@
+name: Portfolio sync
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "data/portfolio.json"
+      - "scripts/sync-roadmap.mjs"
+      - ".github/workflows/portfolio-sync.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: portfolio-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 1
+
+      - name: Generate factual portfolio status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/sync-roadmap.mjs --sync
+
+      - name: Commit changed snapshot
+        shell: bash
+        run: |
+          if git diff --quiet -- STATUS.md data/status.json; then
+            echo "Portfolio factual state is unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add STATUS.md data/status.json
+          git commit -m "chore(status): refresh portfolio snapshot"
+          git push
