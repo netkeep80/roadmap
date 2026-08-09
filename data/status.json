@@ -1,5 +1,948 @@
 {
   "schema_version": 1,
-  "bootstrap": true,
-  "message": "Generated factual snapshot will replace this bootstrap on the first portfolio-sync run."
+  "owner": "netkeep80",
+  "registry_schema_version": 1,
+  "latest_observed_github_change": "2026-08-09T09:51:47Z",
+  "repository_count": 24,
+  "workstreams": [
+    {
+      "number": 2,
+      "title": "[P0] PMM → pjson: закрыть persistent object-storage readiness chain",
+      "state": "open",
+      "state_reason": null,
+      "updated_at": "2026-08-09T08:31:07Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/2",
+      "is_pull_request": false
+    },
+    {
+      "number": 3,
+      "title": "[P0] МТС → AVM → aprover: один нормативный и один runtime path",
+      "state": "open",
+      "state_reason": null,
+      "updated_at": "2026-08-09T08:31:19Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/3",
+      "is_pull_request": false
+    },
+    {
+      "number": 4,
+      "title": "[P0] mast-calculator: физическая и нормативная верификация прежде новых features",
+      "state": "open",
+      "state_reason": null,
+      "updated_at": "2026-08-09T08:31:29Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/4",
+      "is_pull_request": false
+    },
+    {
+      "number": 5,
+      "title": "[P1] isocubic + god-mode: восстановить product core и завершить extraction boundary",
+      "state": "open",
+      "state_reason": null,
+      "updated_at": "2026-08-09T08:33:13Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/5",
+      "is_pull_request": false
+    },
+    {
+      "number": 6,
+      "title": "[P1] repo-guard: единый governance baseline для активных репозиториев",
+      "state": "open",
+      "state_reason": null,
+      "updated_at": "2026-08-09T08:31:53Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/6",
+      "is_pull_request": false
+    },
+    {
+      "number": 7,
+      "title": "[P1] termowood + aes: safety-first commissioning и as-built evidence",
+      "state": "open",
+      "state_reason": null,
+      "updated_at": "2026-08-09T08:32:05Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/7",
+      "is_pull_request": false
+    },
+    {
+      "number": 8,
+      "title": "[P2] Portfolio hygiene: legacy, oracle, archive и placeholder decisions",
+      "state": "open",
+      "state_reason": null,
+      "updated_at": "2026-08-09T08:32:18Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/8",
+      "is_pull_request": false
+    },
+    {
+      "number": 9,
+      "title": "[P2] Research incubation: NNets, meta_rm и mts-genesis с явными exit criteria",
+      "state": "open",
+      "state_reason": null,
+      "updated_at": "2026-08-09T08:32:30Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/9",
+      "is_pull_request": false
+    },
+    {
+      "number": 11,
+      "title": "[Vision] Общий замысел и траектории ассоциативной вычислительной архитектуры",
+      "state": "closed",
+      "state_reason": "completed",
+      "updated_at": "2026-08-09T09:32:29Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/11",
+      "is_pull_request": false
+    },
+    {
+      "number": 13,
+      "title": "[Control Plane] Сделать roadmap главным источником актуального состояния portfolio",
+      "state": "open",
+      "state_reason": "reopened",
+      "updated_at": "2026-08-09T09:50:12Z",
+      "html_url": "https://github.com/netkeep80/roadmap/issues/13",
+      "is_pull_request": false
+    }
+  ],
+  "repositories": [
+    {
+      "name": "roadmap",
+      "html_url": "https://github.com/netkeep80/roadmap",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-09T09:51:47Z",
+      "updated_at": "2026-08-09T09:47:39Z",
+      "open_issues": 11,
+      "open_pull_requests": 0,
+      "tracked_issues": [
+        {
+          "number": 13,
+          "title": "[Control Plane] Сделать roadmap главным источником актуального состояния portfolio",
+          "state": "open",
+          "state_reason": "reopened",
+          "updated_at": "2026-08-09T09:50:12Z",
+          "html_url": "https://github.com/netkeep80/roadmap/issues/13",
+          "is_pull_request": false
+        }
+      ]
+    },
+    {
+      "name": "PersistMemoryManager",
+      "html_url": "https://github.com/netkeep80/PersistMemoryManager",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-08T19:26:17Z",
+      "updated_at": "2026-08-08T19:10:25Z",
+      "open_issues": 14,
+      "open_pull_requests": 6,
+      "tracked_issues": [
+        {
+          "number": 410,
+          "title": "Compaction: eliminate forest_domain_mixin.inc and fix registry relocation lifetimes",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T15:54:36Z",
+          "html_url": "https://github.com/netkeep80/PersistMemoryManager/issues/410",
+          "is_pull_request": false
+        },
+        {
+          "number": 415,
+          "title": "Define and enforce pmap key/value object-lifetime contract",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T18:51:03Z",
+          "html_url": "https://github.com/netkeep80/PersistMemoryManager/issues/415",
+          "is_pull_request": false
+        },
+        {
+          "number": 416,
+          "title": "Make pstringview interning length-aware and embedded-NUL safe",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T18:14:11Z",
+          "html_url": "https://github.com/netkeep80/PersistMemoryManager/issues/416",
+          "is_pull_request": false
+        },
+        {
+          "number": 426,
+          "title": "Make pmap persistent type identity collision-safe for typed handles",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T19:09:50Z",
+          "html_url": "https://github.com/netkeep80/PersistMemoryManager/issues/426",
+          "is_pull_request": false
+        },
+        {
+          "number": 421,
+          "title": "Define the PMM readiness contract consumed by pjson objects",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T18:18:06Z",
+          "html_url": "https://github.com/netkeep80/PersistMemoryManager/issues/421",
+          "is_pull_request": false
+        }
+      ]
+    },
+    {
+      "name": "pjson",
+      "html_url": "https://github.com/netkeep80/pjson",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-08T15:06:47Z",
+      "updated_at": "2026-08-08T15:06:53Z",
+      "open_issues": 16,
+      "open_pull_requests": 0,
+      "tracked_issues": [
+        {
+          "number": 55,
+          "title": "Advance immutable PMM pin to the object-storage readiness commit",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T19:27:27Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/55",
+          "is_pull_request": false
+        },
+        {
+          "number": 34,
+          "title": "Phase C3: implement JSON objects on PMM pmap with pstringview keys",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T19:27:58Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/34",
+          "is_pull_request": false
+        },
+        {
+          "number": 35,
+          "title": "Phase C4: unify node views, iterators and subtree traversal",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:38:37Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/35",
+          "is_pull_request": false
+        },
+        {
+          "number": 36,
+          "title": "Phase D1: implement RFC 6901 path parsing and separate read/create walkers",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:38:46Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/36",
+          "is_pull_request": false
+        },
+        {
+          "number": 37,
+          "title": "Phase D2: implement persistent CRUD/root API over path addressing",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:38:53Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/37",
+          "is_pull_request": false
+        },
+        {
+          "number": 38,
+          "title": "Phase D3: implement persistent $ref nodes with bounded/cycle-safe resolution",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:39:00Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/38",
+          "is_pull_request": false
+        },
+        {
+          "number": 39,
+          "title": "Phase E1: migrate JSON parser/serializer with UTF-8, $ref and $base64 semantics",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:39:08Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/39",
+          "is_pull_request": false
+        },
+        {
+          "number": 40,
+          "title": "Phase F1: prove save/load/verify/relocation persistence invariants end-to-end",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:39:16Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/40",
+          "is_pull_request": false
+        },
+        {
+          "number": 41,
+          "title": "Phase F2: port BinDiffSynchronizer pjson behavioral tests as compatibility fixtures",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T22:13:42Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/41",
+          "is_pull_request": false
+        },
+        {
+          "number": 42,
+          "title": "Phase G1: stabilize public include/API surface and package integration",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:39:38Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/42",
+          "is_pull_request": false
+        },
+        {
+          "number": 43,
+          "title": "Phase G2: add benchmarks and memory-efficiency baselines for persistent JSON",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:39:49Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/43",
+          "is_pull_request": false
+        },
+        {
+          "number": 44,
+          "title": "Phase H1: complete extraction from BinDiffSynchronizer and define pjson_db/jsonRVM handoff contract",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T22:26:08Z",
+          "html_url": "https://github.com/netkeep80/pjson/issues/44",
+          "is_pull_request": false
+        }
+      ]
+    },
+    {
+      "name": "anum_docs",
+      "html_url": "https://github.com/netkeep80/anum_docs",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-09T09:49:51Z",
+      "updated_at": "2026-08-09T09:48:19Z",
+      "open_issues": 27,
+      "open_pull_requests": 3,
+      "tracked_issues": [
+        {
+          "number": 194,
+          "title": "[BLOCKED by #200–#202] МТС v0.6 production/reference migration epic",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:07:05Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/194",
+          "is_pull_request": false
+        },
+        {
+          "number": 195,
+          "title": "v0.6 migration P1: typed storage-neutral link/current substrate",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:07:20Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/195",
+          "is_pull_request": false
+        },
+        {
+          "number": 196,
+          "title": "v0.6 migration P2: target AST/grammar без primitive `◁/▷` и parent-depth",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:07:31Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/196",
+          "is_pull_request": false
+        },
+        {
+          "number": 197,
+          "title": "v0.6 migration P3: candidate reference interpreter over current link",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:07:46Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/197",
+          "is_pull_request": false
+        },
+        {
+          "number": 198,
+          "title": "v0.6 migration P4: candidate root + Anum production-facing conformance",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:07:58Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/198",
+          "is_pull_request": false
+        },
+        {
+          "number": 199,
+          "title": "v0.6 migration P5: integrated acceptance gate и atomic production cutover plan",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:08:16Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/199",
+          "is_pull_request": false
+        }
+      ]
+    },
+    {
+      "name": "avm",
+      "html_url": "https://github.com/netkeep80/avm",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-09T09:48:06Z",
+      "updated_at": "2026-08-09T09:37:11Z",
+      "open_issues": 19,
+      "open_pull_requests": 1,
+      "tracked_issues": [
+        {
+          "number": 122,
+          "title": "[Epic] AVM 1.5 — перенести семантику Relations Model из jsonRVM в link-native AVM",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T17:06:52Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/122",
+          "is_pull_request": false
+        },
+        {
+          "number": 128,
+          "title": "AVM 1.5 / 6 — canonical value denotation и перенос pure vocabulary без JSON runtime values",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T17:05:28Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/128",
+          "is_pull_request": false
+        },
+        {
+          "number": 163,
+          "title": "AVM 1.5 / 6.1 — canonical signed integer v0.1 и минимальная arithmetic vocabulary",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T21:54:45Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/163",
+          "is_pull_request": false
+        },
+        {
+          "number": 169,
+          "title": "AVM Native JSON — каноническая дуплетная нотация и миграция формата jsonRVM",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T23:57:31Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/169",
+          "is_pull_request": false
+        },
+        {
+          "number": 173,
+          "title": "AVM Native JSON / 4 — leaf/value/symbol resolver без скрытой identity",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-09T08:46:22Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/173",
+          "is_pull_request": false
+        },
+        {
+          "number": 180,
+          "title": "AVM 1.5 / canonical Text — frontend-neutral денотация текста связями",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-09T08:35:05Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/180",
+          "is_pull_request": false
+        },
+        {
+          "number": 174,
+          "title": "AVM Native JSON / 5 — semantic migrator jsonRVM program → AVM duplet program",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T23:11:00Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/174",
+          "is_pull_request": false
+        },
+        {
+          "number": 131,
+          "title": "AVM 1.5 / 9 — end-to-end migration slice и differential equivalence с jsonRVM",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T17:06:29Z",
+          "html_url": "https://github.com/netkeep80/avm/issues/131",
+          "is_pull_request": false
+        }
+      ]
+    },
+    {
+      "name": "aprover",
+      "html_url": "https://github.com/netkeep80/aprover",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-08T22:56:11Z",
+      "updated_at": "2026-08-08T20:41:45Z",
+      "open_issues": 2,
+      "open_pull_requests": 1,
+      "tracked_issues": [
+        {
+          "number": 139,
+          "title": "[Roadmap] aprover v0.3 — multi-step proof search поверх trusted МТС v0.3",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T20:42:19Z",
+          "html_url": "https://github.com/netkeep80/aprover/issues/139",
+          "is_pull_request": false
+        },
+        {
+          "number": 144,
+          "title": "v0.4 multi-step: exact-pin MTS v0.5 и untrusted DefinitionOpeningPath search",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T23:07:45Z",
+          "html_url": "https://github.com/netkeep80/aprover/issues/144",
+          "is_pull_request": false
+        }
+      ]
+    },
+    {
+      "name": "mast-calculator",
+      "html_url": "https://github.com/netkeep80/mast-calculator",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-09T09:51:33Z",
+      "updated_at": "2026-08-09T09:36:30Z",
+      "open_issues": 11,
+      "open_pull_requests": 1,
+      "tracked_issues": [
+        {
+          "number": 71,
+          "title": "Physics: нормативная модель ветра, динамики и стадий/условий возведения",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T21:33:51Z",
+          "html_url": "https://github.com/netkeep80/mast-calculator/issues/71",
+          "is_pull_request": false
+        },
+        {
+          "number": 77,
+          "title": "[Epic] Post-Foundation Physics: строительная постановка нагрузок и монтаж",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T18:53:27Z",
+          "html_url": "https://github.com/netkeep80/mast-calculator/issues/77",
+          "is_pull_request": false
+        },
+        {
+          "number": 97,
+          "title": "Physics / #71b — SP20 pulsation and dynamic wind response from modal properties",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T08:04:03Z",
+          "html_url": "https://github.com/netkeep80/mast-calculator/issues/97",
+          "is_pull_request": false
+        },
+        {
+          "number": 102,
+          "title": "Physics / #97b — SP20 pulsation contract, damping and regime provenance",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:30:50Z",
+          "html_url": "https://github.com/netkeep80/mast-calculator/issues/102",
+          "is_pull_request": false
+        },
+        {
+          "number": 72,
+          "title": "Physics: монтажный load case подъёма мачты поворотом вокруг опоры",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T08:55:46Z",
+          "html_url": "https://github.com/netkeep80/mast-calculator/issues/72",
+          "is_pull_request": false
+        },
+        {
+          "number": 98,
+          "title": "Physics / #71c — normative fabrication, transport and erection load stages",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T09:34:26Z",
+          "html_url": "https://github.com/netkeep80/mast-calculator/issues/98",
+          "is_pull_request": false
+        },
+        {
+          "number": 69,
+          "title": "Web UI 2.0: заменить legacy prototype UI на единое инженерное рабочее пространство",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T21:03:02Z",
+          "html_url": "https://github.com/netkeep80/mast-calculator/issues/69",
+          "is_pull_request": false
+        },
+        {
+          "number": 76,
+          "title": "Web UI 2.0 / 3 — result workspace, integrated 3D и exports",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-08T18:21:13Z",
+          "html_url": "https://github.com/netkeep80/mast-calculator/issues/76",
+          "is_pull_request": false
+        }
+      ]
+    },
+    {
+      "name": "repo-guard",
+      "html_url": "https://github.com/netkeep80/repo-guard",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-08T14:53:49Z",
+      "updated_at": "2026-08-08T14:53:56Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "BinDiffSynchronizer",
+      "html_url": "https://github.com/netkeep80/BinDiffSynchronizer",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-03-22T13:45:48Z",
+      "updated_at": "2026-03-22T13:45:55Z",
+      "open_issues": 6,
+      "open_pull_requests": 0,
+      "tracked_issues": [
+        {
+          "number": 212,
+          "title": "Сделать следующую задачу в текущей фазе разработки и после обновить README.md и файл фазы разработки",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-03-21T21:25:16Z",
+          "html_url": "https://github.com/netkeep80/BinDiffSynchronizer/issues/212",
+          "is_pull_request": false
+        },
+        {
+          "number": 213,
+          "title": "Сделать следующую задачу в текущей фазе разработки и после обновить README.md и файл фазы разработки",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-03-21T21:25:20Z",
+          "html_url": "https://github.com/netkeep80/BinDiffSynchronizer/issues/213",
+          "is_pull_request": false
+        },
+        {
+          "number": 214,
+          "title": "Сделать следующую задачу в текущей фазе разработки и после обновить README.md и файл фазы разработки",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-03-21T21:25:23Z",
+          "html_url": "https://github.com/netkeep80/BinDiffSynchronizer/issues/214",
+          "is_pull_request": false
+        },
+        {
+          "number": 215,
+          "title": "Сделать следующую задачу в текущей фазе разработки и после обновить README.md и файл фазы разработки",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-03-21T21:25:25Z",
+          "html_url": "https://github.com/netkeep80/BinDiffSynchronizer/issues/215",
+          "is_pull_request": false
+        },
+        {
+          "number": 216,
+          "title": "Сделать следующую задачу в текущей фазе разработки и после обновить README.md и файл фазы разработки",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-03-21T21:25:28Z",
+          "html_url": "https://github.com/netkeep80/BinDiffSynchronizer/issues/216",
+          "is_pull_request": false
+        },
+        {
+          "number": 217,
+          "title": "Сделать следующую задачу в текущей фазе разработки и после обновить README.md и файл фазы разработки",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-03-21T21:25:31Z",
+          "html_url": "https://github.com/netkeep80/BinDiffSynchronizer/issues/217",
+          "is_pull_request": false
+        }
+      ]
+    },
+    {
+      "name": "isocubic",
+      "html_url": "https://github.com/netkeep80/isocubic",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-08T07:24:33Z",
+      "updated_at": "2026-08-08T07:16:58Z",
+      "open_issues": 12,
+      "open_pull_requests": 1,
+      "tracked_issues": [
+        {
+          "number": 299,
+          "title": "EPIC: Phase 15 — Core Recovery, Test-First Refactoring and Product Focus",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:56:51Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/299",
+          "is_pull_request": false
+        },
+        {
+          "number": 300,
+          "title": "Phase 15.1 — Test Foundation: make CI a strict, trustworthy quality gate",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-07T23:43:31Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/300",
+          "is_pull_request": false
+        },
+        {
+          "number": 301,
+          "title": "Phase 15.2 — Canonical Cube Domain: schema parity, versioning and migration contracts",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T23:48:42Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/301",
+          "is_pull_request": false
+        },
+        {
+          "number": 302,
+          "title": "Phase 15.3 — Rendering Kernel: isolate shader inputs and add deterministic visual-math regression tests",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:44:43Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/302",
+          "is_pull_request": false
+        },
+        {
+          "number": 303,
+          "title": "Phase 15.4 — FFT/Energy Core: numerical invariants, WASM parity and property tests",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:44:50Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/303",
+          "is_pull_request": false
+        },
+        {
+          "number": 304,
+          "title": "Phase 15.5 — Editor Application Layer: deterministic state, undo/redo and import/export contracts",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:45:02Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/304",
+          "is_pull_request": false
+        },
+        {
+          "number": 305,
+          "title": "Phase 15.6 — Browser E2E: test the real application in Chromium, not only jsdom",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:45:11Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/305",
+          "is_pull_request": false
+        },
+        {
+          "number": 306,
+          "title": "Phase 15.7 — Finish MetaMode extraction and restore a hard boundary around product code",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:45:20Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/306",
+          "is_pull_request": false
+        },
+        {
+          "number": 307,
+          "title": "Phase 15.8 — Product Surface Audit: quarantine or remove peripheral features that obscure the core",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:45:32Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/307",
+          "is_pull_request": false
+        },
+        {
+          "number": 308,
+          "title": "Phase 15.9 — Performance Budgets: reproducible CPU/GPU/size benchmarks for the cube engine",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:45:45Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/308",
+          "is_pull_request": false
+        },
+        {
+          "number": 309,
+          "title": "Phase 15.10 — Split tinyLLM.ts into tested AI adapters and deterministic generation services",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:55:06Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/309",
+          "is_pull_request": false
+        },
+        {
+          "number": 310,
+          "title": "Phase 15.11 — Documentation and Backlog Cleanup: make roadmap describe reality",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:46:06Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/310",
+          "is_pull_request": false
+        },
+        {
+          "number": 312,
+          "title": "Phase 15.12 — Dependency Security Audit: classify and eliminate critical/high npm vulnerabilities safely",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-07T21:56:34Z",
+          "html_url": "https://github.com/netkeep80/isocubic/issues/312",
+          "is_pull_request": false
+        }
+      ]
+    },
+    {
+      "name": "god-mode",
+      "html_url": "https://github.com/netkeep80/god-mode",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-01-30T21:48:43Z",
+      "updated_at": "2026-01-30T21:48:47Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "termowood",
+      "html_url": "https://github.com/netkeep80/termowood",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-04-16T22:14:34Z",
+      "updated_at": "2026-04-16T22:14:39Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "aes",
+      "html_url": "https://github.com/netkeep80/aes",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-07-21T23:54:52Z",
+      "updated_at": "2026-07-21T23:54:56Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "NNets",
+      "html_url": "https://github.com/netkeep80/NNets",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-01-28T16:11:41Z",
+      "updated_at": "2026-01-28T16:11:46Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "meta_rm",
+      "html_url": "https://github.com/netkeep80/meta_rm",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-04-21T20:56:05Z",
+      "updated_at": "2026-04-21T20:56:09Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "mts-genesis",
+      "html_url": "https://github.com/netkeep80/mts-genesis",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-08T22:55:31Z",
+      "updated_at": "2026-08-08T22:55:35Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "jsonRVM",
+      "html_url": "https://github.com/netkeep80/jsonRVM",
+      "default_branch": "master",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-02-26T10:45:27Z",
+      "updated_at": "2026-02-26T10:45:07Z",
+      "open_issues": 0,
+      "open_pull_requests": 1,
+      "tracked_issues": []
+    },
+    {
+      "name": "phprvm",
+      "html_url": "https://github.com/netkeep80/phprvm",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-01-28T17:26:54Z",
+      "updated_at": "2026-01-28T17:33:07Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "associative_proofs",
+      "html_url": "https://github.com/netkeep80/associative_proofs",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2023-08-05T13:59:38Z",
+      "updated_at": "2023-08-05T11:20:32Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "a-num-",
+      "html_url": "https://github.com/netkeep80/a-num-",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2024-10-15T21:44:26Z",
+      "updated_at": "2024-10-15T21:44:29Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "usefull",
+      "html_url": "https://github.com/netkeep80/usefull",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-01-29T11:22:56Z",
+      "updated_at": "2026-01-29T11:23:00Z",
+      "open_issues": 1,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "sample_cmake",
+      "html_url": "https://github.com/netkeep80/sample_cmake",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2021-01-31T18:03:46Z",
+      "updated_at": "2021-05-30T06:13:40Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "jgit",
+      "html_url": "https://github.com/netkeep80/jgit",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-02-26T13:52:05Z",
+      "updated_at": "2026-02-26T13:52:09Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    },
+    {
+      "name": "jhub",
+      "html_url": "https://github.com/netkeep80/jhub",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-02-26T13:53:08Z",
+      "updated_at": "2026-02-26T13:53:11Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
+    }
+  ],
+  "state_hash": "8b05cda4548e01bdebcfc72b0339107400e4e8a846d28f5f358cef31824319c1"
 }
