@@ -16,6 +16,7 @@
 | Какой следующий portfolio gate? | `data/portfolio.json` |
 | Какие cross-repo workstreams активны? | roadmap issues + `data/portfolio.json` |
 | Что фактически открыто/закрыто на GitHub? | generated `STATUS.md` / `data/status.json` |
+| Когда GitHub state последний раз успешно проверялся? | `STATUS.md: Last successful GitHub check` |
 | Каков порядок исполнения между lanes? | `EXECUTION.md` |
 | Что конкретно реализовать в одном проекте? | local epic/issues соответствующего repository |
 | Почему изменилось portfolio-level решение? | `DECISIONS.md` + соответствующий PR/issue |
@@ -64,6 +65,13 @@ GitHub API reports facts.
 - `STATUS.md` — человекочитаемый control board;
 - `data/status.json` — machine-readable factual snapshot.
 
+Snapshot содержит два разных времени:
+
+- `checked_at` — когда GitHub был успешно проверен;
+- `latest_observed_github_change` — самый свежий timestamp факта, найденного внутри snapshot.
+
+Это позволяет отличить «ничего не менялось, но всё только что проверено» от «sync давно не работал».
+
 Эти файлы **не редактируются вручную**.
 
 ## 4. Drift policy
@@ -86,6 +94,17 @@ GitHub API reports facts.
 ### Исчезнувший repository
 
 Если зарегистрированный public repository исчез или стал недоступен, sync также падает. Нельзя тихо удалять его из карты: сначала нужно принять portfolio decision — rename/move/private/archive/delete.
+
+### Workstream status drift
+
+Generated `STATUS.md` сравнивает declared workstream state с GitHub issue state:
+
+- `registry=completed`, issue still open;
+- `registry=active`, issue already closed.
+
+Это не меняет registry автоматически. Snapshot показывает warning, после чего нужен explicit portfolio decision/transition.
+
+Broken tracked issue reference, в отличие от semantic drift, является hard failure.
 
 ## 5. Lifecycle vocabulary
 
@@ -148,7 +167,11 @@ Portfolio issue в `roadmap` описывает только:
 - JSON registry parseability;
 - schema/invariants;
 - уникальность repository/workstream identities;
-- разрешимость dependencies внутри registry.
+- разрешимость dependencies внутри registry;
+- blocked lifecycle имеет upstream dependency;
+- roadmap issue refs зарегистрированы как workstreams/meta-epic;
+- live public-owner coverage;
+- существование tracked issues/workstreams.
 
 ### `portfolio-sync.yml`
 
@@ -159,13 +182,16 @@ Portfolio issue в `roadmap` описывает только:
 - доступен через `workflow_dispatch`;
 - сверяет registry с public GitHub owner scope;
 - генерирует `STATUS.md` и `data/status.json`;
-- коммитит только factual snapshot, если он изменился.
+- записывает `checked_at` и поэтому сохраняет подтверждение свежести каждого successful scheduled check;
+- коммитит factual snapshot bot-коммитом.
 
 Workflow не меняет `data/portfolio.json`.
 
+Четыре служебных snapshot-commit в сутки считаются приемлемой ценой за проверяемую freshness центрального control-plane.
+
 ## 10. Freshness and failure semantics
 
-Если sync зелёный, `STATUS.md` является последним сохранённым подтверждённым snapshot GitHub state.
+Если sync зелёный, `STATUS.md` является последним сохранённым подтверждённым snapshot GitHub state; поле `Last successful GitHub check` показывает точное время этой проверки.
 
 Если sync красный:
 
@@ -181,6 +207,8 @@ Workflow не меняет `data/portfolio.json`.
 - broken tracked issue reference;
 - script/schema failure.
 
+Semantic-vs-GitHub workstream mismatch показывается как health warning, а не автоматически исправляется.
+
 ## 11. Decision classes
 
 Изменение требует записи в `DECISIONS.md`, если оно меняет хотя бы одно из:
@@ -195,14 +223,29 @@ Workflow не меняет `data/portfolio.json`.
 
 Обычное уточнение текста или автоматически обновлённый factual status ADR не требует.
 
-## 12. Как пользоваться repository
+## 12. Discoverability from child repositories
+
+Каждый из 23 child repositories содержит stable root `PORTFOLIO.md`.
+
+Он указывает на central roadmap/STATUS/EXECUTION и **не копирует** текущие priority/lifecycle/gates. Поэтому вход возможен с любой стороны:
+
+```text
+child repository
+→ PORTFOLIO.md
+→ central roadmap
+→ live STATUS
+```
+
+Local README/epics остаются свободны описывать локальный продукт и implementation plan.
+
+## 13. Как пользоваться repository
 
 Для ежедневной ориентации:
 
 ```text
 README
   ↓
-STATUS.md          — что происходит сейчас
+STATUS.md          — что происходит сейчас + freshness + drift health
   ↓
 EXECUTION.md       — что делать раньше/позже
   ↓
@@ -225,7 +268,7 @@ DECISIONS.md
 
 ```text
 data/portfolio.json   — intent / semantics
-data/status.json      — observed facts
+data/status.json      — observed facts + checked_at
 ```
 
 Это разделение позволяет использовать `roadmap` и человеку, и автоматическому агенту без необходимости каждый раз заново исследовать весь GitHub account.

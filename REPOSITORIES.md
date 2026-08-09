@@ -2,6 +2,8 @@
 
 Срез: 2026-08-09. Порядок ниже — не рейтинг важности, а полный inventory.
 
+> Этот документ объясняет **роль и направление** каждого repository. Текущие `open/closed` facts берутся только из generated [`STATUS.md`](STATUS.md), а machine-readable priority/lifecycle/next gate — из [`data/portfolio.json`](data/portfolio.json). Локальные implementation tasks остаются в issues соответствующего repository.
+
 ## 1. PersistMemoryManager — P0
 
 **Роль:** C++20 persistent storage kernel.
@@ -44,7 +46,7 @@
 
 **Current program:** `#122` AVM 1.5; migration строится через triune semantics, contexts, references, sequence/projection, canonical values, effects, frontend convergence и differential slice.
 
-**Дальше:** закрывать semantic gates, а не наращивать tooling в отрыве от них. Особо важны `#128/#163` canonical Integer, `#180` Text, `#169/#173` native duplet JSON boundary, `#174` semantic migrator и `#131` end-to-end jsonRVM equivalence.
+**Current gate:** `#173` leaf/value/symbol resolver и `#180` canonical Text уже закрыты. Остаются `#128/#163` canonical value/Integer, `#169` native duplet JSON boundary, `#174` semantic migrator и финальный `#131` end-to-end jsonRVM equivalence. MTS-dependent frontend decisions ждут accepted outcome `anum_docs#200–#202` и не получают локальную alternative semantics.
 
 **Не делать:** JSON DOM как internal runtime value, string opcodes, второй Executor, hidden materialization на read/find path.
 
@@ -52,17 +54,31 @@
 
 **Роль:** normative source МТС/Anum contracts, conformance и reference semantics.
 
-**Current state:** foundation reset привёл к preferred v0.6 research direction; production migration ещё не разрешена.
+**Current state:** новый foundation reset v2 изменил прежний v0.6 production ordering. `#194–#199` сейчас не являются непосредственным следующим этапом: `#194` прямо заблокирован `#200–#202`.
 
-**Дальше:** `#194 → #195/#196/#197/#198 → #199`. Только `#199` может принять/reject foundation и разрешить atomic cutover. После accepted L2 foundation — repin downstream и продолжать L5/relative/persistent-L4 tracks.
+**Дальше:**
 
-**Не делать:** dual parser/interpreter semantics, retroactive mutation historical contracts, downstream repin на candidate.
+```text
+#200  5-link semantic kernel / meaning-of-meaning
+  ↓
+#201  quaternary Anum streaming interpreter + link-only context
+  ↓
+#202  dictionary-driven universal associative interpreter / theory network
+  ↓
+explicit decision what survives old v0.6 direction
+  ↓
+rewrite/revalidate #194–#199
+```
+
+Только после этого возможен accepted production/reference cutover и downstream repin.
+
+**Не делать:** parser/AST production migration в обход `#200–#202`, dual semantics, retroactive mutation historical contracts, downstream repin на candidate.
 
 ## 7. aprover — P0/P1 consumer
 
 **Роль:** browser research environment: canonical parsing/visualization, untrusted proof search, independent trusted replay.
 
-**Дальше:** поддерживать exact pin/provenance и replay historical accepted artifacts. После accepted next `anum_docs` proof/foundation contracts — один exact repin, upstream conformance replay, затем multi-step search/UI. Старые local inference rules не возвращать.
+**Дальше:** поддерживать exact pin/provenance и replay historical accepted artifacts. После accepted foundation-reset outcome и переписанного production contract — один exact repin, upstream conformance replay, затем multi-step search/UI. Старые local inference rules не возвращать.
 
 **Главный invariant:** search != checker; UI != proof validity; `anum_docs` owns semantics.
 
@@ -70,7 +86,7 @@
 
 **Роль:** компактное conceptual exposition о самоподобной корневой системе, интерпретаторе и актуальности.
 
-**Дальше:** удерживать статью самодостаточной и философски глубокой, но всё, что претендует на machine-checkable semantics, переводить в research issues/challenges `anum_docs` (пример: actuality/interpreter-act questions).
+**Дальше:** удерживать статью самодостаточной и философски глубокой, но всё, что претендует на machine-checkable semantics, переводить в research issues/challenges `anum_docs`, включая текущий foundation-reset pipeline.
 
 **Не делать:** вторую нормативную МТС внутри статьи.
 
@@ -180,9 +196,11 @@
 
 ## 24. roadmap — P1 portfolio control
 
-**Роль:** dependency/priority/ownership map по всем репозиториям.
+**Роль:** authoritative portfolio control plane по всем 24 repositories.
 
-**Дальше:** обновлять только при изменении cross-repo contract/status/owner/gate. Не копировать сюда все local issues. Portfolio epic: #1; workstreams #2–#9.
+**Состояние:** machine-readable semantic registry, live GitHub validation, generated `STATUS.md`/`data/status.json`, operating model и decision log работают на `main`; child backlink rollout завершён 23/23.
+
+**Дальше:** это ongoing governance, а не новый implementation backlog: поддерживать registry при semantic changes, реагировать на drift, сохранять актуальные cross-repo gates и не дублировать local implementation issues. Meta-epic #1 остаётся открытой управляющей точкой.
 
 ---
 
@@ -194,6 +212,8 @@
 2. **Consumer/oracle:** явно указано, что он не является owner соответствующей semantics;
 3. **Maintenance:** scope заморожен, изменения consumer-driven;
 4. **Incubation:** есть charter + first vertical slice;
-5. **Archive:** status/provenance/current successor видимы из README.
+5. **Archive:** status/provenance/current successor видимы из repository или central roadmap.
+
+Дополнительный portfolio invariant: каждый current child repository содержит стабильный `PORTFOLIO.md` backlink на central control plane.
 
 Неопределённое состояние «может быть когда-нибудь продолжим» должно исчезнуть из portfolio.

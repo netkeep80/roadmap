@@ -4,6 +4,8 @@
 
 Этот документ фиксирует **ownership и dependency direction**. Он не утверждает, что все связи уже реализованы.
 
+> Текущее open/closed состояние конкретных gates берётся из [`STATUS.md`](STATUS.md). Этот документ фиксирует архитектурный смысл зависимостей; текущий strategic ordering — в [`EXECUTION.md`](EXECUTION.md) и `data/portfolio.json`.
+
 ## 0. Long-term architecture hypothesis
 
 Текущие dependency graphs ниже являются инженерной картой уже существующих проектов. Над ними есть более долгосрочная исследовательская гипотеза:
@@ -151,11 +153,42 @@ flowchart TD
 - `mts-genesis` — философско-концептуальная публикация; не подменяет normative contract.
 - `meta_rm` — compile-time research branch; не второй runtime/theory authority.
 
-### Foundation gate
+### Foundation gate — current
 
-До `anum_docs#199` v0.6 остаётся candidate program. После acceptance допустим **один atomic production migration** с удалением obsolete semantics; permanent dual mode запрещён.
+Прежняя production/reference цепочка `anum_docs#194 → #195..#199` больше не является непосредственным foundation gate. `#194` прямо заблокирован foundation reset v2:
+
+```text
+anum_docs #200
+5-link semantic kernel / акорень как смысл смысла
+        ↓
+#201
+minimal quaternary Anum streaming interpreter
++ link-only context network
+        ↓
+#202
+universal dictionary-driven associative interpreter
++ explicit theory/axiom network
+        ↓
+explicit decision:
+which previous v0.6 assumptions survive
+        ↓
+rewrite/revalidate #194–#199
+        ↓
+accepted production/reference contract
+```
+
+Пока `#200–#202` не разрешены:
+
+- `aprover` не repin-ится на candidate foundation;
+- AVM продолжает только frontend-neutral gates, не требующие нового candidate МТС/Anum contract;
+- `#194–#199` не считаются автоматически действительным production plan;
+- AVM/aprover не создают локальную альтернативную semantics, потому что `anum_docs` остаётся единственным normative owner.
+
+После foundation decision допускается **один** production migration с удалением obsolete semantics; permanent dual mode запрещён.
 
 AVM migration завершается не количеством primitives, а differential vertical slice `avm#131` против frozen jsonRVM corpus.
+
+Актуальное состояние issue и точный порядок работ см. в [`STATUS.md`](STATUS.md), [`EXECUTION.md`](EXECUTION.md) и roadmap issue #3.
 
 ### Long-term role
 
