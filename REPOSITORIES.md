@@ -46,9 +46,21 @@
 
 **Current program:** `#122` AVM 1.5; migration строится через triune semantics, contexts, references, sequence/projection, canonical values, effects, frontend convergence и differential slice.
 
-**Current gate:** `#173` leaf/value/symbol resolver и `#180` canonical Text уже закрыты. Остаются `#128/#163` canonical value/Integer, `#169` native duplet JSON boundary, `#174` semantic migrator и финальный `#131` end-to-end jsonRVM equivalence. MTS-dependent frontend decisions ждут accepted outcome `anum_docs#200–#202` и не получают локальную alternative semantics.
+**Current gate:** `#173` leaf/value/symbol resolver и `#180` canonical Text уже закрыты. Текущая frontend-neutral ветка декомпозирована так:
 
-**Не делать:** JSON DOM как internal runtime value, string opcodes, второй Executor, hidden materialization на read/find path.
+```text
+#187 deterministic foreach по ordered link-list
+        ↓
+#188 projection/lambda + deterministic effect-order
+        ↓
+#174 semantic migrator из frozen jsonRVM corpus
+        ↓
+#131 end-to-end differential migration
+```
+
+`#187/#188` закрывают remaining часть общего `#127` sequence/projection/foreach contract; `#128/#163` canonical value/Integer развиваются параллельно и остаются prerequisite для arithmetic/value constructs в migrator; `#169` остаётся native duplet JSON boundary. MTS-dependent frontend decisions ждут accepted outcome `anum_docs#200–#202` и не получают локальную alternative semantics.
+
+**Не делать:** JSON DOM как internal runtime value, string opcodes, второй Executor, hidden materialization на read/find path, implicit parallelism как semantic requirement.
 
 ## 6. anum_docs — P0
 
@@ -198,7 +210,7 @@ rewrite/revalidate #194–#199
 
 **Роль:** authoritative portfolio control plane по всем 24 repositories.
 
-**Состояние:** machine-readable semantic registry, live GitHub validation, generated `STATUS.md`/`data/status.json`, operating model и decision log работают на `main`; child backlink rollout завершён 23/23.
+**Состояние:** machine-readable semantic registry, live GitHub validation, generated `STATUS.md`/`data/status.json`, operating model и decision log работают на `main`; child backlink rollout завершён и continuously verified 23/23.
 
 **Дальше:** это ongoing governance, а не новый implementation backlog: поддерживать registry при semantic changes, реагировать на drift, сохранять актуальные cross-repo gates и не дублировать local implementation issues. Meta-epic #1 остаётся открытой управляющей точкой.
 
@@ -214,6 +226,6 @@ rewrite/revalidate #194–#199
 4. **Incubation:** есть charter + first vertical slice;
 5. **Archive:** status/provenance/current successor видимы из repository или central roadmap.
 
-Дополнительный portfolio invariant: каждый current child repository содержит стабильный `PORTFOLIO.md` backlink на central control plane.
+Дополнительный portfolio invariant: каждый current child repository содержит стабильный `PORTFOLIO.md` backlink на central control plane, а live validator проверяет его сохранность.
 
 Неопределённое состояние «может быть когда-нибудь продолжим» должно исчезнуть из portfolio.

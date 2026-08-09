@@ -62,10 +62,27 @@ AVM может идти параллельно МТС foundation там, где 
 - `#122` — основной AVM 1.5 epic;
 - `#128/#163` — canonical value/integer;
 - `#169` — native duplet JSON boundary;
-- `#174` — semantic migrator из frozen jsonRVM corpus;
+- `#127` — sequence/projection/foreach semantics; ordered sequence/state-threading уже существуют, remaining path уточнён как `#187 → #188`;
+- `#187` — deterministic foreach по canonical ordered link-list;
+- `#188` — projection/lambda и deterministic effect-order contract;
+- `#174` — semantic migrator из frozen jsonRVM corpus, зависящий от `#127` и использующий `foreach-object-context` в стартовом differential corpus;
 - `#173` — **completed**;
 - `#180` — **completed**;
 - `#131` — финальный differential end-to-end gate.
+
+Уточнённый frontend-neutral migration path:
+
+```text
+#187 deterministic foreach
+        ↓
+#188 projection/effect-order contract
+        ↓
+#174 semantic migrator
+        ↓
+#131 differential end-to-end slice
+```
+
+`#128/#163` развивается параллельно и остаётся prerequisite для arithmetic/value constructs внутри `#174`.
 
 Если оставшийся AVM шаг требует нового accepted МТС/Anum contract из `#200–#202`, ждать exact upstream acceptance, а не дублировать semantics внутри AVM.
 
