@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-09T11:51:33Z",
+  "latest_observed_github_change": "2026-08-09T12:07:33Z",
   "repository_count": 24,
   "child_repository_count": 23,
   "verified_child_backlinks": 23,
@@ -114,8 +114,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T11:51:29Z",
-      "updated_at": "2026-08-09T11:51:33Z",
+      "pushed_at": "2026-08-09T12:07:33Z",
+      "updated_at": "2026-08-09T11:52:19Z",
       "open_issues": 9,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -324,27 +324,18 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T11:48:38Z",
-      "updated_at": "2026-08-09T11:48:44Z",
-      "open_issues": 22,
+      "pushed_at": "2026-08-09T12:01:30Z",
+      "updated_at": "2026-08-09T12:01:43Z",
+      "open_issues": 14,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
-          "number": 200,
-          "title": "[Foundation reset v2] Акорень как смысл смысла: вывести 5-связное semantic kernel МТС",
+          "number": 213,
+          "title": "[Foundation v2] Canonical astring topology поверх exact UTF-8 byte transport",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-09T09:37:53Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/200",
-          "is_pull_request": false
-        },
-        {
-          "number": 201,
-          "title": "[Foundation v2] Четверичный десериализатор как минимальный интерпретатор МТС и стек контекстов",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T09:26:04Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/201",
+          "updated_at": "2026-08-09T12:00:56Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/213",
           "is_pull_request": false
         },
         {
@@ -354,69 +345,6 @@
           "state_reason": null,
           "updated_at": "2026-08-09T10:30:04Z",
           "html_url": "https://github.com/netkeep80/anum_docs/issues/202",
-          "is_pull_request": false
-        },
-        {
-          "number": 205,
-          "title": "[Foundation v2] Вывести link-only состояние контекстов Anum-интерпретатора и точный смысл `↑`",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T09:52:39Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/205",
-          "is_pull_request": false
-        },
-        {
-          "number": 206,
-          "title": "[Foundation v2] Проверить гипотезу: ачисло как корневое смысловое разложение связи без `Meaning(x)`",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T09:48:02Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/206",
-          "is_pull_request": false
-        },
-        {
-          "number": 208,
-          "title": "[Foundation v2] Четыре формы различённости бинарной связи: `∞ / ♂e / b♀ / b⟼e`",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T09:40:54Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/208",
-          "is_pull_request": false
-        },
-        {
-          "number": 211,
-          "title": "[Foundation v2] Контекст интерпретатора как самозамкнутое начало `K = K ⟼ (parent ⟼ current)`",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T09:52:28Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/211",
-          "is_pull_request": false
-        },
-        {
-          "number": 213,
-          "title": "[Foundation v2] Строковые ачисла: точный UTF-8 → абитовый bootstrap без смешения с recursive Anum grammar",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T10:03:30Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/213",
-          "is_pull_request": false
-        },
-        {
-          "number": 215,
-          "title": "[Foundation v2] Словарь форм как scoped link network: `source Anum → form` без host-map",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T10:07:42Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/215",
-          "is_pull_request": false
-        },
-        {
-          "number": 216,
-          "title": "[Foundation v2] Система аксиом как explicit theory network и её использование интерпретатором",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-09T10:12:08Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/216",
           "is_pull_request": false
         }
       ]
@@ -964,6 +892,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-09T11:52:03.875Z",
-  "state_hash": "afadfbe9d930b633657ecdb9e81e69344132a85bc1a49aac8335ccbad1ad76dc"
+  "checked_at": "2026-08-09T12:07:55.311Z",
+  "state_hash": "acc1954c127135be7f564839127bfb978dd6428c976c0a82fde8c9a66d5ad1fb"
 }
