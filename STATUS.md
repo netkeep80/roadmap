@@ -5,9 +5,9 @@
 - Owner: `netkeep80`
 - Registered repositories: **24**
 - Verified child roadmap backlinks: **23/23**
-- Last successful GitHub check: **2026-08-09T19:02:01.108Z**
-- Latest observed GitHub change in snapshot: **2026-08-09T18:48:04Z**
-- State hash (excluding check time): `ec00d463f142bf0bc6e748f35c544a1f7c0f3dba0b3391c6a575c116ac757e05`
+- Last successful GitHub check: **2026-08-10T02:36:06.184Z**
+- Latest observed GitHub change in snapshot: **2026-08-10T01:35:07Z**
+- State hash (excluding check time): `d389a8f872ca624f7df585829d56c8ed1263a95e82014543fb688a5c10eec70d`
 
 ## Control-plane health
 
@@ -34,7 +34,7 @@
 
 | Priority | Repository | Lifecycle | Current objective | Next portfolio gate | GitHub | Roadmap |
 |---:|---|---|---|---|---|---|
-| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | завершить верхний интеграционный слой Foundation v2 поверх закрытого root/meaning foundation и подготовить единственную production migration | #213 canonical astring topology → #202 end-to-end UTF-8→astring→D→T→act→K' coherence → fresh Gate P production migration; retire obsolete #194–#199 only when replacement Gate P exists | 9 issues / 1 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | завершить верхний интеграционный слой Foundation v2 поверх закрытого root/meaning foundation и подготовить единственную production migration | #213 canonical astring topology → #202 end-to-end UTF-8→astring→D→T→act→K' coherence → fresh Gate P production migration; retire obsolete #194–#199 only when replacement Gate P exists | 10 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`avm`](https://github.com/netkeep80/avm) | `active` | закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая candidate МТС semantics | #174 semantic migrator → #131 differential end-to-end; #169 remains Native JSON umbrella; MTS-dependent frontend decisions wait for integrated accepted Foundation v2 outcome and new production contract | 15 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `active` | закрыть физическую и нормативную верификацию dynamic wind и erection stages до дальнейшего feature growth | modal/eigen → #97/#102 dynamic SP20 → #72/#98 erection → verification passport | 11 issues / 1 PRs | [#4](https://github.com/netkeep80/roadmap/issues/4) |
 | **P0** | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `active` | закрыть consumer-shaped readiness для native persistent object storage pjson | #410/#415/#416/#426 → #421 | 14 issues / 6 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
@@ -146,7 +146,7 @@
 
 | Repository | Branch | Archived | Last push | Open issues | Open PRs |
 |---|---|---:|---|---:|---:|
-| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-09T18:48:04Z | 9 | 1 |
+| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-10T01:35:07Z | 10 | 0 |
 | [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-09T11:14:36Z | 15 | 2 |
 | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `main` | no | 2026-08-09T10:25:45Z | 11 | 1 |
 | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-09T09:56:41Z | 14 | 6 |
@@ -154,8 +154,8 @@
 | [`aprover`](https://github.com/netkeep80/aprover) | `main` | no | 2026-08-09T09:57:26Z | 2 | 1 |
 | [`aes`](https://github.com/netkeep80/aes) | `main` | no | 2026-08-09T09:58:37Z | 0 | 0 |
 | [`isocubic`](https://github.com/netkeep80/isocubic) | `main` | no | 2026-08-09T09:58:08Z | 12 | 1 |
-| [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-09T09:57:47Z | 0 | 0 |
-| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-09T13:16:55Z | 9 | 0 |
+| [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-10T00:55:31Z | 0 | 0 |
+| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-09T19:02:02Z | 9 | 0 |
 | [`termowood`](https://github.com/netkeep80/termowood) | `main` | no | 2026-08-09T09:58:27Z | 0 | 0 |
 | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `main` | no | 2026-08-09T09:57:59Z | 6 | 0 |
 | [`god-mode`](https://github.com/netkeep80/god-mode) | `main` | no | 2026-08-09T09:58:17Z | 0 | 0 |

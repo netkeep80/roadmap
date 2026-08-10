@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-09T18:48:04Z",
+  "latest_observed_github_change": "2026-08-10T01:35:07Z",
   "repository_count": 24,
   "child_repository_count": 23,
   "verified_child_backlinks": 23,
@@ -48,7 +48,7 @@
       "title": "[P1] repo-guard: единый governance baseline для активных репозиториев",
       "state": "open",
       "state_reason": null,
-      "updated_at": "2026-08-09T08:31:53Z",
+      "updated_at": "2026-08-10T00:29:13Z",
       "html_url": "https://github.com/netkeep80/roadmap/issues/6",
       "is_pull_request": false
     },
@@ -114,8 +114,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T13:16:55Z",
-      "updated_at": "2026-08-09T13:17:03Z",
+      "pushed_at": "2026-08-09T19:02:02Z",
+      "updated_at": "2026-08-09T19:02:37Z",
       "open_issues": 9,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -324,10 +324,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T18:48:04Z",
-      "updated_at": "2026-08-09T18:43:12Z",
-      "open_issues": 9,
-      "open_pull_requests": 1,
+      "pushed_at": "2026-08-10T01:35:07Z",
+      "updated_at": "2026-08-10T01:32:58Z",
+      "open_issues": 10,
+      "open_pull_requests": 0,
       "tracked_issues": [
         {
           "number": 213,
@@ -520,8 +520,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T09:57:47Z",
-      "updated_at": "2026-08-09T09:57:51Z",
+      "pushed_at": "2026-08-10T00:55:31Z",
+      "updated_at": "2026-08-10T00:55:35Z",
       "open_issues": 0,
       "open_pull_requests": 0,
       "tracked_issues": []
@@ -892,6 +892,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-09T19:02:01.108Z",
-  "state_hash": "ec00d463f142bf0bc6e748f35c544a1f7c0f3dba0b3391c6a575c116ac757e05"
+  "checked_at": "2026-08-10T02:36:06.184Z",
+  "state_hash": "d389a8f872ca624f7df585829d56c8ed1263a95e82014543fb688a5c10eec70d"
 }
