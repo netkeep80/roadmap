@@ -2,10 +2,10 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-10T02:36:12Z",
-  "repository_count": 24,
-  "child_repository_count": 23,
-  "verified_child_backlinks": 23,
+  "latest_observed_github_change": "2026-08-12T20:38:27Z",
+  "repository_count": 25,
+  "child_repository_count": 24,
+  "verified_child_backlinks": 24,
   "workstreams": [
     {
       "number": 2,
@@ -18,10 +18,10 @@
     },
     {
       "number": 3,
-      "title": "[P0] МТС → AVM → aprover: один нормативный и один runtime path",
+      "title": "[P0] МТС v0.7 → AVM → aprover: один нормативный и один runtime path",
       "state": "open",
       "state_reason": null,
-      "updated_at": "2026-08-09T14:56:56Z",
+      "updated_at": "2026-08-12T20:24:38Z",
       "html_url": "https://github.com/netkeep80/roadmap/issues/3",
       "is_pull_request": false
     },
@@ -114,8 +114,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-10T02:36:07Z",
-      "updated_at": "2026-08-10T02:36:12Z",
+      "pushed_at": "2026-08-12T20:38:27Z",
+      "updated_at": "2026-08-10T08:06:11Z",
       "open_issues": 9,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -324,30 +324,42 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-10T01:35:07Z",
-      "updated_at": "2026-08-10T01:32:58Z",
-      "open_issues": 10,
+      "pushed_at": "2026-08-12T20:14:10Z",
+      "updated_at": "2026-08-12T20:15:22Z",
+      "open_issues": 12,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
-          "number": 213,
-          "title": "[Foundation v2] Canonical astring topology поверх exact UTF-8 byte transport",
-          "state": "closed",
-          "state_reason": "completed",
-          "updated_at": "2026-08-09T12:31:07Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/213",
+          "number": 122,
+          "title": "L5 v0.3: определить proof judgment и минимальный trusted calculus МТС",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-09T22:26:56Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/122",
           "is_pull_request": false
         },
         {
-          "number": 202,
-          "title": "[Foundation v2] Универсальный ассоциативный интерпретатор: словарь смыслов, астроки и сеть аксиом",
-          "state": "closed",
-          "state_reason": "completed",
-          "updated_at": "2026-08-09T12:37:59Z",
-          "html_url": "https://github.com/netkeep80/anum_docs/issues/202",
+          "number": 123,
+          "title": "L3 v0.3: relative Anum denotation поверх rooted identity #343",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-10T17:33:30Z",
+          "html_url": "https://github.com/netkeep80/anum_docs/issues/123",
           "is_pull_request": false
         }
       ]
+    },
+    {
+      "name": "anum_parser",
+      "html_url": "https://github.com/netkeep80/anum_parser",
+      "default_branch": "main",
+      "archived": false,
+      "visibility": "public",
+      "pushed_at": "2026-08-12T20:31:54Z",
+      "updated_at": "2026-08-12T20:33:15Z",
+      "open_issues": 0,
+      "open_pull_requests": 0,
+      "tracked_issues": []
     },
     {
       "name": "avm",
@@ -404,10 +416,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T09:57:26Z",
-      "updated_at": "2026-08-09T09:57:48Z",
-      "open_issues": 2,
-      "open_pull_requests": 1,
+      "pushed_at": "2026-08-12T15:50:37Z",
+      "updated_at": "2026-08-12T15:51:35Z",
+      "open_issues": 3,
+      "open_pull_requests": 0,
       "tracked_issues": [
         {
           "number": 139,
@@ -425,6 +437,15 @@
           "state_reason": null,
           "updated_at": "2026-08-08T23:07:45Z",
           "html_url": "https://github.com/netkeep80/aprover/issues/144",
+          "is_pull_request": false
+        },
+        {
+          "number": 152,
+          "title": "[Upstream repin] Exact-pin accepted MTS v0.7 / rooted Foundation-v2 boundary",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-12T20:18:27Z",
+          "html_url": "https://github.com/netkeep80/aprover/issues/152",
           "is_pull_request": false
         }
       ]
@@ -892,6 +913,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-10T08:05:51.360Z",
-  "state_hash": "8653d0b22e9381b9ad4eb9b5aa3fa591efbde3ce4a0c725fae66cd9045f04839"
+  "checked_at": "2026-08-12T20:39:06.817Z",
+  "state_hash": "3b1ad59d02d1f97c2fa5cb3409553c86dd2042aa0dff17d82aaea392e25de2c2"
 }
