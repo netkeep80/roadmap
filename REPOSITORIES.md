@@ -1,6 +1,6 @@
 # Дорожная карта по каждому репозиторию
 
-Срез: 2026-08-09. Порядок ниже — не рейтинг важности, а полный inventory.
+Срез: 2026-08-12. Порядок ниже — не рейтинг важности, а полный inventory.
 
 > Этот документ объясняет **роль и направление** каждого repository. Текущие `open/closed` facts берутся только из generated [`STATUS.md`](STATUS.md), а machine-readable priority/lifecycle/next gate — из [`data/portfolio.json`](data/portfolio.json). Локальные implementation tasks остаются в issues соответствующего repository.
 
@@ -58,47 +58,37 @@
 #131 end-to-end differential migration
 ```
 
-`#187/#188` закрывают remaining часть общего `#127` sequence/projection/foreach contract; `#128/#163` canonical value/Integer развиваются параллельно и остаются prerequisite для arithmetic/value constructs в migrator; `#169` остаётся native duplet JSON boundary. MTS-dependent frontend decisions ждут accepted outcome `anum_docs#200–#202` и не получают локальную alternative semantics.
+`#187/#188` закрывают remaining часть общего `#127` sequence/projection/foreach contract; `#128/#163` canonical value/Integer развиваются параллельно и остаются prerequisite для arithmetic/value constructs в migrator; `#169` остаётся native duplet JSON boundary. Foundation-v2 acceptance больше не является blocker: MTS-dependent frontend теперь может exact-repin accepted `anum_docs` v0.7, когда этого потребует конкретный local gate.
 
-**Не делать:** JSON DOM как internal runtime value, string opcodes, второй Executor, hidden materialization на read/find path, implicit parallelism как semantic requirement.
+**Не делать:** JSON DOM как internal runtime value, string opcodes, второй Executor, hidden materialization на read/find path, implicit parallelism как semantic requirement, локальный fork MTS semantics.
 
 ## 6. anum_docs — P0
 
 **Роль:** normative source МТС/Anum contracts, conformance и reference semantics.
 
-**Current state:** новый foundation reset v2 изменил прежний v0.6 production ordering. `#194–#199` сейчас не являются непосредственным следующим этапом: `#194` прямо заблокирован `#200–#202`.
+**Current state:** foundation reset и production migration завершены. Atomic `#401` выполнил C7+C8+C9: historical Python semantic runtime удалён, единый rooted Foundation-v2 runtime принят как current **MTS v0.7** (`mts-contract/v0.7`, `mts-conformance/v0.7`). Gate P `#237/#271` выполнен; downstream repin разрешён. v0.6 остаётся immutable previous-release evidence и не является current live-owner manifest.
 
-**Дальше:**
+**Дальше:** не открывать второй production runtime. Новые направления `#122` proof calculus и `#123` relative Anum развивать как независимые research/versioned candidates поверх стабильного v0.7 baseline. Любое принятие должно создавать следующий явный versioned boundary, а не мутировать v0.7.
 
-```text
-#200  5-link semantic kernel / meaning-of-meaning
-  ↓
-#201  quaternary Anum streaming interpreter + link-only context
-  ↓
-#202  dictionary-driven universal associative interpreter / theory network
-  ↓
-explicit decision what survives old v0.6 direction
-  ↓
-rewrite/revalidate #194–#199
-```
+**Production handoff:** первый конкретный downstream consumer gate — `aprover#152` exact pin текущего v0.7 boundary.
 
-Только после этого возможен accepted production/reference cutover и downstream repin.
-
-**Не делать:** parser/AST production migration в обход `#200–#202`, dual semantics, retroactive mutation historical contracts, downstream repin на candidate.
+**Не делать:** возвращать parser/AST/interpreter compatibility runtime, использовать runtime/storage/source/path ids как semantic Link identity, ретроактивно менять v0.6/v0.7 или считать research candidate текущим production contract до отдельного acceptance.
 
 ## 7. aprover — P0/P1 consumer
 
-**Роль:** browser research environment: canonical parsing/visualization, untrusted proof search, independent trusted replay.
+**Роль:** browser research environment: canonical visualization, untrusted proof search, independent trusted replay.
 
-**Дальше:** поддерживать exact pin/provenance и replay historical accepted artifacts. После accepted foundation-reset outcome и переписанного production contract — один exact repin, upstream conformance replay, затем multi-step search/UI. Старые local inference rules не возвращать.
+**Current state:** upstream blocker снят — `anum_docs` принял MTS v0.7. `aprover#152` теперь является конкретным current-upstream repin gate. Существующий `#144` остаётся historical accepted v0.5/proof-v0.4 replay slice и не должен быть переосмыслен под v0.7.
 
-**Главный invariant:** search != checker; UI != proof validity; `anum_docs` owns semantics.
+**Дальше:** `#152` exact-pin v0.7 artifacts/source/blob provenance → replay portable identity/transport/read-only invariants → current-upstream UI/docs pointer. Затем `#139` может развивать proof/search только в рамках отдельно принятых upstream proof semantics; `anum_docs#122` остаётся research dependency для будущего calculus growth.
+
+**Главный invariant:** search != checker; UI != proof validity; `anum_docs` owns semantics; old artifacts replay under their own version; никакого local MTS fork или compatibility occurrence runtime.
 
 ## 8. mts-genesis — P2 research/publication
 
-**Роль:** компактное conceptual exposition о самоподобной корневой системе, интерпретаторе и актуальности.
+**Роль:** compact conceptual exposition о самоподобной корневой системе, интерпретаторе и актуальности.
 
-**Дальше:** удерживать статью самодостаточной и философски глубокой, но всё, что претендует на machine-checkable semantics, переводить в research issues/challenges `anum_docs`, включая текущий foundation-reset pipeline.
+**Дальше:** удерживать статью самодостаточной и философски глубокой, но всё, что претендует на machine-checkable semantics, переводить в research issues/challenges `anum_docs` как будущие versioned candidates поверх принятого v0.7 baseline.
 
 **Не делать:** вторую нормативную МТС внутри статьи.
 
@@ -208,11 +198,21 @@ rewrite/revalidate #194–#199
 
 ## 24. roadmap — P1 portfolio control
 
-**Роль:** authoritative portfolio control plane по всем 24 repositories.
+**Роль:** authoritative portfolio control plane по всем 25 repositories.
 
-**Состояние:** machine-readable semantic registry, live GitHub validation, generated `STATUS.md`/`data/status.json`, operating model и decision log работают на `main`; child backlink rollout завершён и continuously verified 23/23.
+**Состояние:** machine-readable semantic registry, live GitHub validation, generated `STATUS.md`/`data/status.json`, operating model и decision log работают на `main`; child backlink rollout является continuously verified invariant для всех current child repositories.
 
 **Дальше:** это ongoing governance, а не новый implementation backlog: поддерживать registry при semantic changes, реагировать на drift, сохранять актуальные cross-repo gates и не дублировать local implementation issues. Meta-epic #1 остаётся открытой управляющей точкой.
+
+## 25. anum_parser — P1/P2 research laboratory
+
+**Роль:** отдельная лаборатория для экспериментальных алгоритмов сериализации, десериализации и визуализации ачисел.
+
+**Граница владения:** `anum_parser` не является вторым нормативным МТС/Anum owner. Нормативные contracts, conformance и принятие новой семантики принадлежат `anum_docs`. Текущий Anum leaf остаётся `anum-deserialization/v0.4`; текущий umbrella provenance должен быть exact-repin на accepted MTS v0.7.
+
+**Дальше:** обновить current-upstream provenance с прежнего MTS v0.6 на v0.7 без изменения v0.4 leaf semantics; сохранять альтернативные parser/visualization modes экспериментальными; если новый алгоритм претендует на нормативный смысл — сначала отдельный research/acceptance path в `anum_docs`.
+
+**Не делать:** локальную alternative MTS semantics, compatibility runtime исторической МТС или выдавать UI/internal node identity за semantic Link identity.
 
 ---
 

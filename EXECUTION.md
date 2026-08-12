@@ -1,6 +1,6 @@
 # Порядок исполнения
 
-Срез: 2026-08-09.
+Срез: 2026-08-12.
 
 Центральный roadmap не означает, что вся работа сериализована. Ниже выделены независимые lanes и hard dependency gates.
 
@@ -22,40 +22,51 @@ pjson #55 → #34
 
 **Hard rule:** пока `PMM#421` не закрыт, не реализовывать pjson object storage через временный compatibility container.
 
-### Lane B — МТС foundation reset v2
+### Lane B — accepted MTS v0.7 → downstream consumers
 
-Прежняя production/reference цепочка `#194 → #195..#199` сейчас **не является непосредственным next step**. `anum_docs#194` заблокирован новым foundation reset:
+Foundation-reset и production migration больше не являются текущим blocker. Эта цепочка завершена в `anum_docs`:
 
 ```text
-#200
-5-link semantic kernel / акорень как смысл смысла
+#200 / #201 / #202
+foundation reset
         ↓
-#201
-четверичный Anum streaming interpreter
-+ link-only context chain
+новые rooted Foundation-v2 gates
         ↓
-#202
-универсальный dictionary-driven associative interpreter
-+ explicit theory/axiom network
+#237 / #271 Gate P
         ↓
-explicit decision:
-что survives from old v0.6 direction
+#401 atomic C7+C8+C9
         ↓
-rewrite/revalidate #194–#199
-        ↓
-accepted production/reference migration
+accepted mts-contract/v0.7
++ mts-conformance/v0.7
++ один rooted production runtime
 ```
 
-**Hard rules:** 
+Historical Python semantic runtime удалён без compatibility path. `mts-contract/v0.6` и его corpus остаются immutable previous-release evidence, но не current production owner.
 
-- не продолжать parser/AST production migration через `#195–#199`, пока `#200–#202` не завершены;
-- после `#202` не считать старый #194 plan автоматически действительным — нужен explicit rewrite/revalidation;
-- `aprover` и другие downstream consumers не repin-ятся на foundation-reset candidate;
-- historical v0.2–v0.5 остаются replayable, но accepted production path в итоге должен быть один.
+Текущий downstream gate:
+
+```text
+accepted anum_docs MTS v0.7
+        ↓
+aprover #152 exact pin + consumer conformance
+        ↓
+current-upstream pointer / historical replay remains version-scoped
+```
+
+Параллельно AVM может продолжать frontend-neutral migration; MTS-dependent frontend теперь может exact-repin v0.7 только тогда, когда этого требует конкретный local gate.
+
+**Hard rules:**
+
+- не возвращать historical parser/AST/interpreter как selectable runtime;
+- не создавать compatibility occurrence semantics;
+- downstream consumer pin должен указывать на exact accepted v0.7 artifacts/provenance;
+- accepted v0.7 не даёт aprover права самостоятельно добавлять proof rules;
+- `anum_docs#122/#123` — отдельные research/versioned extension tracks и не мутируют v0.7 задним числом;
+- Link identity остаётся только функцией упорядоченных semantic poles; runtime/storage/source/path ids не создают тождество связи.
 
 ### Lane C — AVM 1.5
 
-AVM может идти параллельно МТС foundation там, где contract frontend-neutral и не зависит от candidate denotation.
+AVM может идти параллельно МТС work там, где contract frontend-neutral. Теперь accepted MTS v0.7 существует, поэтому ожидание Foundation-v2 acceptance снято; однако repin не нужен gates, которые вообще не зависят от MTS frontend.
 
 Завершённый foundation текущей migration-линии:
 
@@ -95,7 +106,7 @@ AVM может идти параллельно МТС foundation там, где 
 
 Поддержка migrator-а расширяется construct-by-construct только вместе с oracle fixture/evidence. Float/Object/Map/BigInt и другие value domains не реализуются speculative заранее: новый domain добавляется отдельным gate только когда migration corpus или реальный consumer доказывает необходимость.
 
-Если оставшийся AVM шаг требует нового accepted МТС/Anum contract из `#200–#202`, ждать exact upstream acceptance, а не дублировать semantics внутри AVM.
+Если MTS-dependent frontend действительно нужен конкретному AVM шагу, использовать exact accepted `anum_docs` v0.7 boundary, а не дублировать semantics внутри AVM.
 
 ### Lane D — mast-calculator physics
 
@@ -121,11 +132,15 @@ Web UI 2.0 может развиваться параллельно, если н
 
 ### MTS consumers
 
-После **нового accepted foundation contract**, выведенного через `#200–#202` и перепроверенный production migration plan:
-- exact repin `aprover`;
-- replay upstream conformance directly;
-- только затем multi-step untrusted search/UI;
-- AVM/Anum frontend conformance repin, если требуется.
+Текущий upstream production contract уже принят как MTS v0.7. Следующий consumer-shaped этап:
+
+- `aprover#152` — exact pin v0.7 contract/conformance/C9 provenance;
+- replay portable identity/transport/read-only invariants непосредственно в consumer tests;
+- сохранить historical version-scoped replay без compatibility runtime;
+- только после отдельно принятого upstream proof contract расширять multi-step untrusted search/UI;
+- AVM/Anum frontend repin выполнять только по реальной локальной зависимости, не как ритуальный version bump.
+
+`anum_docs#122` (proof calculus) и `#123` (relative Anum) продолжаются независимо как будущие versioned research tracks.
 
 ### isocubic core recovery
 
@@ -179,6 +194,7 @@ failure modes → protection → test procedure → measured evidence → as-bui
 - `NNets`: benchmarks/baselines before more algorithms.
 - `meta_rm`: use cases + compile-time cost before promotion.
 - `mts-genesis`: publication + upstream research questions, no parallel contracts.
+- `anum_docs#122/#123`: новые proof/relative-Anum semantics только как отдельные versioned candidates поверх принятого v0.7 baseline.
 
 ### Portfolio hygiene
 
@@ -203,8 +219,8 @@ Roadmap намеренно ориентирован на gates, а не на п�
 Следующие lanes в основном независимы и могут идти параллельно:
 
 1. PMM/pjson foundation;
-2. anum_docs foundation reset v2 (`#200–#202`);
-3. AVM gates, не зависящие от candidate MTS semantics;
+2. `aprover#152` exact MTS v0.7 repin и независимые `anum_docs#122/#123` research tracks;
+3. AVM gates, включая frontend-neutral `#174 → #131`, а MTS-dependent work — только через accepted v0.7;
 4. mast-calculator physical validation;
 5. isocubic Phase 15 core recovery;
 6. termowood/aes commissioning work;
