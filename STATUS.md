@@ -5,9 +5,9 @@
 - Owner: `netkeep80`
 - Registered repositories: **25**
 - Verified child roadmap backlinks: **24/24**
-- Last successful GitHub check: **2026-08-13T07:55:11.348Z**
-- Latest observed GitHub change in snapshot: **2026-08-13T02:49:25Z**
-- State hash (excluding check time): `31f187f8b4ffcb652f01edd8a8b2555ae74c93cccfef4c1378acb015c0cb2363`
+- Last successful GitHub check: **2026-08-13T13:50:00.538Z**
+- Latest observed GitHub change in snapshot: **2026-08-13T13:46:39Z**
+- State hash (excluding check time): `41416e2db011db70f1aa3bc0c5a796d1494474a11523992fb8de77b704715af0`
 
 ## Control-plane health
 
@@ -34,7 +34,7 @@
 
 | Priority | Repository | Lifecycle | Current objective | Next portfolio gate | GitHub | Roadmap |
 |---:|---|---|---|---|---|---|
-| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | поддерживать accepted MTS v0.7 как единственный production/reference runtime и развивать новые semantics только через отдельные versioned research/acceptance gates | accepted v0.7 production baseline закрыт через #237/#271/#403; #122 proof calculus и #123 relative Anum продолжаются как независимые research/versioned extensions без мутации v0.7 | 10 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | поддерживать accepted MTS v0.7 как единственный production/reference runtime и развивать новые semantics только через отдельные versioned research/acceptance gates | accepted v0.7 production baseline закрыт через #237/#271/#403; #122 proof calculus и #123 relative Anum продолжаются как независимые research/versioned extensions без мутации v0.7 | 1 issues / 1 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`avm`](https://github.com/netkeep80/avm) | `active` | закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая accepted МТС semantics | #174 semantic migrator → #131 differential end-to-end; #169 remains Native JSON umbrella; MTS-dependent frontend may exact-repin accepted anum_docs v0.7 when a local gate requires it, without local alternative semantics | 15 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `active` | закрыть физическую и нормативную верификацию dynamic wind и erection stages до дальнейшего feature growth | modal/eigen → #97/#102 dynamic SP20 → #72/#98 erection → verification passport | 11 issues / 1 PRs | [#4](https://github.com/netkeep80/roadmap/issues/4) |
 | **P0** | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `active` | закрыть consumer-shaped readiness для native persistent object storage pjson | #410/#415/#416/#426 → #421 | 14 issues / 6 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
@@ -68,8 +68,8 @@
 
 **Next gate:** accepted v0.7 production baseline закрыт через #237/#271/#403; #122 proof calculus и #123 relative Anum продолжаются как независимые research/versioned extensions без мутации v0.7
 
-- 🟡 [#122](https://github.com/netkeep80/anum_docs/issues/122) `open` — L5 v0.3: определить proof judgment и минимальный trusted calculus МТС
-- 🟡 [#123](https://github.com/netkeep80/anum_docs/issues/123) `open` — L3 v0.3: relative Anum denotation поверх rooted identity #343
+- ✅ [#122](https://github.com/netkeep80/anum_docs/issues/122) `closed` — L5 v0.3: определить proof judgment и минимальный trusted calculus МТС
+- ✅ [#123](https://github.com/netkeep80/anum_docs/issues/123) `closed` — L3 v0.3: relative Anum denotation поверх rooted identity #343
 
 ### avm — active
 
@@ -148,7 +148,7 @@
 
 | Repository | Branch | Archived | Last push | Open issues | Open PRs |
 |---|---|---:|---|---:|---:|
-| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-12T20:14:10Z | 10 | 0 |
+| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-13T13:46:39Z | 1 | 1 |
 | [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-09T11:14:36Z | 15 | 2 |
 | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `main` | no | 2026-08-09T10:25:45Z | 11 | 1 |
 | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-09T09:56:41Z | 14 | 6 |
@@ -157,7 +157,7 @@
 | [`aes`](https://github.com/netkeep80/aes) | `main` | no | 2026-08-09T09:58:37Z | 0 | 0 |
 | [`isocubic`](https://github.com/netkeep80/isocubic) | `main` | no | 2026-08-09T09:58:08Z | 12 | 1 |
 | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-10T00:55:31Z | 0 | 0 |
-| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-13T02:49:22Z | 9 | 0 |
+| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-13T07:55:12Z | 9 | 0 |
 | [`termowood`](https://github.com/netkeep80/termowood) | `main` | no | 2026-08-09T09:58:27Z | 0 | 0 |
 | [`anum_parser`](https://github.com/netkeep80/anum_parser) | `main` | no | 2026-08-12T20:31:54Z | 0 | 0 |
 | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `main` | no | 2026-08-09T09:57:59Z | 6 | 0 |
@@ -178,8 +178,8 @@
 
 ### anum_docs
 
-- 🟡 [#122](https://github.com/netkeep80/anum_docs/issues/122) `open` — L5 v0.3: определить proof judgment и минимальный trusted calculus МТС
-- 🟡 [#123](https://github.com/netkeep80/anum_docs/issues/123) `open` — L3 v0.3: relative Anum denotation поверх rooted identity #343
+- ✅ [#122](https://github.com/netkeep80/anum_docs/issues/122) `closed` — L5 v0.3: определить proof judgment и минимальный trusted calculus МТС
+- ✅ [#123](https://github.com/netkeep80/anum_docs/issues/123) `closed` — L3 v0.3: relative Anum denotation поверх rooted identity #343
 
 ### avm
 
