@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-12T20:38:27Z",
+  "latest_observed_github_change": "2026-08-12T20:53:09Z",
   "repository_count": 25,
   "child_repository_count": 24,
   "verified_child_backlinks": 24,
@@ -114,8 +114,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-12T20:38:27Z",
-      "updated_at": "2026-08-10T08:06:11Z",
+      "pushed_at": "2026-08-12T20:39:08Z",
+      "updated_at": "2026-08-12T20:40:37Z",
       "open_issues": 9,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -326,7 +326,7 @@
       "visibility": "public",
       "pushed_at": "2026-08-12T20:14:10Z",
       "updated_at": "2026-08-12T20:15:22Z",
-      "open_issues": 12,
+      "open_issues": 10,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
@@ -416,7 +416,7 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-12T15:50:37Z",
+      "pushed_at": "2026-08-12T20:53:09Z",
       "updated_at": "2026-08-12T15:51:35Z",
       "open_issues": 3,
       "open_pull_requests": 0,
@@ -913,6 +913,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-12T20:39:06.817Z",
-  "state_hash": "3b1ad59d02d1f97c2fa5cb3409553c86dd2042aa0dff17d82aaea392e25de2c2"
+  "checked_at": "2026-08-13T02:49:20.862Z",
+  "state_hash": "b70eab75823c1fe75b83ed67c340d32f4446756676bcfa95e056c7051e1c335d"
 }
