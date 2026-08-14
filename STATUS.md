@@ -5,9 +5,9 @@
 - Owner: `netkeep80`
 - Registered repositories: **25**
 - Verified child roadmap backlinks: **24/24**
-- Last successful GitHub check: **2026-08-13T19:26:51.273Z**
-- Latest observed GitHub change in snapshot: **2026-08-13T19:26:30Z**
-- State hash (excluding check time): `974c15a67c2ca09f95c105ec483693ba7262d9012bfaa3480260e8eeb47ee3f7`
+- Last successful GitHub check: **2026-08-14T02:47:39.585Z**
+- Latest observed GitHub change in snapshot: **2026-08-14T02:29:45Z**
+- State hash (excluding check time): `5653114a5c6d40962bb5f78b02994b9cc8facd9fefc8f0a6b586abac76c6e3b0`
 
 ## Control-plane health
 
@@ -34,7 +34,7 @@
 
 | Priority | Repository | Lifecycle | Current objective | Next portfolio gate | GitHub | Roadmap |
 |---:|---|---|---|---|---|---|
-| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | поддерживать accepted MTS v0.7 как единственный production/reference runtime и развивать новые semantics только через отдельные versioned research/acceptance gates | accepted v0.7 production baseline закрыт через #237/#271/#403; #122 proof calculus и #123 relative Anum продолжаются как независимые research/versioned extensions без мутации v0.7 | 6 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | поддерживать accepted MTS v0.7 как единственный production/reference runtime и развивать новые semantics только через отдельные versioned research/acceptance gates | accepted v0.7 production baseline закрыт через #237/#271/#403; #122 proof calculus и #123 relative Anum продолжаются как независимые research/versioned extensions без мутации v0.7 | 11 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`avm`](https://github.com/netkeep80/avm) | `active` | закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая accepted МТС semantics | #174 semantic migrator → #131 differential end-to-end; #169 remains Native JSON umbrella; MTS-dependent frontend may exact-repin accepted anum_docs v0.7 when a local gate requires it, without local alternative semantics | 15 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `active` | закрыть физическую и нормативную верификацию dynamic wind и erection stages до дальнейшего feature growth | modal/eigen → #97/#102 dynamic SP20 → #72/#98 erection → verification passport | 11 issues / 1 PRs | [#4](https://github.com/netkeep80/roadmap/issues/4) |
 | **P0** | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `active` | закрыть consumer-shaped readiness для native persistent object storage pjson | #410/#415/#416/#426 → #421 | 15 issues / 6 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
@@ -42,7 +42,7 @@
 | **P0/P1** | [`aprover`](https://github.com/netkeep80/aprover) | `active` | оставаться exact consumer accepted anum_docs contracts и развивать search только поверх trusted replay | #152 exact-pin accepted MTS v0.7/current invariants while preserving historical replay; proof/search growth under #139 waits for separately accepted upstream proof semantics | 3 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P1** | [`aes`](https://github.com/netkeep80/aes) | `active` | перевести проект от design assumptions к проверенному commissioning и as-built состоянию | design freeze → staged commissioning → measured as-built | 0 issues / 0 PRs | [#7](https://github.com/netkeep80/roadmap/issues/7) |
 | **P1** | [`isocubic`](https://github.com/netkeep80/isocubic) | `active` | восстановить test-first product core и завершить dev-tool extraction boundary | #300 → #301 → #302/#303/#304 → #305 → #306/#307 | 12 issues / 1 PRs | [#5](https://github.com/netkeep80/roadmap/issues/5) |
-| **P1** | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `active` | раскатывать consumer-driven governance baseline без speculative DSL growth | Tier A active repos use reproducible immutable-pinned policy | 18 issues / 1 PRs | [#6](https://github.com/netkeep80/roadmap/issues/6) |
+| **P1** | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `active` | раскатывать consumer-driven governance baseline без speculative DSL growth | Tier A active repos use reproducible immutable-pinned policy | 15 issues / 2 PRs | [#6](https://github.com/netkeep80/roadmap/issues/6) |
 | **P1** | [`roadmap`](https://github.com/netkeep80/roadmap) | `control-plane` | быть единой точкой входа для актуального состояния, зависимостей, решений и направления развития всего portfolio | ongoing: поддерживать live control loop и явно reconciliate detected semantic drift | 9 issues / 0 PRs | [#1](https://github.com/netkeep80/roadmap/issues/1), [#13](https://github.com/netkeep80/roadmap/issues/13), [#16](https://github.com/netkeep80/roadmap/issues/16) |
 | **P1** | [`termowood`](https://github.com/netkeep80/termowood) | `active` | закрыть failure-mode, independent cutoff, calibration, HIL/bench и OTA recovery evidence | safe-state matrix → protection → calibration/HIL → measured evidence | 0 issues / 0 PRs | [#7](https://github.com/netkeep80/roadmap/issues/7) |
 | **P1/P2** | [`anum_parser`](https://github.com/netkeep80/anum_parser) | `research` | экспериментировать с сериализацией, десериализацией, визуализацией и альтернативными алгоритмами ачисел без создания второго нормативного источника МТС | exact-repin current umbrella provenance to accepted anum_docs v0.7 while retaining anum-deserialization/v0.4 as the active Anum leaf; experimental modes remain non-normative until accepted upstream | 0 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
@@ -148,7 +148,7 @@
 
 | Repository | Branch | Archived | Last push | Open issues | Open PRs |
 |---|---|---:|---|---:|---:|
-| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-13T18:04:24Z | 6 | 0 |
+| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-13T21:29:02Z | 11 | 0 |
 | [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-09T11:14:36Z | 15 | 2 |
 | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `main` | no | 2026-08-09T10:25:45Z | 11 | 1 |
 | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-09T09:56:41Z | 15 | 6 |
@@ -156,8 +156,8 @@
 | [`aprover`](https://github.com/netkeep80/aprover) | `main` | no | 2026-08-12T20:53:09Z | 3 | 0 |
 | [`aes`](https://github.com/netkeep80/aes) | `main` | no | 2026-08-09T09:58:37Z | 0 | 0 |
 | [`isocubic`](https://github.com/netkeep80/isocubic) | `main` | no | 2026-08-09T09:58:08Z | 12 | 1 |
-| [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-13T19:26:30Z | 18 | 1 |
-| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-13T13:50:01Z | 9 | 0 |
+| [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-14T02:29:45Z | 15 | 2 |
+| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-13T19:26:52Z | 9 | 0 |
 | [`termowood`](https://github.com/netkeep80/termowood) | `main` | no | 2026-08-09T09:58:27Z | 0 | 0 |
 | [`anum_parser`](https://github.com/netkeep80/anum_parser) | `main` | no | 2026-08-12T20:31:54Z | 0 | 0 |
 | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `main` | no | 2026-08-09T09:57:59Z | 6 | 0 |
