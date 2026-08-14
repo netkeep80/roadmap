@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-14T13:44:07Z",
+  "latest_observed_github_change": "2026-08-14T18:42:33Z",
   "repository_count": 25,
   "child_repository_count": 24,
   "verified_child_backlinks": 24,
@@ -114,8 +114,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-14T07:52:18Z",
-      "updated_at": "2026-08-14T07:52:24Z",
+      "pushed_at": "2026-08-14T13:45:02Z",
+      "updated_at": "2026-08-14T13:45:38Z",
       "open_issues": 9,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -324,10 +324,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-13T21:29:02Z",
-      "updated_at": "2026-08-13T21:29:07Z",
-      "open_issues": 11,
-      "open_pull_requests": 0,
+      "pushed_at": "2026-08-14T18:42:33Z",
+      "updated_at": "2026-08-14T18:38:54Z",
+      "open_issues": 9,
+      "open_pull_requests": 1,
       "tracked_issues": [
         {
           "number": 122,
@@ -367,17 +367,17 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T11:14:36Z",
-      "updated_at": "2026-08-09T11:08:52Z",
-      "open_issues": 15,
-      "open_pull_requests": 2,
+      "pushed_at": "2026-08-14T18:27:18Z",
+      "updated_at": "2026-08-14T18:26:54Z",
+      "open_issues": 9,
+      "open_pull_requests": 1,
       "tracked_issues": [
         {
           "number": 122,
           "title": "[Epic] AVM 1.5 — перенести семантику Relations Model из jsonRVM в link-native AVM",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-08T17:06:52Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-14T18:05:06Z",
           "html_url": "https://github.com/netkeep80/avm/issues/122",
           "is_pull_request": false
         },
@@ -386,25 +386,25 @@
           "title": "AVM Native JSON — каноническая дуплетная нотация и миграция формата jsonRVM",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-08T23:57:31Z",
+          "updated_at": "2026-08-14T16:45:50Z",
           "html_url": "https://github.com/netkeep80/avm/issues/169",
           "is_pull_request": false
         },
         {
           "number": 174,
           "title": "AVM Native JSON / 5 — semantic migrator jsonRVM program → AVM duplet program",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-08T23:11:00Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-14T16:45:21Z",
           "html_url": "https://github.com/netkeep80/avm/issues/174",
           "is_pull_request": false
         },
         {
           "number": 131,
           "title": "AVM 1.5 / 9 — end-to-end migration slice и differential equivalence с jsonRVM",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-08T17:06:29Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-14T18:04:38Z",
           "html_url": "https://github.com/netkeep80/avm/issues/131",
           "is_pull_request": false
         }
@@ -541,9 +541,9 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-14T13:43:59Z",
-      "updated_at": "2026-08-14T13:44:07Z",
-      "open_issues": 10,
+      "pushed_at": "2026-08-14T17:37:01Z",
+      "updated_at": "2026-08-14T17:37:57Z",
+      "open_issues": 6,
       "open_pull_requests": 0,
       "tracked_issues": []
     },
@@ -913,6 +913,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-14T13:45:01.154Z",
-  "state_hash": "b94b8af93a26be57879350cc0e65472719e1d6b04a6d5a42531d2e4ff17aebe4"
+  "checked_at": "2026-08-14T19:15:57.823Z",
+  "state_hash": "151be21e70f5f0d4c4e6617576b2a1112bf7c67cb59375db463fadd7533d851a"
 }
