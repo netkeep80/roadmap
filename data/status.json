@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-14T22:51:35Z",
+  "latest_observed_github_change": "2026-08-15T06:58:30Z",
   "repository_count": 25,
   "child_repository_count": 24,
   "verified_child_backlinks": 24,
@@ -114,8 +114,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-14T19:15:59Z",
-      "updated_at": "2026-08-14T19:16:05Z",
+      "pushed_at": "2026-08-15T01:51:15Z",
+      "updated_at": "2026-08-15T01:51:23Z",
       "open_issues": 9,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -324,8 +324,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-14T22:51:31Z",
-      "updated_at": "2026-08-14T22:51:35Z",
+      "pushed_at": "2026-08-15T06:58:30Z",
+      "updated_at": "2026-08-15T06:56:46Z",
       "open_issues": 9,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -367,10 +367,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-14T21:50:24Z",
-      "updated_at": "2026-08-14T21:32:42Z",
-      "open_issues": 6,
-      "open_pull_requests": 1,
+      "pushed_at": "2026-08-15T06:56:55Z",
+      "updated_at": "2026-08-15T06:57:02Z",
+      "open_issues": 1,
+      "open_pull_requests": 0,
       "tracked_issues": [
         {
           "number": 122,
@@ -384,9 +384,9 @@
         {
           "number": 169,
           "title": "AVM Native JSON — каноническая дуплетная нотация и миграция формата jsonRVM",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-14T16:45:50Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-15T06:43:25Z",
           "html_url": "https://github.com/netkeep80/avm/issues/169",
           "is_pull_request": false
         },
@@ -913,6 +913,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-15T01:51:13.894Z",
-  "state_hash": "fd1e12c9dcaa0a38ffb661e8775e24886821808e6f45d364f4be90fad526a524"
+  "checked_at": "2026-08-15T06:59:10.560Z",
+  "state_hash": "27b2b80caa6d24d6578d3d052d3cb571e0c02ac71fe5b6252acc532d4673c36f"
 }
