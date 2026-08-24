@@ -306,6 +306,16 @@ function timestamp(record, label) {
   return value;
 }
 
+function assertUnmodifiedCandidateCheckpoint(comment) {
+  if (typeof comment?.created_at !== 'string' || typeof comment?.updated_at !== 'string') {
+    fail('candidate checkpoint provenance timestamps are required');
+  }
+  const createdAt = Date.parse(comment.created_at);
+  const updatedAt = Date.parse(comment.updated_at);
+  if (!Number.isFinite(createdAt) || !Number.isFinite(updatedAt)) fail('candidate checkpoint provenance timestamp is invalid');
+  if (createdAt !== updatedAt) fail('candidate checkpoint provenance shows the authority comment was updated after creation');
+}
+
 function validateAcceptanceChronology({ candidateIssue, candidateComment, acceptanceIssue, acceptanceComment }) {
   const candidateNumber = Number(candidateIssue?.number);
   const acceptanceNumber = Number(acceptanceIssue?.number);
@@ -408,6 +418,7 @@ async function validateAcceptanceEvidence({
       || commentIssueNumber !== acceptance.candidate_session) {
     fail('candidate checkpoint ownership does not match the referenced candidate Session');
   }
+  assertUnmodifiedCandidateCheckpoint(candidateComment);
 
   const candidateCheckpoint = strictCheckpointFromBody(candidateComment.body, registry, candidateSession);
   if (candidateCheckpoint.protocol !== CHECKPOINT_PROTOCOL_V2 || !candidateCheckpoint.review_candidate) {
