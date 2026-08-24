@@ -10,7 +10,7 @@ import {
 } from './agent-protocol.mjs';
 
 const REGISTRY_PATH = new URL('../data/portfolio.json', import.meta.url);
-const AGENT_MARKER = '<!-- roadmap-agent:start -->';
+export const AGENT_MARKER = '<!-- roadmap-agent:start -->';
 const enforceComplete = process.argv.includes('--enforce');
 
 function apiHeaders() {
@@ -23,7 +23,7 @@ function apiHeaders() {
   return headers;
 }
 
-async function github(pathname) {
+export async function githubAgentApi(pathname) {
   const response = await fetch(`https://api.github.com${pathname}`, { headers: apiHeaders() });
   if (!response.ok) {
     const body = await response.text();
@@ -32,7 +32,7 @@ async function github(pathname) {
   return response.json();
 }
 
-function isPublicRepository(repo) {
+export function isPublicRepository(repo) {
   return repo && repo.private === false && (repo.visibility == null || repo.visibility === 'public');
 }
 
@@ -41,28 +41,37 @@ export function publicRepositoryNames(repositories) {
   return repositories.filter(isPublicRepository).map((repo) => repo.name).sort();
 }
 
-async function listPublicOwnerRepositories(owner) {
+export async function listPublicOwnerRepositories(owner) {
   const publicRepositories = [];
   for (let page = 1; ; page += 1) {
-    const batch = await github(`/users/${owner}/repos?type=owner&per_page=100&page=${page}&sort=full_name`);
+    const batch = await githubAgentApi(`/users/${owner}/repos?type=owner&per_page=100&page=${page}&sort=full_name`);
     publicRepositories.push(...batch.filter(isPublicRepository));
     if (batch.length < 100) break;
   }
   return publicRepositories;
 }
 
-async function listOpenControlIssues(owner, repository) {
+export async function listOpenControlIssues(owner, repository) {
   const issues = [];
   for (let page = 1; ; page += 1) {
-    const batch = await github(`/repos/${owner}/${repository}/issues?state=open&per_page=100&page=${page}`);
+    const batch = await githubAgentApi(`/repos/${owner}/${repository}/issues?state=open&per_page=100&page=${page}`);
     issues.push(...batch.filter((issue) => !issue.pull_request));
     if (batch.length < 100) break;
   }
   return issues;
 }
 
-function agentIssuesOnly(issues) {
+export function agentIssuesOnly(issues) {
   return issues.filter((issue) => typeof issue.body === 'string' && issue.body.includes(AGENT_MARKER));
+}
+
+export async function collectLiveAgentInputs(registry) {
+  if (!registry || typeof registry !== 'object') throw new Error('agent control plane registry is required');
+  const [repositories, issues] = await Promise.all([
+    listPublicOwnerRepositories(registry.owner),
+    listOpenControlIssues(registry.owner, registry.control_repository),
+  ]);
+  return { repositories, issues };
 }
 
 export async function validateLiveAgentState({ registry, repositories, issues, enforce = false }) {
@@ -98,11 +107,7 @@ async function main() {
     console.warn('WARN: GITHUB_TOKEN is not set; public API rate limits may apply.');
   }
 
-  const [repositories, issues] = await Promise.all([
-    listPublicOwnerRepositories(registry.owner),
-    listOpenControlIssues(registry.owner, registry.control_repository),
-  ]);
-
+  const { repositories, issues } = await collectLiveAgentInputs(registry);
   const result = await validateLiveAgentState({
     registry,
     repositories,
