@@ -18,11 +18,26 @@ function block(data) {
   return `${START}\n\`\`\`json\n${JSON.stringify(data)}\n\`\`\`\n${END}`;
 }
 
-function sessionBody({ phase = 'implementation', state = 'working', claims, number = 139 } = {}) {
+function roadmapRoleIssue() {
+  return {
+    number: 49,
+    state: 'open',
+    body: block({
+      protocol: 'roadmap-agent-role/v1',
+      repository: 'netkeep80/roadmap',
+      scope: 'public-only',
+      state: 'active',
+      role_kind: 'repository-developer',
+      portfolio_authority: 'coordinate',
+    }),
+  };
+}
+
+function sessionBody({ phase = 'implementation', state = 'working', claims, number = 139, roleIssueNumber = 49 } = {}) {
   const workItem = `netkeep80/roadmap#${number}`;
   return block({
     protocol: 'roadmap-agent-session/v2',
-    role_issue: 49,
+    role_issue: roleIssueNumber,
     repository: 'netkeep80/roadmap',
     work_item: workItem,
     work_phase: phase,
@@ -81,11 +96,12 @@ function exactPr(number = 142) {
   return { number, state: 'open', head: { sha: HEAD }, base: { sha: BASE } };
 }
 
-function candidateIssue() {
+function candidateIssue({ roleIssueNumber = 49 } = {}) {
   return {
     number: 900,
+    state: 'open',
     created_at: '2026-08-24T20:00:00Z',
-    body: sessionBody({ state: 'handoff', claims: [] }),
+    body: sessionBody({ state: 'handoff', claims: [], roleIssueNumber }),
   };
 }
 
@@ -107,6 +123,7 @@ function acceptanceEvent(data = acceptanceData(), {
     action,
     issue: {
       number: 901,
+      state: 'open',
       created_at: sessionCreatedAt,
       body: sessionBody({ phase: 'acceptance' }),
     },
@@ -121,7 +138,11 @@ function acceptanceEvent(data = acceptanceData(), {
 function acceptanceResolvers({ candidateCommentCreatedAt } = {}) {
   return {
     resolvePullRequest: async (_repository, number) => exactPr(number),
-    resolveControlIssue: async () => candidateIssue(),
+    resolveControlIssue: async (number) => {
+      if (number === 49) return roadmapRoleIssue();
+      if (number === 900) return candidateIssue();
+      throw new Error(`control issue #${number} not found`);
+    },
     resolveControlComment: async () => candidateComment(candidateCommentCreatedAt),
   };
 }
@@ -144,6 +165,7 @@ test('event boundary rejects malformed generic checkpoint fields before evidence
         action: 'created',
         issue: {
           number: 900,
+          state: 'open',
           created_at: '2026-08-24T20:00:00Z',
           body: sessionBody(),
         },
@@ -171,6 +193,7 @@ test('editing an authority-bearing v2 checkpoint cannot remove its authority obj
         action: 'edited',
         issue: {
           number: 900,
+          state: 'open',
           created_at: '2026-08-24T20:00:00Z',
           body: sessionBody(),
         },
@@ -194,6 +217,7 @@ test('deleting an authority-bearing v2 checkpoint fails closed at the changed-ev
         action: 'deleted',
         issue: {
           number: 900,
+          state: 'open',
           created_at: '2026-08-24T20:00:00Z',
           body: sessionBody(),
         },
@@ -245,7 +269,7 @@ test('workflow routing sees previous body when an edited v2 Session removes the 
 });
 
 test('Session authority rejects pull request conversations at event and referenced-candidate boundaries', async () => {
-  const pullSession = { number: 900, created_at: '2026-08-24T20:00:00Z', body: sessionBody(), pull_request: {} };
+  const pullSession = { number: 900, state: 'open', created_at: '2026-08-24T20:00:00Z', body: sessionBody(), pull_request: {} };
   await assert.rejects(() => validateCheckpointEventEvidence({
     event: { action: 'created', issue: pullSession, comment: { id: 7001, body: block(candidateData()) } },
     registry: REGISTRY,
@@ -259,12 +283,62 @@ test('Session authority rejects pull request conversations at event and referenc
 });
 
 test('review candidate rejects a later claimant when an earlier open claimant exists', async () => {
-  const current = { number: 901, created_at: '2026-08-24T20:01:00Z', body: sessionBody() };
-  const earlier = { number: 900, created_at: '2026-08-24T20:00:00Z', body: sessionBody() };
+  const current = { number: 901, state: 'open', created_at: '2026-08-24T20:01:00Z', body: sessionBody() };
+  const earlier = { number: 900, state: 'open', created_at: '2026-08-24T20:00:00Z', body: sessionBody() };
   await assert.rejects(() => validateCheckpointEventEvidence({
     event: { action: 'created', issue: current, comment: { id: 7002, body: block(candidateData()) } },
     registry: REGISTRY,
     resolvePullRequest: async (_repository, number) => exactPr(number),
+    resolveControlIssue: async (number) => {
+      if (number === 49) return roadmapRoleIssue();
+      throw new Error(`control issue #${number} not found`);
+    },
     resolveOpenControlIssues: async () => [earlier, current],
   }), /winning Claim|claim winner|earlier claimant/i);
+});
+
+test('authority-bearing candidate rejects an attached v2 Session with a forged Role binding', async () => {
+  const forgedSession = {
+    number: 900,
+    state: 'open',
+    created_at: '2026-08-24T20:00:00Z',
+    body: sessionBody({ roleIssueNumber: 999 }),
+  };
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event: { action: 'created', issue: forgedSession, comment: { id: 7001, body: block(candidateData()) } },
+    registry: REGISTRY,
+    resolvePullRequest: async (_repository, number) => exactPr(number),
+    resolveControlIssue: async (number) => {
+      if (number === 49) return roadmapRoleIssue();
+      throw new Error(`control issue #${number} not found`);
+    },
+    resolveOpenControlIssues: async () => [forgedSession],
+  }), /role.*999|unknown role|does not resolve/i);
+});
+
+test('final acceptance rejects a referenced candidate Session with a forged Role binding', async () => {
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event: acceptanceEvent(),
+    registry: REGISTRY,
+    resolvePullRequest: async (_repository, number) => exactPr(number),
+    resolveControlIssue: async (number) => {
+      if (number === 49) return roadmapRoleIssue();
+      if (number === 900) return candidateIssue({ roleIssueNumber: 999 });
+      throw new Error(`control issue #${number} not found`);
+    },
+    resolveControlComment: async () => candidateComment(),
+  }), /role.*999|unknown role|does not resolve/i);
+});
+
+test('review candidate fails closed when no current claimant resolver is supplied', async () => {
+  const current = { number: 900, state: 'open', created_at: '2026-08-24T20:00:00Z', body: sessionBody() };
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event: { action: 'created', issue: current, comment: { id: 7001, body: block(candidateData()) } },
+    registry: REGISTRY,
+    resolvePullRequest: async (_repository, number) => exactPr(number),
+    resolveControlIssue: async (number) => {
+      if (number === 49) return roadmapRoleIssue();
+      throw new Error(`control issue #${number} not found`);
+    },
+  }), /claim.*resolver|required.*claim|current claimant/i);
 });
