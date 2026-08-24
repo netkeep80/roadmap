@@ -45,7 +45,10 @@ jobs:
         (github.event_name == 'issue_comment' &&
           (github.event.action == 'deleted' ||
             contains(github.event.comment.body || '', '<!-- roadmap-agent:start -->') ||
-            (github.event.action == 'edited' && contains(github.event.changes.body.from || '', '<!-- roadmap-agent:start -->'))))
+            contains(github.event.comment.body || '', '<!-- roadmap-agent-validation-attestation:start -->') ||
+            (github.event.action == 'edited' &&
+              (contains(github.event.changes.body.from || '', '<!-- roadmap-agent:start -->') ||
+                contains(github.event.changes.body.from || '', '<!-- roadmap-agent-validation-attestation:start -->')))))
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -80,6 +83,7 @@ jobs:
           echo "AGENT_STATUS_RUNTIME=${runtime}" >> "${GITHUB_ENV}"
 
       - name: Validate changed checkpoint commit evidence and v2 Session immutability
+        id: evidence
         if: >-
           ${{
             (github.event_name == 'issue_comment' &&
@@ -92,6 +96,26 @@ jobs:
         run: |
           cd "${AGENT_STATUS_RUNTIME}"
           node scripts/agent-evidence-integrity.mjs --validate-event
+
+      - name: Publish successful candidate validation attestation
+        if: >-
+          ${{
+            github.event_name == 'issue_comment' &&
+            github.event.action == 'created' &&
+            steps.evidence.outputs.validation_attestation_body_b64 != ''
+          }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_ATTESTATION_BODY_B64: ${{ steps.evidence.outputs.validation_attestation_body_b64 }}
+        run: |
+          set -euo pipefail
+          body="$(printf '%s' "${VALIDATION_ATTESTATION_BODY_B64}" | base64 --decode)"
+          case "${body}" in
+            *'<!-- roadmap-agent-validation-attestation:start -->'*) ;;
+            *) echo 'validation attestation output is missing its authority marker' >&2; exit 1 ;;
+          esac
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.issue.number }}/comments" -f body="${body}"
 
       - name: Publish current worker state to permanent Issue
         if: >-
