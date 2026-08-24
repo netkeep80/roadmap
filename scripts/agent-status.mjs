@@ -28,14 +28,17 @@ function latestCheckpoint(entries = []) {
 
 function safeCheckpointProjection(checkpoint) {
   if (!checkpoint) return null;
-  return {
+  const projected = {
     created_at: checkpoint.created_at,
     state: checkpoint.data.state,
     refs: [...checkpoint.data.refs],
     blockers: [...checkpoint.data.blockers],
     messages: [...checkpoint.data.messages],
-    current_branch: checkpoint.data.current_branch ?? null,
   };
+  if (Object.hasOwn(checkpoint.data, 'current_branch')) {
+    projected.current_branch = checkpoint.data.current_branch;
+  }
+  return projected;
 }
 
 function roleLookup(roles) {
