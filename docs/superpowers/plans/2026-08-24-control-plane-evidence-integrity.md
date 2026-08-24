@@ -1,10 +1,12 @@
 # Control Plane Evidence Integrity Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Make structured Checkpoint commit evidence live-verifiable and make Agent Status fail visibly closed instead of leaving a stale healthy snapshot.
+**Goal:** Make structured Checkpoint commit evidence live-verifiable, prevent stale healthy Agent Status after integrity failure, and avoid control-plane self-DoS from redundant GitHub history scans.
 
-**Architecture:** Keep the fix independent from active branch-lifecycle PR #124. Add a focused evidence-integrity module/CLI with injected commit resolution for tests, then wire it into Agent Status. If any live validation step fails, publish a constant safe INVALID status to issue #103 while preserving the failed workflow conclusion.
+**Architecture:** Validate commit evidence at the GitHub `issue_comment` write boundary. On `created` / `edited` structured Checkpoint comments, resolve only that changed Checkpoint's unique `commit:<sha>` refs in the exact registered Session repository. Do not add another automatic full-history commit-resolution pass; the existing Agent Status structural history scan remains the historical validator, while `--validate-live` is retained only as an explicit forensic baseline audit. Protocol comments do not trigger a full Agent Status rebuild. Any integrity/status failure publishes a constant-safe `CONTROL PLANE INVALID` body to issue #103 without converting the failed workflow to success.
+
+**Compatibility baseline:** branch-lifecycle PR #124 is already merged into `main`; this change is verified on top of that model and preserves durable `current_branch` behavior.
 
 **Tech Stack:** Node.js ESM, node:test, GitHub REST API, GitHub Actions.
 
@@ -12,63 +14,66 @@
 
 ## Global Constraints
 
-- Do not modify files owned by active roadmap PR #124.
 - A syntactically valid but nonexistent `commit:<sha>` must fail closed.
-- Resolve commit evidence only in the Session's exact registered public repository.
-- Deduplicate repeated repository+SHA lookups within one run.
-- INVALID status must not echo raw malformed payload or out-of-scope identifiers.
+- Bare `commit:` evidence is scoped to the Session repository only.
+- Resolve only registered public Session repositories.
+- Deduplicate repeated repository+SHA lookups within one validation call.
+- Non-Checkpoint/deleted-comment events perform zero commit-resolution calls.
+- Automatic workflows must not add a second complete historical comments+commit scan.
+- Protocol Checkpoint comments must not trigger a full Agent Status rebuild.
+- INVALID status must not echo raw malformed payload or out-of-scope/private identifiers.
 - Publishing INVALID must not turn a failed workflow green.
+- Preserve Role/Session/Message/Checkpoint validation, PR reconciliation and branch lifecycle semantics.
 
 ---
 
-### Task 1: Live commit-evidence validator
+### Task 1: Commit-evidence boundary
 
 **Files:**
-- Create: `scripts/agent-evidence-integrity.test.mjs`
-- Create: `scripts/agent-evidence-integrity.mjs`
-- Create: `.github/workflows/agent-evidence-integrity.yml`
+- `scripts/agent-evidence-integrity.test.mjs`
+- `scripts/agent-evidence-integrity.mjs`
+- `.github/workflows/agent-evidence-integrity.yml`
 
 **Interfaces:**
-- Produces: `validateCommitEvidence(records, resolveCommit)` where records contain `{ repository, sha }` and `resolveCommit(repository, sha)` is async.
-- Produces: CLI `node scripts/agent-evidence-integrity.mjs --validate-live` that scans all public protocol Session Checkpoints and resolves each unique `repository@sha` against GitHub.
+- `validateCommitEvidence(records, resolveCommit)` validates `{ repository, sha }` records and deduplicates lookups.
+- `validateCheckpointEventEvidence({ event, registry, resolveCommit })` validates only one changed Checkpoint event.
+- `node scripts/agent-evidence-integrity.mjs --validate-event` is the automatic write-boundary path.
+- `node scripts/agent-evidence-integrity.mjs --validate-live` remains manual/forensic only.
 
-- [ ] **Step 1: Write failing contract tests**
+- [x] **Step 1: RED contract for nonexistent well-formed SHA**
+- [x] **Step 2: GREEN repository-scoped commit resolution**
+- [x] **Step 3: Deduplicate repository+SHA lookups**
+- [x] **Step 4: RED contract for missing event-scoped boundary**
+- [x] **Step 5: GREEN changed-Checkpoint-only validation**
+- [x] **Step 6: Prove non-Checkpoint/deleted events make zero commit API calls**
+- [x] **Step 7: Remove automatic full-history `--validate-live` from PR/status cadence**
 
-Tests dynamically load `./agent-evidence-integrity.mjs`, assert the export exists, then require: nonexistent well-formed SHA rejects; valid SHA passes; duplicate refs invoke resolver once.
-
-- [ ] **Step 2: Run RED in GitHub Actions**
-
-The dedicated workflow runs `node --test scripts/agent-evidence-integrity.test.mjs`; expected result is FAIL because the module/export does not exist yet.
-
-- [ ] **Step 3: Implement minimal validator and live scanner**
-
-Use `parseProtocolBlock`, `agentIssuesOnly`, `githubAgentApi`, and `listAllControlIssues`. For every Session, inspect marked checkpoint comments, collect only `commit:` refs after protocol parsing, map them to the Session repository, and resolve `/repos/<owner>/<repo>/commits/<sha>` once per unique key.
-
-- [ ] **Step 4: Verify GREEN**
-
-Run the unit workflow and the live CLI; both must pass on current GitHub state.
-
-### Task 2: Fail-visible Agent Status
+### Task 2: Fail-visible Agent Status without comment-triggered rebuilds
 
 **Files:**
-- Modify: `.github/workflows/agent-status.yml`
-- Test: `scripts/agent-evidence-integrity.test.mjs`
+- `.github/workflows/agent-status.yml`
+- `scripts/agent-evidence-integrity.test.mjs`
 
 **Interfaces:**
-- Produces: `renderInvalidAgentStatus({ checkedAt, runUrl })` returning constant-safe markdown containing `CONTROL PLANE INVALID` and no exception payload.
+- `renderInvalidAgentStatus({ checkedAt, runUrl })` returns constant-safe markdown containing `CONTROL PLANE INVALID`.
+- Checkpoint comment events execute event evidence validation but skip `sync-agent-status.mjs` full rebuild.
+- Schedule / workflow-dispatch / push and protocol issue lifecycle events retain the normal Agent Status rebuild path.
 
-- [ ] **Step 1: Add failing renderer test**
+- [x] **Step 1: RED renderer/workflow contract**
+- [x] **Step 2: Publish safe INVALID status on failure**
+- [x] **Step 3: Preserve red workflow conclusion after fallback publication**
+- [x] **Step 4: Filter `issue_comment` trigger on the comment marker, not the parent issue marker**
+- [x] **Step 5: Skip full Agent Status rebuild for protocol comment events**
 
-Assert the renderer exists, contains `CONTROL PLANE INVALID`, says not to use the previous snapshot for work selection, includes only supplied public run URL/timestamp, and does not include an injected secret/raw error string.
+### Task 3: Historical repair and integration verification
 
-- [ ] **Step 2: Observe RED**
+- [x] Repair foreign bare `commit:` ref in roadmap Session #130 without losing provenance.
+- [x] Repair foreign `mts_visual` bare commit ref in anum_docs Session #123 without losing provenance.
+- [x] Repair foreign roadmap status-snapshot bare commit ref in anum_docs Session #56 without losing provenance.
+- [x] Reconcile branch with merged branch-lifecycle PR #124.
+- [x] Verify `behind_by=0` against current `main` before final merge gate.
+- [x] Verify exact-head `Agent evidence integrity` GREEN.
+- [x] Verify exact-head `Portfolio validate` GREEN, including live GitHub coverage and Agent Status inputs.
+- [x] Verify exact-head `repo-guard advisory` GREEN.
 
-Run the dedicated test workflow and confirm failure is specifically the missing renderer behavior.
-
-- [ ] **Step 3: Implement renderer and workflow fallback**
-
-Run live evidence validation before normal status publication. Add an `if: failure()` step that patches issue #103 with safe INVALID markdown generated by the module. Do not catch/suppress the original failed step, so the job remains red.
-
-- [ ] **Step 4: Verify exact-head gates**
-
-Require dedicated evidence tests, Portfolio validate, and repo-guard advisory to complete successfully on an unchanged head; compare against fresh main and require `behind_by=0` before merge.
+Before merge, re-read fresh `main`, unchanged PR head, review/thread state and exact-head workflow results; merge only with `expected_head_sha`.
