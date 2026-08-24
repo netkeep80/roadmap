@@ -320,6 +320,8 @@ concurrent-worker acceptance
 fresh Role-URL-only resume
 +
 worker_slot observability without authority
++
+real numbered hourly-pool smoke/soak observation
 ```
 
 Until then, the worker policy and tests are control-plane preparation, not permission to run unattended production workers.
