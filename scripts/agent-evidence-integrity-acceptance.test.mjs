@@ -247,6 +247,22 @@ test('final acceptance requires the candidate seal to predate the fresh acceptan
   );
 });
 
+test('final acceptance fails closed when candidate seal and acceptance Session share the same timestamp', async () => {
+  const event = acceptanceEvent(acceptanceData(), {
+    sessionCreatedAt: '2026-08-24T20:20:00Z',
+    commentCreatedAt: '2026-08-24T20:30:00Z',
+  });
+  await assert.rejects(
+    () => validateCheckpointEventEvidence({
+      event,
+      registry: REGISTRY,
+      ...acceptanceResolvers({ candidateCommentCreatedAt: '2026-08-24T20:20:00Z' }),
+      resolveOpenControlIssues: async () => [event.issue],
+    }),
+    /fresh|chronolog|candidate.*precede|predate/i,
+  );
+});
+
 test('automatic Agent Status event validator includes issue_comment deletion', async () => {
   const workflow = await readFile(new URL('../.github/workflows/agent-status.yml', import.meta.url), 'utf8');
   assert.match(workflow, /github\.event\.action == 'deleted'/);
@@ -266,6 +282,25 @@ test('workflow routing sees previous body when an edited v2 Session removes the 
   assert.match(workflow, /github\.event_name == 'issues'[\s\S]*?github\.event\.action == 'edited'[\s\S]*?changes\.body\.from/);
   assert.match(workflow, /name: Publish current worker state to permanent Issue[\s\S]*?github\.event_name != 'issue_comment'/);
   assert.doesNotMatch(workflow, /--validate-live/);
+});
+
+test('destructive v2 Session edit to an empty body fails closed from previous evidence', async () => {
+  await assert.rejects(
+    () => validateCheckpointEventEvidence({
+      event: {
+        action: 'edited',
+        issue: {
+          number: 901,
+          state: 'open',
+          created_at: '2026-08-24T20:20:00Z',
+          body: '',
+        },
+        changes: { body: { from: sessionBody({ phase: 'acceptance' }) } },
+      },
+      registry: REGISTRY,
+    }),
+    /v2 Session|immutable|protocol/i,
+  );
 });
 
 test('Session authority rejects pull request conversations at event and referenced-candidate boundaries', async () => {
