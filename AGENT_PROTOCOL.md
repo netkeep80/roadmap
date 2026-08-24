@@ -75,6 +75,7 @@ Canonical object:
 {
   "protocol": "roadmap-agent-session/v1",
   "role_issue": 123,
+  "worker_slot": 3,
   "repository": "netkeep80/<repository>",
   "state": "working",
   "claims": ["netkeep80/<repository>#456"],
@@ -82,6 +83,23 @@ Canonical object:
   "blocked_by": []
 }
 ```
+
+`worker_slot` is optional. Manual/non-scheduled Sessions omit it. When a Scheduled Task creates a Session, it records the task's positive integer `WORKER_SLOT` as `worker_slot`.
+
+`worker_slot` is observability metadata only:
+
+```text
+worker_slot != Role
+worker_slot != Session identity
+worker_slot != repository assignment
+worker_slot != authority
+worker_slot != durable context
+worker_slot != lease authority
+worker_slot != lock
+worker_slot != claim priority
+```
+
+The same slot may select a different Role on a later invocation. Two invocations of the same slot may overlap. Slot equality gives no permission to replace a LIVE Session and is deliberately absent from claim-collision ordering.
 
 Finite `state`:
 
@@ -128,7 +146,8 @@ Rules:
 - no global repository lock exists;
 - before taking work, inspect all relevant Sessions for the Role;
 - `handoff`, `completed`, and `abandoned` Sessions cannot retain claims;
-- a stale candidate does not automatically release a claim.
+- a stale candidate does not automatically release a claim;
+- `worker_slot` never changes claim ownership or collision priority.
 
 Collision order for two competing Sessions claiming the same item:
 
@@ -180,7 +199,7 @@ Authoritative `heartbeat_at` for a leased Session is:
 1. GitHub server `created_at` of the latest valid structured Checkpoint comment;
 2. if no valid Checkpoint exists yet, GitHub server `created_at` of the Session issue.
 
-Do not use Session `updated_at` as heartbeat because unrelated issue-body edits can refresh it.
+Do not use Session `updated_at` as heartbeat because unrelated issue-body edits can refresh it. `worker_slot` also has no liveness authority.
 
 Classification:
 
@@ -232,7 +251,7 @@ if work remains executable and has no LIVE winner:
     resume from current GitHub facts
 ```
 
-A stale Checkpoint's `next` field never overrides current GitHub facts.
+A stale Checkpoint's `next` field never overrides current GitHub facts. A matching `worker_slot` never bypasses this revalidation.
 
 ## 6. Agent Message
 
@@ -319,6 +338,8 @@ NO EXPLICIT EXECUTABLE WORK => EXIT
 
 No speculative backlog generation, unsolicited cleanup, idle dependency upgrade, architecture redesign, implicit next milestone, blocker bypass, or keep-busy issue creation is permitted.
 
+Pool workers dynamically choose a Role before Session creation. A `worker_slot` does not reserve or prefer any repository. Once an invocation enters a Role/Session, it does not switch repositories merely to stay busy; a claim-collision loser may release/terminate the losing Session and return to pool selection or exit.
+
 `roadmap` coordinator authority is bounded the same way. `portfolio_authority=coordinate` permits action only when an observed fact combines with an existing declared portfolio goal/invariant/dependency and a real drift, pending transition, blocker, actionable Message, or explicit control-plane work item. Otherwise coordinator exits without strategy mutation.
 
 ## 8. Refresh points
@@ -368,10 +389,12 @@ Previously public Git/GitHub history is historical public information; the contr
 The protocol does not:
 
 - choose portfolio priority or canonical ownership automatically;
+- bind a Scheduled Task slot to a repository;
+- grant authority from `worker_slot` identity;
 - create work merely because a timer fired or a worker is idle;
 - replace local repository issues/PRs;
 - replace repo-guard or local CI;
 - introduce a second merge queue;
-- introduce a global repository lock;
+- introduce a global or per-slot repository lock;
 - coordinate private repositories;
 - store hidden chain-of-thought.
