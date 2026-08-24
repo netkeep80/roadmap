@@ -278,7 +278,11 @@ test('Session authority rejects pull request conversations at event and referenc
 
   await assert.rejects(() => validateCheckpointEventEvidence({
     event: acceptanceEvent(), registry: REGISTRY, ...acceptanceResolvers(),
-    resolveControlIssue: async () => ({ ...candidateIssue(), pull_request: {} }),
+    resolveControlIssue: async (number) => {
+      if (number === 49) return roadmapRoleIssue();
+      if (number === 900) return { ...candidateIssue(), pull_request: {} };
+      throw new Error(`control issue #${number} not found`);
+    },
   }), /candidate Session.*Issue|pull request/i);
 });
 
