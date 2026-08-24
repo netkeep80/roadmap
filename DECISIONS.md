@@ -154,6 +154,38 @@ anum_parser laboratory tracks current umbrella provenance while its Anum leaf re
 
 **Следствие:** прежняя D-005 цепочка считается завершённым historical ordering. Текущая P0 граница сдвинулась с upstream foundation migration на downstream exact-pin/conformance и локальные AVM migration gates.
 
+## D-008 — Public Agent Control Plane: одна repository role и one-URL bootstrap
+
+**Статус:** accepted  
+**Дата:** 2026-08-24  
+**Связано:** PR #26, `AGENTS.md`, `AGENT_PROTOCOL.md`
+
+`roadmap` расширяется от portfolio control plane до durable координационного центра AI-агентов для **public repositories only**.
+
+Решение:
+
+- каждый live public repository `netkeep80` имеет ровно одну permanent `[Agent Role] <repository> developer` issue;
+- сама URL этой role issue является полным bootstrap identity: отдельное имя роли или pasted chat checkpoint от пользователя не требуются;
+- `roadmap` тоже имеет repository-developer role, с дополнительным `portfolio_authority=coordinate`;
+- отдельная subsystem-role taxonomy не создаётся: специализация/зависимости берутся из portfolio/local repository state;
+- permanent Role хранит stable identity/authority, Agent Session хранит transient execution context, Checkpoint — resumable factual state, Claim — optimistic work selection, Agent Message — durable cross-repository communication;
+- hidden chain-of-thought не является durable context;
+- `data/portfolio.json` остаётся единственным manually-maintained portfolio repository registry; role mapping derived from GitHub Issues;
+- Agent Control Plane не создаёт второй merge coordinator: local CI/repo-guard остаётся authority для change/integration correctness;
+- initial role rollout выполняется idempotent reconciler-ом после accepted main change, а hard 1:1 coverage включается только после фактического появления ролей.
+
+Public-only privacy invariant:
+
+```text
+live public owner scope
+== public portfolio registry
+== repositories represented by active Agent Roles
+```
+
+Non-public repository names/URLs/issues/PRs/SHAs/status/dependencies/roles не сериализуются в public Agent Control Plane. Authenticated inventory фильтруется до public set **до** agent-state projection.
+
+**Следствие:** работающий или новый AI-агент может быть введён/повторно введён в роль одной постоянной GitHub URL, восстановить durable context через Sessions/Messages и продолжить работу после обязательной проверки свежего local GitHub state.
+
 ## Как добавлять следующее решение
 
 Новая запись должна содержать:
