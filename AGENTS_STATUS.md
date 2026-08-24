@@ -2,13 +2,13 @@
 
 > **GENERATED FILE — DO NOT EDIT.** This is a read-only projection of validated public Agent Role / Session / Message / Checkpoint state in GitHub.
 
-- Last successful agent-state check: **2026-08-24T11:06:49.228Z**
+- Last successful agent-state check: **2026-08-24T13:35:35.197Z**
 - Permanent public roles: **26/26**
 - Active sessions: **4**
-- Resumable handoffs: **1**
-- Active claims: **2**
+- Resumable handoffs: **12**
+- Active claims: **3**
 - Claim collisions: **0**
-- Unresolved messages: **1**
+- Unresolved messages: **2**
 - Blockers: **0**
 
 ## Role directory
@@ -47,28 +47,41 @@
 | Session | Worker slot | Repository | State | Claims | Current PR | Last activity |
 |---|---|---|---|---|---|---|
 | [#56](https://github.com/netkeep80/roadmap/issues/56) | — | `netkeep80/anum_docs` | `working` | `netkeep80/anum_docs#122` | — | 2026-08-24T09:54:51Z |
-| [#59](https://github.com/netkeep80/roadmap/issues/59) | — | `netkeep80/sample_cmake` | `working` | — | — | 2026-08-24T09:55:55Z |
 | [#61](https://github.com/netkeep80/roadmap/issues/61) | — | `netkeep80/mts_visual` | `starting` | — | — | 2026-08-24T10:01:02Z |
-| [#64](https://github.com/netkeep80/roadmap/issues/64) | — | `netkeep80/roadmap` | `working` | `netkeep80/roadmap#62` | `netkeep80/roadmap#63` | 2026-08-24T10:15:50Z |
+| [#74](https://github.com/netkeep80/roadmap/issues/74) | `2` | `netkeep80/anum_docs` | `working` | `netkeep80/anum_docs#925` | — | 2026-08-24T13:32:06Z |
+| [#77](https://github.com/netkeep80/roadmap/issues/77) | `4` | `netkeep80/PersistMemoryManager` | `working` | `netkeep80/PersistMemoryManager#410` | `netkeep80/PersistMemoryManager#427` | 2026-08-24T12:24:41Z |
 
 ## Resumable handoffs
 
 | Session | Worker slot | Repository | State | Claims | Current PR | Last activity |
 |---|---|---|---|---|---|---|
 | [#57](https://github.com/netkeep80/roadmap/issues/57) | — | `netkeep80/mts_visual` | `handoff` | — | — | 2026-08-24T09:59:39Z |
+| [#64](https://github.com/netkeep80/roadmap/issues/64) | — | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T11:09:21Z |
+| [#66](https://github.com/netkeep80/roadmap/issues/66) | — | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T11:55:29Z |
+| [#70](https://github.com/netkeep80/roadmap/issues/70) | — | `netkeep80/anum_parser` | `handoff` | — | — | 2026-08-24T13:28:14Z |
+| [#71](https://github.com/netkeep80/roadmap/issues/71) | — | `netkeep80/anum_docs` | `handoff` | — | — | 2026-08-24T13:32:48Z |
+| [#73](https://github.com/netkeep80/roadmap/issues/73) | `1` | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T12:17:23Z |
+| [#75](https://github.com/netkeep80/roadmap/issues/75) | `3` | `netkeep80/PersistMemoryManager` | `handoff` | — | `netkeep80/PersistMemoryManager#427` | 2026-08-24T13:28:48Z |
+| [#78](https://github.com/netkeep80/roadmap/issues/78) | `5` | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T12:26:37Z |
+| [#79](https://github.com/netkeep80/roadmap/issues/79) | `3` | `netkeep80/mast-calculator` | `handoff` | — | — | 2026-08-24T13:14:03Z |
+| [#80](https://github.com/netkeep80/roadmap/issues/80) | `4` | `netkeep80/mast-calculator` | `handoff` | — | — | 2026-08-24T13:25:17Z |
+| [#81](https://github.com/netkeep80/roadmap/issues/81) | `1` | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T13:26:40Z |
+| [#83](https://github.com/netkeep80/roadmap/issues/83) | `2` | `netkeep80/isocubic` | `handoff` | — | — | 2026-08-24T13:34:27Z |
 
 ## Claims
 
 | Claim | Winner | Contenders | State |
 |---|---|---|---|
 | `netkeep80/anum_docs#122` | [#56](https://github.com/netkeep80/roadmap/issues/56) | [#56](https://github.com/netkeep80/roadmap/issues/56) | active |
-| `netkeep80/roadmap#62` | [#64](https://github.com/netkeep80/roadmap/issues/64) | [#64](https://github.com/netkeep80/roadmap/issues/64) | active |
+| `netkeep80/anum_docs#925` | [#74](https://github.com/netkeep80/roadmap/issues/74) | [#74](https://github.com/netkeep80/roadmap/issues/74) | active |
+| `netkeep80/PersistMemoryManager#410` | [#77](https://github.com/netkeep80/roadmap/issues/77) | [#77](https://github.com/netkeep80/roadmap/issues/77) | active |
 
 ## Unresolved messages
 
 | Message | Kind | From | To | State | ACK |
 |---|---|---|---|---|---|
 | [#60](https://github.com/netkeep80/roadmap/issues/60) | `dependency-ready` | [#32](https://github.com/netkeep80/roadmap/issues/32) | [#45](https://github.com/netkeep80/roadmap/issues/45) | `acknowledged` | required |
+| [#72](https://github.com/netkeep80/roadmap/issues/72) | `coordination` | [#32](https://github.com/netkeep80/roadmap/issues/32) | [#34](https://github.com/netkeep80/roadmap/issues/34) | `open` | no |
 
 ## Blockers
 
