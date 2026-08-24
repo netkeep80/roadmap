@@ -8,6 +8,8 @@ const ISSUE_PROTOCOLS = new Map([
   ['roadmap-agent-message/v1', 'message'],
 ]);
 
+const CHECKPOINT_PROTOCOL = 'roadmap-agent-checkpoint/v1';
+
 const SESSION_STATES = new Set([
   'starting',
   'working',
@@ -77,6 +79,14 @@ function assertArray(value, field) {
   return value;
 }
 
+function assertStringArray(value, field) {
+  const items = assertArray(value, field);
+  for (const item of items) {
+    if (typeof item !== 'string' || !item.trim()) fail(`${field} entries must be non-empty strings`);
+  }
+  return items;
+}
+
 function publicRoleRepositories(roleMap) {
   return new Set([...roleMap.values()].map((role) => parseRepository(role.repository)));
 }
@@ -97,6 +107,16 @@ function validatePublicIssueReference(ref, publicRepositories, field, requiredRe
     fail(`${field} ${ref} must belong to repository ${requiredRepository}`);
   }
   return parsed;
+}
+
+function validateCheckpointEvidenceReference(ref, publicRepositories, sessionRepository) {
+  if (typeof ref !== 'string') fail('checkpoint refs entries must be strings');
+  if (ref.startsWith('commit:')) {
+    const sha = ref.slice('commit:'.length);
+    if (!/^[0-9a-f]{40,64}$/i.test(sha)) fail(`checkpoint commit SHA ${JSON.stringify(sha)} is malformed`);
+    return { kind: 'commit', repository: sessionRepository, sha };
+  }
+  return { kind: 'issue', ...validatePublicIssueReference(ref, publicRepositories, 'checkpoint ref') };
 }
 
 export function parseProtocolBlock(body) {
@@ -243,6 +263,28 @@ export function validateMessage(issue, roleMap) {
   return data;
 }
 
+export function validateCheckpoint(comment, roleMap, sessionData) {
+  if (!comment || typeof comment !== 'object') fail('checkpoint comment object is required');
+  if (!sessionData || typeof sessionData !== 'object') fail('checkpoint session data is required');
+  const data = parseProtocolBlock(comment.body);
+  if (data.protocol !== CHECKPOINT_PROTOCOL) fail(`checkpoint protocol must be ${CHECKPOINT_PROTOCOL}`);
+  if (!SESSION_STATES.has(data.state)) fail(`invalid checkpoint state ${JSON.stringify(data.state)}`);
+
+  const completed = assertStringArray(data.completed, 'checkpoint completed');
+  const refs = assertStringArray(data.refs, 'checkpoint refs');
+  const blockers = assertStringArray(data.blockers, 'checkpoint blockers');
+  const next = assertStringArray(data.next, 'checkpoint next');
+  const messages = assertStringArray(data.messages, 'checkpoint messages');
+
+  const publicRepositories = publicRoleRepositories(roleMap);
+  const sessionRepository = parseRepository(sessionData.repository);
+  for (const ref of refs) validateCheckpointEvidenceReference(ref, publicRepositories, sessionRepository);
+  for (const blocker of blockers) validatePublicIssueReference(blocker, publicRepositories, 'checkpoint blocker');
+  for (const message of messages) validatePublicIssueReference(message, publicRepositories, 'checkpoint message');
+
+  return { ...data, completed, refs, blockers, next, messages };
+}
+
 export function compareClaimPriority(left, right) {
   const leftTime = Date.parse(left?.created_at ?? '');
   const rightTime = Date.parse(right?.created_at ?? '');
@@ -266,6 +308,7 @@ export const AGENT_PROTOCOL = Object.freeze({
   startMarker: START,
   endMarker: END,
   owner: OWNER,
+  checkpointProtocol: CHECKPOINT_PROTOCOL,
   sessionStates: Object.freeze([...SESSION_STATES]),
   messageKinds: Object.freeze([...MESSAGE_KINDS]),
   messageStates: Object.freeze([...MESSAGE_STATES]),
