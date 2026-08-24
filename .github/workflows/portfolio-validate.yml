@@ -5,8 +5,20 @@ on:
     paths:
       - "data/portfolio.json"
       - "scripts/sync-roadmap.mjs"
+      - "scripts/agent-protocol.mjs"
+      - "scripts/agent-protocol.test.mjs"
+      - "scripts/validate-agents.mjs"
+      - "scripts/validate-agents.test.mjs"
+      - "scripts/agent-role-template.mjs"
+      - "scripts/agent-role-template.test.mjs"
+      - "scripts/reconcile-agent-roles.mjs"
+      - "scripts/reconcile-agent-roles.test.mjs"
       - ".github/workflows/portfolio-validate.yml"
       - ".github/workflows/portfolio-sync.yml"
+      - ".github/workflows/agent-roles.yml"
+      - "README.md"
+      - "AGENTS.md"
+      - "AGENT_PROTOCOL.md"
       - "OPERATING_MODEL.md"
       - "DECISIONS.md"
   push:
@@ -14,11 +26,25 @@ on:
     paths:
       - "data/portfolio.json"
       - "scripts/sync-roadmap.mjs"
+      - "scripts/agent-protocol.mjs"
+      - "scripts/agent-protocol.test.mjs"
+      - "scripts/validate-agents.mjs"
+      - "scripts/validate-agents.test.mjs"
+      - "scripts/agent-role-template.mjs"
+      - "scripts/agent-role-template.test.mjs"
+      - "scripts/reconcile-agent-roles.mjs"
+      - "scripts/reconcile-agent-roles.test.mjs"
       - ".github/workflows/portfolio-validate.yml"
       - ".github/workflows/portfolio-sync.yml"
+      - ".github/workflows/agent-roles.yml"
+      - "README.md"
+      - "AGENTS.md"
+      - "AGENT_PROTOCOL.md"
+      - "OPERATING_MODEL.md"
 
 permissions:
   contents: read
+  issues: read
 
 jobs:
   validate:
@@ -26,9 +52,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Test agent control plane
+        run: node --test scripts/agent-protocol.test.mjs scripts/validate-agents.test.mjs scripts/agent-role-template.test.mjs scripts/reconcile-agent-roles.test.mjs
       - name: Validate registry
         run: node scripts/sync-roadmap.mjs --validate
       - name: Validate live GitHub coverage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/sync-roadmap.mjs --validate-live
+      - name: Validate Agent Control Plane (advisory rollout)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/validate-agents.mjs

@@ -1,0 +1,165 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import {
+  parseProtocolBlock,
+  classifyAgentIssue,
+  validateRoleCoverage,
+  validateSession,
+  validateMessage,
+  compareClaimPriority,
+} from './agent-protocol.mjs';
+
+const block = (value) => `before\n<!-- roadmap-agent:start -->\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\`\n<!-- roadmap-agent:end -->\nafter`;
+
+const role = (repository, number = 10) => ({
+  number,
+  state: 'open',
+  created_at: '2026-08-24T09:00:00Z',
+  body: block({
+    protocol: 'roadmap-agent-role/v1',
+    repository: `netkeep80/${repository}`,
+    scope: 'public-only',
+    state: 'active',
+    role_kind: 'repository-developer',
+    portfolio_authority: repository === 'roadmap' ? 'coordinate' : 'propose',
+  }),
+});
+
+const session = ({ roleIssue = 10, repository = 'alpha', claims = [], state = 'working', number = 100, createdAt = '2026-08-24T10:00:00Z' } = {}) => ({
+  number,
+  state: 'open',
+  created_at: createdAt,
+  body: block({
+    protocol: 'roadmap-agent-session/v1',
+    role_issue: roleIssue,
+    repository: `netkeep80/${repository}`,
+    state,
+    claims,
+    current_pr: null,
+    blocked_by: [],
+  }),
+});
+
+test('parseProtocolBlock parses exactly one strict JSON block', () => {
+  const parsed = parseProtocolBlock(role('alpha').body);
+  assert.equal(parsed.protocol, 'roadmap-agent-role/v1');
+  assert.equal(parsed.repository, 'netkeep80/alpha');
+});
+
+test('parseProtocolBlock rejects malformed JSON and duplicate canonical blocks', () => {
+  assert.throws(() => parseProtocolBlock('<!-- roadmap-agent:start -->\n```json\n{bad}\n```\n<!-- roadmap-agent:end -->'), /JSON|parse|malformed/i);
+  const one = block({ protocol: 'roadmap-agent-role/v1' });
+  assert.throws(() => parseProtocolBlock(`${one}\n${one}`), /exactly one|multiple/i);
+});
+
+test('classifyAgentIssue recognizes finite issue protocol kinds', () => {
+  assert.equal(classifyAgentIssue(role('alpha')).kind, 'role');
+  assert.equal(classifyAgentIssue(session()).kind, 'session');
+  const message = {
+    number: 200,
+    state: 'open',
+    body: block({
+      protocol: 'roadmap-agent-message/v1',
+      from_role_issue: 10,
+      to_role_issues: [11],
+      kind: 'dependency-ready',
+      requires_ack: true,
+      state: 'open',
+      refs: ['netkeep80/alpha#1'],
+    }),
+  };
+  assert.equal(classifyAgentIssue(message).kind, 'message');
+});
+
+test('validateRoleCoverage accepts exact one-role-per-public-repository coverage', () => {
+  const result = validateRoleCoverage(['alpha', 'beta'], ['alpha', 'beta'], [role('alpha', 10), role('beta', 11)]);
+  assert.deepEqual(result.missing, []);
+  assert.equal(result.roleMap.get(10).repository, 'netkeep80/alpha');
+});
+
+test('validateRoleCoverage rejects duplicate and out-of-scope roles', () => {
+  assert.throws(
+    () => validateRoleCoverage(['alpha'], ['alpha'], [role('alpha', 10), role('alpha', 11)]),
+    /duplicate/i,
+  );
+  assert.throws(
+    () => validateRoleCoverage(['alpha'], ['alpha'], [role('beta', 11)]),
+    /public|registry|scope/i,
+  );
+});
+
+test('validateRoleCoverage supports advisory missing-role diagnostics but enforcement rejects gaps', () => {
+  const advisory = validateRoleCoverage(['alpha', 'beta'], ['alpha', 'beta'], [role('alpha', 10)], { enforceComplete: false });
+  assert.deepEqual(advisory.missing, ['beta']);
+  assert.throws(
+    () => validateRoleCoverage(['alpha', 'beta'], ['alpha', 'beta'], [role('alpha', 10)], { enforceComplete: true }),
+    /missing/i,
+  );
+});
+
+test('validateRoleCoverage rejects registry/public visibility mismatch', () => {
+  assert.throws(
+    () => validateRoleCoverage(['alpha', 'beta'], ['alpha'], [role('alpha', 10)], { enforceComplete: false }),
+    /public.*registry|registry.*public|coverage/i,
+  );
+});
+
+test('validateSession requires matching role/repository and local claims', () => {
+  const coverage = validateRoleCoverage(['alpha'], ['alpha'], [role('alpha', 10)]);
+  assert.doesNotThrow(() => validateSession(session({ claims: ['netkeep80/alpha#7'] }), coverage.roleMap));
+  assert.throws(
+    () => validateSession(session({ repository: 'beta' }), coverage.roleMap),
+    /repository|role/i,
+  );
+  assert.throws(
+    () => validateSession(session({ claims: ['netkeep80/beta#7'] }), coverage.roleMap),
+    /claim/i,
+  );
+});
+
+test('validateSession rejects active claims on terminal sessions', () => {
+  const coverage = validateRoleCoverage(['alpha'], ['alpha'], [role('alpha', 10)]);
+  assert.throws(
+    () => validateSession(session({ state: 'completed', claims: ['netkeep80/alpha#7'] }), coverage.roleMap),
+    /claim|terminal|completed/i,
+  );
+});
+
+test('validateMessage requires valid role endpoints and public refs', () => {
+  const coverage = validateRoleCoverage(['alpha', 'beta'], ['alpha', 'beta'], [role('alpha', 10), role('beta', 11)]);
+  const valid = {
+    number: 200,
+    state: 'open',
+    body: block({
+      protocol: 'roadmap-agent-message/v1',
+      from_role_issue: 10,
+      to_role_issues: [11],
+      kind: 'dependency-ready',
+      requires_ack: true,
+      state: 'open',
+      refs: ['netkeep80/alpha#1', 'netkeep80/beta#2'],
+    }),
+  };
+  assert.doesNotThrow(() => validateMessage(valid, coverage.roleMap));
+
+  const invalidTarget = structuredClone(valid);
+  invalidTarget.body = block({ ...parseProtocolBlock(valid.body), to_role_issues: [999] });
+  assert.throws(() => validateMessage(invalidTarget, coverage.roleMap), /target|role/i);
+
+  const invalidRef = structuredClone(valid);
+  invalidRef.body = block({ ...parseProtocolBlock(valid.body), refs: ['other/private#1'] });
+  assert.throws(() => validateMessage(invalidRef, coverage.roleMap), /public|reference|registered/i);
+});
+
+test('compareClaimPriority deterministically prefers earlier session then lower issue number', () => {
+  const earlier = session({ number: 30, createdAt: '2026-08-24T10:00:00Z' });
+  const later = session({ number: 20, createdAt: '2026-08-24T10:00:01Z' });
+  assert.equal(compareClaimPriority(earlier, later), -1);
+  assert.equal(compareClaimPriority(later, earlier), 1);
+
+  const sameTimeLow = session({ number: 20, createdAt: '2026-08-24T10:00:00Z' });
+  const sameTimeHigh = session({ number: 30, createdAt: '2026-08-24T10:00:00Z' });
+  assert.equal(compareClaimPriority(sameTimeLow, sameTimeHigh), -1);
+  assert.equal(compareClaimPriority(sameTimeHigh, sameTimeLow), 1);
+});
