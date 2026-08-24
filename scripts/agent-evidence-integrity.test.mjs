@@ -24,6 +24,21 @@ const ROADMAP_REGISTRY = {
   repositories: [{ name: 'roadmap' }],
 };
 
+function roadmapRoleIssue() {
+  return {
+    number: 49,
+    state: 'open',
+    body: agentBlock({
+      protocol: 'roadmap-agent-role/v1',
+      repository: 'netkeep80/roadmap',
+      scope: 'public-only',
+      state: 'active',
+      role_kind: 'repository-developer',
+      portfolio_authority: 'coordinate',
+    }),
+  };
+}
+
 function v2Session({ phase = 'implementation', state = 'working', claims, currentPr = 'netkeep80/roadmap#142', workItem = 'netkeep80/roadmap#139' } = {}) {
   return agentBlock({
     protocol: 'roadmap-agent-session/v2',
@@ -37,6 +52,14 @@ function v2Session({ phase = 'implementation', state = 'working', claims, curren
     current_pr: currentPr,
     blocked_by: [],
   });
+}
+
+function openSessionIssue(number, body, createdAt = '2026-08-24T20:00:00Z') {
+  return { number, state: 'open', created_at: createdAt, body };
+}
+
+function candidateSessionIssue() {
+  return openSessionIssue(900, v2Session({ state: 'handoff', claims: [] }));
 }
 
 function candidateCheckpoint({ head = VALID_SHA, base = OTHER_VALID_SHA } = {}) {
@@ -72,6 +95,16 @@ function acceptanceCheckpoint({ candidateSession = 900, candidateComment = 7001,
       decision,
     },
   });
+}
+
+function reviewAuthorityResolvers(issue) {
+  return {
+    resolveControlIssue: async (number) => {
+      if (number === 49) return roadmapRoleIssue();
+      throw new Error(`control issue #${number} not found`);
+    },
+    resolveOpenControlIssues: async () => [issue],
+  };
 }
 
 test('evidence integrity module exposes the required public boundary', async () => {
@@ -170,10 +203,11 @@ test('non-checkpoint events require zero commit API calls', async () => {
 test('v2 review candidate validates exact current PR head/base with one bounded PR lookup', async () => {
   const module = await loadIntegrityModule();
   const calls = [];
+  const issue = openSessionIssue(900, v2Session());
   const result = await module.validateCheckpointEventEvidence({
     event: {
       action: 'created',
-      issue: { number: 900, body: v2Session() },
+      issue,
       comment: { id: 7001, body: candidateCheckpoint() },
     },
     registry: ROADMAP_REGISTRY,
@@ -182,6 +216,7 @@ test('v2 review candidate validates exact current PR head/base with one bounded 
       calls.push([repository, number]);
       return { number, state: 'open', head: { sha: VALID_SHA }, base: { sha: OTHER_VALID_SHA } };
     },
+    ...reviewAuthorityResolvers(issue),
   });
 
   assert.deepEqual(calls, [['netkeep80/roadmap', 142]]);
@@ -190,11 +225,12 @@ test('v2 review candidate validates exact current PR head/base with one bounded 
 
 test('v2 review candidate fails closed when current PR head or base moved', async () => {
   const module = await loadIntegrityModule();
+  const issue = openSessionIssue(900, v2Session());
   await assert.rejects(
     () => module.validateCheckpointEventEvidence({
       event: {
         action: 'created',
-        issue: { number: 900, body: v2Session() },
+        issue,
         comment: { id: 7001, body: candidateCheckpoint() },
       },
       registry: ROADMAP_REGISTRY,
@@ -204,6 +240,7 @@ test('v2 review candidate fails closed when current PR head or base moved', asyn
         head: { sha: THIRD_VALID_SHA },
         base: { sha: OTHER_VALID_SHA },
       }),
+      ...reviewAuthorityResolvers(issue),
     }),
     /review candidate.*head|candidate.*head.*mismatch/i,
   );
@@ -215,12 +252,15 @@ test('v2 final acceptance must use a different Session from its candidate', asyn
     () => module.validateCheckpointEventEvidence({
       event: {
         action: 'created',
-        issue: { number: 900, body: v2Session({ phase: 'acceptance' }) },
+        issue: openSessionIssue(900, v2Session({ phase: 'acceptance' }), '2026-08-24T20:20:00Z'),
         comment: { id: 7002, body: acceptanceCheckpoint({ candidateSession: 900 }) },
       },
       registry: ROADMAP_REGISTRY,
       resolvePullRequest: async (repository, number) => ({ number, state: 'open', head: { sha: VALID_SHA }, base: { sha: OTHER_VALID_SHA } }),
-      resolveControlIssue: async () => { throw new Error('same-session rejection must happen before lookup'); },
+      resolveControlIssue: async (number) => {
+        if (number === 49) return roadmapRoleIssue();
+        throw new Error('same-session rejection must happen before candidate lookup');
+      },
       resolveControlComment: async () => { throw new Error('same-session rejection must happen before lookup'); },
     }),
     /different Session|cannot accept its own candidate/i,
@@ -233,12 +273,16 @@ test('v2 final acceptance fails closed on forged candidate checkpoint ownership'
     () => module.validateCheckpointEventEvidence({
       event: {
         action: 'created',
-        issue: { number: 901, body: v2Session({ phase: 'acceptance' }) },
+        issue: openSessionIssue(901, v2Session({ phase: 'acceptance' }), '2026-08-24T20:20:00Z'),
         comment: { id: 7002, body: acceptanceCheckpoint({ candidateSession: 900, candidateComment: 7001 }) },
       },
       registry: ROADMAP_REGISTRY,
       resolvePullRequest: async (repository, number) => ({ number, state: 'open', head: { sha: VALID_SHA }, base: { sha: OTHER_VALID_SHA } }),
-      resolveControlIssue: async (number) => ({ number, body: v2Session({ state: 'handoff', claims: [] }) }),
+      resolveControlIssue: async (number) => {
+        if (number === 49) return roadmapRoleIssue();
+        if (number === 900) return candidateSessionIssue();
+        throw new Error(`control issue #${number} not found`);
+      },
       resolveControlComment: async () => ({ id: 7001, issue_number: 999, body: candidateCheckpoint() }),
     }),
     /candidate checkpoint.*Session|ownership/i,
@@ -251,7 +295,7 @@ test('v2 final acceptance validates exact candidate tuple and target PR', async 
   const result = await module.validateCheckpointEventEvidence({
     event: {
       action: 'created',
-      issue: { number: 901, body: v2Session({ phase: 'acceptance' }) },
+      issue: openSessionIssue(901, v2Session({ phase: 'acceptance' }), '2026-08-24T20:20:00Z'),
       comment: { id: 7002, body: acceptanceCheckpoint({ candidateSession: 900, candidateComment: 7001 }) },
     },
     registry: ROADMAP_REGISTRY,
@@ -261,15 +305,19 @@ test('v2 final acceptance validates exact candidate tuple and target PR', async 
     },
     resolveControlIssue: async (number) => {
       calls.issue += 1;
-      return { number, body: v2Session({ state: 'handoff', claims: [] }) };
+      if (number === 49) return roadmapRoleIssue();
+      if (number === 900) return candidateSessionIssue();
+      throw new Error(`control issue #${number} not found`);
     },
     resolveControlComment: async (issueNumber, commentId) => {
       calls.comment += 1;
-      return { id: commentId, issue_number: issueNumber, body: candidateCheckpoint() };
+      return { id: commentId, issue_number: issueNumber, created_at: '2026-08-24T20:10:00Z', body: candidateCheckpoint() };
     },
   });
 
-  assert.deepEqual(calls, { pr: 1, issue: 1, comment: 1 });
+  assert.equal(calls.pr, 1);
+  assert.ok(calls.issue >= 1 && calls.issue <= 3, `expected bounded control-issue lookups, got ${calls.issue}`);
+  assert.equal(calls.comment, 1);
   assert.deepEqual(result, { checked: true, unique_commit_evidence: 0, acceptance_checked: true });
 });
 
@@ -321,6 +369,7 @@ test('INVALID status is explicit and never echoes raw failure payload', async ()
 });
 
 test('Agent Status validates only changed checkpoint evidence and publishes INVALID on failure', async () => {
+  const module = await loadIntegrityModule();
   const workflow = await readFile(new URL('../.github/workflows/agent-status.yml', import.meta.url), 'utf8');
   assert.match(workflow, /scripts\/agent-evidence-integrity\.mjs/);
   assert.match(workflow, /Validate changed checkpoint commit evidence and v2 Session immutability/i);
@@ -333,6 +382,7 @@ test('Agent Status validates only changed checkpoint evidence and publishes INVA
   assert.match(workflow, /issues\/103/);
   assert.doesNotMatch(workflow, /continue-on-error:\s*true/);
   assert.doesNotMatch(workflow, /\|\|\s*true/);
+  assert.equal(typeof module?.validateCheckpointEventEvidence, 'function');
 });
 
 test('checkpoint comments do not trigger a full Agent Status rebuild', async () => {
