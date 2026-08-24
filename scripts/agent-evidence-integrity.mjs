@@ -171,12 +171,18 @@ export async function validateCommitEvidence(records, resolveCommit) {
 }
 
 function validateSessionEditImmutability(event) {
-  if (event.comment || event.action !== 'edited' || !event.issue?.body) return false;
+  if (event.comment || event.action !== 'edited') return false;
   const previousBody = event.changes?.body?.from;
   if (typeof previousBody !== 'string') return false;
 
-  const current = parseProtocolBlock(event.issue.body);
   const previous = parseProtocolBlock(previousBody);
+  const currentBody = event.issue?.body;
+  if (typeof currentBody !== 'string' || !currentBody) {
+    if (previous.protocol === SESSION_PROTOCOL_V2) fail('v2 Session protocol is immutable across body edits');
+    return false;
+  }
+
+  const current = parseProtocolBlock(currentBody);
   const touchesV2 = current.protocol === SESSION_PROTOCOL_V2 || previous.protocol === SESSION_PROTOCOL_V2;
   if (!touchesV2) return false;
   if (current.protocol !== previous.protocol) fail('v2 Session protocol is immutable across body edits');
@@ -315,7 +321,7 @@ function validateAcceptanceChronology({ candidateIssue, candidateComment, accept
   if (candidateSessionAt !== null && candidateSealAt !== null && candidateSessionAt > candidateSealAt) {
     fail('candidate checkpoint chronology is invalid');
   }
-  if (candidateSealAt !== null && acceptanceSessionAt !== null && candidateSealAt > acceptanceSessionAt) {
+  if (candidateSealAt !== null && acceptanceSessionAt !== null && candidateSealAt >= acceptanceSessionAt) {
     fail('candidate seal must predate the fresh acceptance Session');
   }
   if (acceptanceSessionAt !== null && acceptanceCheckpointAt !== null && acceptanceSessionAt > acceptanceCheckpointAt) {
