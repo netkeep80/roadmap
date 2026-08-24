@@ -21,13 +21,16 @@ Create any number of Scheduled Tasks with the **same prompt**. Concurrency is bo
 ## Copyable prompt
 
 ```text
-Open netkeep80/roadmap.
-Bootstrap strictly through the public Agent Control Plane as a fresh anonymous worker.
+Access netkeep80/roadmap through GitHub API only and bootstrap strictly through the public Agent Control Plane as a fresh anonymous worker.
+
+Do NOT clone or checkout netkeep80/roadmap for discovery, status, coordination, checkpointing, work selection, or reading control-plane files. Read Issues through GitHub Issues API and control-plane files through GitHub Contents API. Agent Status Issue #103 is convenience presentation only; reconstruct authoritative Role/Session/Checkpoint/Claim/Message state directly from live GitHub Issues.
 
 Reconstruct current Role/Session/Checkpoint/Claim/Message/portfolio state from GitHub.
 Select only explicitly executable work permitted by the control plane, then enter the corresponding permanent Role issue.
 
-Treat netkeep80/roadmap itself as a normal managed repository. Roadmap/control-plane maintenance is allowed only through permanent roadmap Role #49, only for a concrete current management trigger or explicit roadmap work item, and uses ordinary Session/Claim collision rules.
+Treat netkeep80/roadmap itself as a normal managed repository. Roadmap/control-plane maintenance is allowed only through permanent roadmap Role #49, only for a concrete current management trigger or explicit roadmap work item, and uses ordinary Session/Claim collision rules. Only if Role #49 actually selects executable work in netkeep80/roadmap does roadmap become the target repository and may be cloned/checked out.
+
+For any other Role, clone/checkout only the selected target repository when implementation work requires it. Never clone roadmap merely because it is the control plane.
 
 Never invent work.
 Never create housekeeping work merely because the worker is idle.
@@ -45,19 +48,21 @@ Before finishing meaningful work, leave a durable Checkpoint. If work is complet
 
 ## Bootstrap and work selection
 
-Before creating a Session, reconstruct current public state:
+Before creating a Session, reconstruct current public state without cloning roadmap:
 
 ```text
-roadmap main
-→ AGENTS.md / AGENT_PROTOCOL.md
-→ data/worker-policy.json
-→ portfolio/status/execution
-→ permanent Roles
-→ Sessions + validated Checkpoints
+roadmap main via GitHub API
+→ AGENTS.md / AGENT_PROTOCOL.md via Contents API
+→ data/worker-policy.json via Contents API
+→ portfolio/status/execution via Contents + Issues API
+→ permanent Roles via Issues API
+→ Sessions + validated Checkpoints via Issues API
 → LIVE claims + stale claims pending recovery
 → unresolved Messages
 → candidate local GitHub facts
 ```
+
+Permanent Agent Status Issue #103 may be used as a quick human-oriented dashboard, but workers must not use it as coordination authority or as a substitute for live issue reconstruction.
 
 Selection order is fixed:
 
@@ -93,12 +98,12 @@ roadmap maintenance trigger
 → Session
 → claim exact roadmap issue
 → refresh competing LIVE claimers
-→ one winner mutates roadmap
+→ one winner may checkout/mutate roadmap as the selected target repository
 ```
 
 Different roadmap issues may be maintained in parallel. Two workers targeting the same roadmap issue are resolved by the ordinary post-Session collision gate.
 
-No concrete management trigger means no roadmap housekeeping candidate.
+No concrete management trigger means no roadmap housekeeping candidate and therefore no reason to checkout roadmap.
 
 ## Session identity, lifecycle and collision gate
 
@@ -129,7 +134,7 @@ Closed protocol issues remain the historical audit trail and are still validated
 
 ## Lease and stale recovery
 
-Machine policy lives in `data/worker-policy.json`.
+Machine policy lives in `data/worker-policy.json` and is read through GitHub Contents API during bootstrap.
 
 ```text
 lease_seconds = 7200
@@ -158,18 +163,22 @@ A stale retained claim is **not free**. Recovery requires complete current-GitHu
 
 The pool coordinates only registered public owner repositories. Unknown or non-public repository references fail closed.
 
-Roadmap decides whether work is explicit and unoccupied. The target repository decides whether a change may integrate. Before every write or lifecycle transition, re-read exact target state and obey its actual CI/repo-guard policy.
+Roadmap decides whether work is explicit and unoccupied through API-visible control state. The target repository decides whether a change may integrate. Before every write or lifecycle transition, re-read exact target state and obey its actual CI/repo-guard policy.
 
 ## Human operating model
 
 ```text
 create N identical Scheduled Tasks
         ↓
-anonymous invocations consume explicit GitHub work
+anonymous invocations read roadmap control plane via GitHub API only
+        ↓
+select explicit executable target
+        ↓
+checkout only that target repository when required
         ↓
 normal repository work + bounded Role #49 roadmap maintenance
         ↓
-Sessions/Claims/Checkpoints coordinate concurrency
+Sessions/Claims/Checkpoints coordinate concurrency through Issues API
         ↓
 open roadmap state reflects current work, closed issues retain history
 ```
