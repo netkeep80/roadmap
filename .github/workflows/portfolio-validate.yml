@@ -26,11 +26,11 @@ on:
       - ".github/workflows/repo-guard.yml"
       - ".github/workflows/portfolio-validate.yml"
       - ".github/workflows/portfolio-sync.yml"
+      - ".github/workflows/agent-status.yml"
       - ".github/workflows/agent-roles.yml"
       - "README.md"
       - "AGENTS.md"
       - "AGENT_PROTOCOL.md"
-      - "AGENTS_STATUS.md"
       - "SCHEDULED_WORKERS.md"
       - "OPERATING_MODEL.md"
       - "DECISIONS.md"
@@ -60,6 +60,7 @@ on:
       - ".github/workflows/repo-guard.yml"
       - ".github/workflows/portfolio-validate.yml"
       - ".github/workflows/portfolio-sync.yml"
+      - ".github/workflows/agent-status.yml"
       - ".github/workflows/agent-roles.yml"
       - "README.md"
       - "AGENTS.md"
@@ -89,7 +90,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/validate-agents.mjs --enforce
-      - name: Validate generated agent status inputs
+      - name: Validate agent status inputs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/sync-agent-status.mjs --validate-live

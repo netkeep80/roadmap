@@ -1,0 +1,78 @@
+name: Agent status
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "data/portfolio.json"
+      - "data/worker-policy.json"
+      - "scripts/agent-protocol.mjs"
+      - "scripts/worker-runtime.mjs"
+      - "scripts/agent-status.mjs"
+      - "scripts/validate-agents.mjs"
+      - "scripts/sync-agent-status.mjs"
+      - ".github/workflows/agent-status.yml"
+  issues:
+    types: [opened, edited, closed, reopened]
+  issue_comment:
+    types: [created, edited, deleted]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: agent-status
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    if: >-
+      ${{
+        github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'push' ||
+        (github.event_name == 'issues' && github.event.issue.number != 103 && contains(github.event.issue.body || '', '<!-- roadmap-agent:start -->')) ||
+        (github.event_name == 'issue_comment' && contains(github.event.issue.body || '', '<!-- roadmap-agent:start -->'))
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch only status runtime inputs through GitHub API
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_REF: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          runtime="${RUNNER_TEMP}/agent-status-runtime"
+          mkdir -p "${runtime}/scripts" "${runtime}/data"
+
+          files=(
+            scripts/agent-protocol.mjs
+            scripts/worker-runtime.mjs
+            scripts/agent-status.mjs
+            scripts/validate-agents.mjs
+            scripts/sync-agent-status.mjs
+            data/portfolio.json
+            data/worker-policy.json
+          )
+
+          for file in "${files[@]}"; do
+            gh api "repos/${GITHUB_REPOSITORY}/contents/${file}?ref=${SOURCE_REF}" --jq .content \
+              | base64 --decode > "${runtime}/${file}"
+          done
+
+          echo "AGENT_STATUS_RUNTIME=${runtime}" >> "${GITHUB_ENV}"
+
+      - name: Publish current worker state to permanent Issue
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AGENT_STATUS_ISSUE_NUMBER: "103"
+        run: |
+          cd "${AGENT_STATUS_RUNTIME}"
+          node scripts/sync-agent-status.mjs

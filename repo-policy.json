@@ -21,9 +21,7 @@
     ],
     "operational_paths": [
       "STATUS.md",
-      "data/status.json",
-      "AGENTS_STATUS.md",
-      "data/agents.json"
+      "data/status.json"
     ]
   },
   "diff_rules": {

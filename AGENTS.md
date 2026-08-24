@@ -14,20 +14,50 @@ That permanent issue identifies exactly one public repository-developer Role. No
 
 Before repository mutation:
 
-1. Read the complete Role issue and parse its `roadmap-agent-role/v1` block.
+1. Read the complete Role issue through GitHub Issues API and parse its `roadmap-agent-role/v1` block.
 2. Confirm public scope and repository identity.
-3. Read current `roadmap` main, `OPERATING_MODEL.md`, `data/portfolio.json`, generated status, and `EXECUTION.md`.
-4. Confirm the Role repository is still in current public-owner scope and the central registry.
-5. Inspect current Sessions, Checkpoints, claims, Messages, liveness, and resumable handoffs.
-6. Read the target repository's current default-branch SHA, open issues/PRs, workflows, repo-policy/repo-guard, and actual blocking checks.
-7. Resume a valid handoff or select the next explicit executable unclaimed local issue.
-8. Create or continue one Session.
-9. After creating a claiming Session, refresh all competing LIVE claimers before any target-repository write.
-10. Before every repository write or lifecycle transition, refresh relevant GitHub source-of-truth state.
-11. Send a durable Message only for real cross-repository coordination.
-12. Finish with a durable Checkpoint and correct Session lifecycle transition.
+3. Read current `roadmap` main control-plane inputs through GitHub Contents API: `OPERATING_MODEL.md`, `data/portfolio.json`, `data/status.json`, `EXECUTION.md`, and worker policy as needed.
+4. Treat Agent Status Issue #103 only as a human-readable convenience projection; reconstruct authoritative Role / Session / Checkpoint / Claim / Message state directly from GitHub Issues.
+5. Confirm the Role repository is still in current public-owner scope and the central registry.
+6. Inspect current Sessions, Checkpoints, claims, Messages, liveness, and resumable handoffs.
+7. Read the target repository's current default-branch SHA, open issues/PRs, workflows, repo-policy/repo-guard, and actual blocking checks.
+8. Resume a valid handoff or select the next explicit executable unclaimed local issue.
+9. Create or continue one Session.
+10. After creating a claiming Session, refresh all competing LIVE claimers before any target-repository write.
+11. Before every repository write or lifecycle transition, refresh relevant GitHub source-of-truth state.
+12. Send a durable Message only for real cross-repository coordination.
+13. Finish with a durable Checkpoint and correct Session lifecycle transition.
 
 The structured protocols are defined in [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md). Timer-driven anonymous pool bootstrap is in [`SCHEDULED_WORKERS.md`](SCHEDULED_WORKERS.md).
+
+## API-only control-plane access
+
+For an ordinary worker, `netkeep80/roadmap` is a remote control plane, **not a repository that must be cloned for bootstrap**.
+
+```text
+Role / Session / Checkpoint / Claim / Message
+        ↓
+GitHub Issues API
+
+portfolio intent / worker policy / control-plane docs
+        ↓
+GitHub Contents API
+
+selected executable repository
+        ↓
+checkout / clone only when implementation work requires it
+```
+
+Hard invariant:
+
+```text
+DO NOT clone or checkout netkeep80/roadmap
+for discovery, status, coordination, checkpointing, or work selection.
+```
+
+The only exception is real executable work owned by permanent roadmap developer Role #49. Once Role #49 selects an issue in `netkeep80/roadmap`, roadmap itself is the target repository and may be checked out exactly like any other target.
+
+The permanent [Agent Status Issue #103](https://github.com/netkeep80/roadmap/issues/103) is disposable presentation only. It is never claim, lease, collision, lifecycle, or merge authority.
 
 ## Hard bounded-autonomy rule
 
@@ -72,12 +102,12 @@ No concrete trigger means no roadmap housekeeping work.
 The open issue set is the current control surface; closed issues are the historical audit trail.
 
 ```text
-Role active                            => OPEN
+Role active                              => OPEN
 Session starting/working/waiting/blocked => OPEN
-Session handoff                        => OPEN only while resumable
-Session completed/abandoned            => CLOSED
-Message open/acknowledged              => OPEN while unresolved
-Message resolved                       => CLOSED
+Session handoff                          => OPEN only while resumable
+Session completed/abandoned              => CLOSED
+Message open/acknowledged                => OPEN while unresolved
+Message resolved                         => CLOSED
 ```
 
 When a successor consumes a handoff, complete/close the predecessor. One-shot acceptance observations finish terminal instead of accumulating as handoffs.

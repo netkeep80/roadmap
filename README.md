@@ -2,6 +2,7 @@
 
 [![Portfolio validate](https://github.com/netkeep80/roadmap/actions/workflows/portfolio-validate.yml/badge.svg)](https://github.com/netkeep80/roadmap/actions/workflows/portfolio-validate.yml)
 [![Portfolio sync](https://github.com/netkeep80/roadmap/actions/workflows/portfolio-sync.yml/badge.svg)](https://github.com/netkeep80/roadmap/actions/workflows/portfolio-sync.yml)
+[![Agent status](https://github.com/netkeep80/roadmap/actions/workflows/agent-status.yml/badge.svg)](https://github.com/netkeep80/roadmap/actions/workflows/agent-status.yml)
 
 **Это главный центр управления и развития public-репозиториев [`netkeep80`](https://github.com/netkeep80).**
 
@@ -13,7 +14,8 @@
 |---|---|
 | **Запустить AI-агента по одной role URL** | [`AGENTS.md`](AGENTS.md) |
 | **Role / Session / Message / Claim protocol** | [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md) |
-| **Что происходит прямо сейчас** | [`STATUS.md`](STATUS.md) — generated live portfolio board |
+| **Текущее состояние worker pool** | [Agent Status Issue #103](https://github.com/netkeep80/roadmap/issues/103) — disposable human-readable projection |
+| **Текущее состояние portfolio** | [`STATUS.md`](STATUS.md) — generated portfolio board |
 | **Что делать раньше/позже** | [`EXECUTION.md`](EXECUTION.md) — dependency lanes and gates |
 | **Зачем существует вся программа** | [`VISION.md`](VISION.md) |
 | **Кто чем владеет и как связаны слои** | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
@@ -22,9 +24,9 @@
 | **Как поддерживается актуальность** | [`OPERATING_MODEL.md`](OPERATING_MODEL.md) |
 | **Почему были приняты ключевые решения** | [`DECISIONS.md`](DECISIONS.md) |
 | **Machine-readable portfolio intent** | [`data/portfolio.json`](data/portfolio.json) |
-| **Machine-readable observed GitHub state** | [`data/status.json`](data/status.json) |
+| **Machine-readable observed portfolio state** | [`data/status.json`](data/status.json) |
 
-> `STATUS.md` — человекочитаемый источник текущих open/closed GitHub facts. Статические документы и permanent Agent Role issues не должны вручную дублировать быстро меняющийся статус issue/PR/SHA.
+> `STATUS.md` / `data/status.json` относятся к portfolio snapshot. Оперативное состояние worker pool не хранится в Git: source of truth — live Role / Session / Checkpoint / Claim / Message Issues, а [Issue #103](https://github.com/netkeep80/roadmap/issues/103) является только удобной производной проекцией для человека.
 
 ## Authority model
 
@@ -45,12 +47,15 @@ implementation
 GitHub API
         ↓
 STATUS.md + data/status.json
-(observed facts)
+(observed portfolio facts)
 
 Agent Role issue
         ↓
 Agent Session / Checkpoints / Messages / Claims
-(durable execution coordination)
+(authoritative durable execution coordination)
+        ↓
+Agent Status Issue #103
+(disposable human-readable projection; never authority)
 ```
 
 Это означает:
@@ -77,14 +82,27 @@ Agent Session / Checkpoints / Messages / Claims
 
 ```text
 role issue
+→ reads roadmap control-plane data through GitHub API
 → validates public role identity
 → reads portfolio intent + fresh observed state
 → restores active session/handoff
 → reads inbox + claims
 → inspects exact local repository state
+→ checks out/clones only the selected target repository when code work requires it
 → works under local CI/repo-guard rules
-→ checkpoints and coordinates cross-repo changes
+→ checkpoints and coordinates cross-repo changes through GitHub Issues API
 ```
+
+### API-only control-plane invariant
+
+Обычный worker **не клонирует и не checkout-ит `netkeep80/roadmap`** только ради bootstrap, выбора работы, чтения статуса, claim, checkpoint или coordination. Для этого используются GitHub Issues / Contents API.
+
+```text
+roadmap control plane = API-only
+selected target repo  = checkout/clone only when implementation requires it
+```
+
+Единственное исключение: если worker под permanent roadmap developer Role #49 выбрал executable работу **в самом `netkeep80/roadmap`**, тогда `roadmap` становится его обычным target repository и может быть checkout-нут как любой другой target.
 
 Полный алгоритм: [`AGENTS.md`](AGENTS.md).
 
@@ -145,20 +163,25 @@ vision
 → update or keep decision
 ```
 
-### 2. Factual loop
+### 2. Factual loops
 
 ```text
-GitHub repositories/issues/PRs
+GitHub repository/issues/PR facts
 → portfolio-sync
 → STATUS.md + data/status.json
+
+GitHub Role/Session/Checkpoint/Claim/Message state
+→ agent-status (GitHub API only; no checkout)
+→ permanent Agent Status Issue #103
 ```
 
 ### 3. Agent coordination loop
 
 ```text
 Role URL
+→ API-only roadmap bootstrap
 → Session / Claim
-→ local work
+→ selected target repository work
 → cross-repo Message when needed
 → Checkpoint / Handoff
 → fresh agent can resume from the same Role URL
@@ -198,35 +221,48 @@ upstream gate closes / new blocker appears
 1. **One canonical owner per layer.**
 2. **One public repository = one permanent repository-developer Agent Role.**
 3. **Public Agent Control Plane must not expose non-public repositories.**
-4. **Git is the archive.** После migration obsolete implementation удаляется.
-5. **No compatibility layer without a named removal gate.**
-6. **Research ≠ accepted production contract.**
-7. **Persistence identity ≠ process address.**
-8. **Frontend syntax ≠ runtime semantic universe.**
-9. **Interpret/find/inspect ≠ realize/mutate.**
-10. **Engineering and physical safety evidence outranks feature growth.**
-11. **Optimization/hardware ≠ second semantics.**
-12. **Future vision never bypasses current correctness gates.**
+4. **Worker control-plane access is API-only; cloning `roadmap` is reserved for actual Role #49 roadmap implementation work.**
+5. **Git is the archive.** После migration obsolete implementation удаляется.
+6. **No compatibility layer without a named removal gate.**
+7. **Research ≠ accepted production contract.**
+8. **Persistence identity ≠ process address.**
+9. **Frontend syntax ≠ runtime semantic universe.**
+10. **Interpret/find/inspect ≠ realize/mutate.**
+11. **Engineering and physical safety evidence outranks feature growth.**
+12. **Optimization/hardware ≠ second semantics.**
+13. **Future vision never bypasses current correctness gates.**
 
 ## Актуальность
 
-`portfolio-sync` запускается:
+`portfolio-sync` обновляет только committed portfolio snapshot:
 
-- после изменения control-plane inputs на `main`;
+- после изменения portfolio inputs на `main`;
 - каждые 6 часов;
 - вручную через `workflow_dispatch`.
 
-Он сверяет registry со всем public owner scope `netkeep80`, проверяет tracked issues и обновляет generated status.
+Он сверяет registry со всем public owner scope `netkeep80`, проверяет tracked issues и обновляет только `STATUS.md` / `data/status.json`.
+
+`agent-status` обновляет [permanent Issue #103](https://github.com/netkeep80/roadmap/issues/103):
+
+- на lifecycle-событиях структурированных Role / Session / Message issues;
+- на Checkpoint comments;
+- после изменения agent-status runtime на `main`;
+- каждые 15 минут для lease / `STALE_CANDIDATE` aging;
+- вручную через `workflow_dispatch`.
+
+`agent-status` **не использует `actions/checkout`**: минимальный runtime читается через GitHub Contents API, а status body обновляется через GitHub Issues API.
 
 `portfolio-validate` на PR дополнительно проверяет live GitHub coverage и разрешимость tracked gates до merge.
 
-Если sync красный, factual snapshot следует считать потенциально stale и исправлять это как **control-plane incident**.
+Если sync красный, соответствующую производную проекцию следует считать потенциально stale; source of truth при этом остаётся live GitHub state.
 
 ## Для автоматических агентов
 
 Нормальный вход — permanent Agent Role issue URL. Получив её, следовать [`AGENTS.md`](AGENTS.md) и [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md).
 
-Если агент ещё не получил Role URL, для portfolio orientation читать:
+Все bootstrap/control-plane reads из `netkeep80/roadmap` выполнять через GitHub API. Не клонировать `roadmap` ради orientation/status/coordination. Checkout `roadmap` допустим только если выбранная executable работа сама относится к Role #49 / `netkeep80/roadmap`.
+
+Если агент ещё не получил Role URL, для portfolio orientation через GitHub Contents API читать:
 
 ```text
 data/portfolio.json
@@ -234,6 +270,6 @@ data/status.json
 EXECUTION.md
 ```
 
-Затем переходить в local epic/issue.
+Затем переходить в local epic/issue и, если требуется кодовая работа, checkout-ить только выбранный target repository.
 
 Если observed state противоречит записанному `next_gate`, не менять priority/ownership автоматически: оформить explicit portfolio update в этом repository.

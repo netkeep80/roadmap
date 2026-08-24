@@ -176,10 +176,14 @@ test('post-Session claim refresh allows only the deterministic winner to write t
   assert.equal(reselection.candidate.ref, 'netkeep80/alpha#2');
 });
 
-test('anonymous scheduled-worker bootstrap is one parameter-free prompt', async () => {
+test('anonymous scheduled-worker bootstrap is one parameter-free API-only control-plane prompt', async () => {
   const text = await readFile(new URL('../SCHEDULED_WORKERS.md', import.meta.url), 'utf8');
   assert.doesNotMatch(text, /WORKER_SLOT|worker_slot/);
   assert.match(text, /fresh anonymous worker/i);
+  assert.match(text, /GitHub API only/i);
+  assert.match(text, /Do NOT clone or checkout netkeep80\/roadmap/i);
+  assert.match(text, /clone\/checkout only the selected target repository/i);
+  assert.match(text, /Only if Role #49[\s\S]*roadmap[\s\S]*target repository[\s\S]*cloned\/checked out/i);
   assert.match(text, /after Session creation[\s\S]*refresh[\s\S]*claim/i);
   assert.match(text, /no executable work[\s\S]*zero repository changes[\s\S]*no idle Session/i);
   assert.match(text, /roadmap Role #49/i);
