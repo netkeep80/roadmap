@@ -68,6 +68,15 @@ Unknown/non-public repository reference -> validation failure, never optimistic 
 
 Validator и sync должны сериализовать только public-scope facts. Техническая аутентификация GitHub API не расширяет semantic scope control plane.
 
+Если tracked public repository перестаёт быть public, это visibility transition и control-plane incident. До следующей работы по этой роли необходимо:
+
+1. прекратить новые agent writes/coordination для repository в public control plane;
+2. закрыть/deactivate current role/session/message surfaces, которые считаются active state;
+3. удалить repository из текущих generated agent/portfolio snapshots после explicit portfolio transition;
+4. не создавать новые публичные упоминания repository после visibility transition.
+
+Agent Control Plane не обещает стереть уже опубликованную историю GitHub задним числом; invariant относится к текущему управляемому состоянию и всем новым writes.
+
 ### 1.4 Intent != observed facts != execution context
 
 Сохраняется существующее разделение:
