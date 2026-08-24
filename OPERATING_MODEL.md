@@ -1,38 +1,66 @@
-# Operating model — как `roadmap` управляет portfolio
+# Operating model — как `roadmap` управляет public portfolio и AI-агентами
 
-`netkeep80/roadmap` — **главная точка входа и portfolio source of truth** для всех репозиториев `netkeep80`.
+`netkeep80/roadmap` — **главная точка входа, portfolio source of truth и public Agent Control Plane** для public repositories владельца `netkeep80`.
 
-Он не заменяет локальные issue trackers. Он отвечает за уровень выше отдельного репозитория: общий замысел, приоритеты, ownership, зависимости, cross-repo gates и lifecycle проектов.
+Он не заменяет локальные issue trackers и не является вторым merge coordinator. Его уровень ответственности выше отдельного репозитория: общий замысел, priority/lifecycle, canonical ownership, cross-repo dependencies/gates, observed public GitHub facts и durable coordination между repository-developer агентами.
 
-## 1. Иерархия источников истины
+## 1. Scope и privacy boundary
+
+Semantic scope control plane:
+
+```text
+public repositories owned by netkeep80 only
+```
+
+Техническая GitHub-аутентификация не расширяет этот scope. Даже если credential способен видеть non-public repository, текущие portfolio/agent validators обязаны отфильтровать его **до** построения рабочего набора.
+
+Public control plane не хранит для non-public repositories:
+
+- имя или URL;
+- issue/PR identifiers;
+- commit SHA;
+- lifecycle/status;
+- Agent Role;
+- dependency/blocker;
+- косвенную запись, существующую только ради описания такого repository.
+
+Любая repository reference внутри Agent protocol должна resolve-иться в текущий public `data/portfolio.json`. Unknown/non-public reference fail closed.
+
+Если repository покидает public scope, это explicit portfolio transition: active public role/session coordination прекращается, current generated projections очищаются, а новые факты из non-public source сюда не импортируются. Уже опубликованную Git/GitHub history нельзя ретроактивно сделать секретной, но control plane перестаёт её обновлять.
+
+## 2. Иерархия источников истины
 
 | Вопрос | Source of truth |
 |---|---|
 | Зачем существует вся программа? | `VISION.md` |
 | К какой архитектуре она может привести? | `ASSOCIATIVE_COMPUTING.md` |
-| Кто владеет semantic/storage/runtime layer? | `ARCHITECTURE.md` + `data/portfolio.json` |
-| Какой repository сейчас P0/P1/P2/P3? | `data/portfolio.json` |
-| Каков lifecycle проекта? | `data/portfolio.json` |
-| Какой следующий portfolio gate? | `data/portfolio.json` |
+| Кто владеет semantic/storage/runtime/presentation layer? | `ARCHITECTURE.md` + `data/portfolio.json` |
+| Priority / lifecycle / objective / next gate / dependencies | `data/portfolio.json` |
 | Какие cross-repo workstreams активны? | roadmap issues + `data/portfolio.json` |
-| Что фактически открыто/закрыто на GitHub? | generated `STATUS.md` / `data/status.json` |
-| Когда GitHub state последний раз успешно проверялся? | `STATUS.md: Last successful GitHub check` |
-| Все ли child repos всё ещё ссылаются на central roadmap? | `STATUS.md: Verified child roadmap backlinks` |
+| Что фактически открыто/закрыто на public GitHub? | generated `STATUS.md` / `data/status.json` |
 | Каков порядок исполнения между lanes? | `EXECUTION.md` |
 | Что конкретно реализовать в одном проекте? | local epic/issues соответствующего repository |
 | Почему изменилось portfolio-level решение? | `DECISIONS.md` + соответствующий PR/issue |
+| Какая permanent AI-role соответствует repository? | open `roadmap-agent-role/v1` issue |
+| Где текущий durable execution context роли? | Agent Session + Checkpoint comments |
+| Какие cross-repo requests/blockers ждут роли? | Agent Message issues |
+| Можно ли конкретный PR интегрировать? | local CI / repo-guard protocol, если он настроен |
 
-Главное правило:
+Главное разделение:
 
 ```text
-roadmap decides direction;
-local repositories execute it;
-GitHub API reports facts.
+data/portfolio.json = intent / decisions
+GitHub live state    = observed facts
+Agent Issues         = execution coordination
+local repository     = implementation
+repo-guard / CI      = change + integration correctness
 ```
 
-## 2. Что редактируется человеком
+Automation не превращает observed fact в portfolio decision сама.
 
-`data/portfolio.json` — канонический machine-readable registry осознанных решений.
+## 3. Что редактируется человеком
+
+`data/portfolio.json` — единственный human-maintained machine-readable registry portfolio semantics.
 
 В нём вручную меняются:
 
@@ -48,185 +76,243 @@ GitHub API reports facts.
 - `tracked_issues`;
 - top-level `workstreams`.
 
-Эти поля нельзя менять автоматически только потому, что закрылся issue. Закрытие issue — факт; вывод «теперь следующий приоритет другой» — архитектурное решение.
+Закрытие issue, merge PR или появление нового release — факт. Вывод «теперь меняется canonical owner / dependency / priority / lifecycle» требует explicit roadmap change.
 
-## 3. Что генерируется и проверяется автоматически
+Отдельный manually-maintained registry Agent Roles **не создаётся**. Permanent Role identity живёт в самой GitHub issue; repository set берётся из `data/portfolio.json` и live public-owner validation.
 
-`scripts/sync-roadmap.mjs` получает из GitHub:
+## 4. Portfolio factual sync
 
-- полный список public owner repositories;
+`scripts/sync-roadmap.mjs` получает public GitHub facts:
+
+- public owner repositories;
 - archive/default-branch state;
 - timestamps;
 - количество открытых issues и PR;
-- состояния tracked issues;
-- состояния portfolio workstream issues;
-- наличие и содержимое root `PORTFOLIO.md` во всех child repositories.
+- tracked issue/workstream states;
+- root `PORTFOLIO.md` backlinks child repositories.
 
 Результат:
 
-- `STATUS.md` — человекочитаемый control board;
+- `STATUS.md` — human-readable control board;
 - `data/status.json` — machine-readable factual snapshot.
 
-Snapshot содержит два разных времени:
+Generated files не редактируются вручную.
 
-- `checked_at` — когда GitHub был успешно проверен;
-- `latest_observed_github_change` — самый свежий timestamp факта, найденного внутри snapshot.
+Snapshot различает:
 
-Это позволяет отличить «ничего не менялось, но всё только что проверено» от «sync давно не работал».
+- `checked_at` — когда GitHub state успешно перечитан;
+- `latest_observed_github_change` — самый свежий timestamp внутри observed facts.
 
-`verified_child_backlinks / child_repository_count` показывает, что двусторонняя discoverability не только однажды внедрена, но и продолжает соблюдаться.
+Backlink coverage считается динамически; никаких захардкоженных `23/23`, `24/24` и т.п. в governance contract быть не должно.
 
-Generated files **не редактируются вручную**.
+## 5. Portfolio drift policy
 
-## 4. Drift policy
+### Новый public repository
 
-### Новый repository
+Если live public owner scope содержит repository вне `data/portfolio.json`, validation/sync завершается ошибкой.
 
-Если в `netkeep80` появился новый public repository, которого нет в `data/portfolio.json`, sync должен завершиться ошибкой.
+До регистрации explicit roadmap transition должен определить:
 
-Новый проект не считается частью управляемого portfolio, пока в одном осознанном PR не определены:
-
-1. роль;
+1. role;
 2. lifecycle;
 3. priority;
 4. objective;
 5. next gate;
-6. зависимости;
-7. canonical ownership, если он что-либо канонизирует;
-8. portfolio workstream либо явная причина его отсутствия.
+6. dependencies;
+7. canonical ownership, если есть;
+8. workstream либо явную причину его отсутствия.
 
-После регистрации child repository обязан иметь root `PORTFOLIO.md`, ведущий обратно в central `netkeep80/roadmap` и его `STATUS.md`.
+После регистрации child repository получает stable root `PORTFOLIO.md` backlink. Затем Agent Role reconciler создаёт ровно одну permanent repository-developer role.
 
-### Исчезнувший repository
+### Repository исчез/покинул public scope
 
-Если зарегистрированный public repository исчез или стал недоступен, sync также падает. Нельзя тихо удалять его из карты: сначала нужно принять portfolio decision — rename/move/private/archive/delete.
+Нельзя тихо удалять его из registry. Сначала explicit decision: rename/move/private/archive/delete; затем public Agent Role deactivation и cleanup current generated state.
 
 ### Backlink drift
 
-Если в child repository удалён `PORTFOLIO.md`, ссылка перестала вести на `netkeep80/roadmap` или файл больше не указывает на central `STATUS.md`, live validation/sync завершается ошибкой.
-
-Это hard failure, потому что repository перестаёт быть двусторонне подключён к управляющему контуру.
+Missing/invalid child `PORTFOLIO.md` является hard failure.
 
 ### Workstream status drift
 
-Generated `STATUS.md` сравнивает declared workstream state с GitHub issue state:
+`registry=active` при closed issue или `registry=completed` при open issue — warning, требующий explicit semantic reconciliation. Broken issue reference — hard failure.
 
-- `registry=completed`, issue still open;
-- `registry=active`, issue already closed.
+## 6. Repository lifecycle vocabulary
 
-Это не меняет registry автоматически. Snapshot показывает warning, после чего нужен explicit portfolio decision/transition.
+- `control-plane` — управляющий repository;
+- `active` — развивается принятый target;
+- `blocked` — meaningful next gate зависит от upstream contract;
+- `transitional` — migration repository, который должен потерять часть старой ответственности;
+- `research` — hypothesis/evidence-driven работа без production commitment;
+- `oracle` — feature-frozen source of behavior/provenance;
+- `maintenance` — изменения под реального consumer/bug;
+- `incubation` — нужен charter/consumer прежде существенной разработки;
+- `archive-candidate` — полезная история без planned active feature growth.
 
-Broken tracked issue reference, в отличие от semantic drift, является hard failure.
+Lifecycle — инструкция поведения Agent Role, а не оценка качества проекта.
 
-## 5. Lifecycle vocabulary
+## 7. Priority vocabulary
 
-- `control-plane` — управляющий repository.
-- `active` — проект активно развивает принятый target.
-- `blocked` — следующий meaningful gate зависит от upstream contract.
-- `transitional` — проект существует во время migration и должен потерять часть прежней ответственности.
-- `research` — hypothesis/evidence-driven работа без production commitment.
-- `oracle` — feature-frozen источник поведения/provenance для migration.
-- `maintenance` — изменения только под реального consumer/bug.
-- `incubation` — нужен charter/consumer до существенной разработки.
-- `archive-candidate` — полезная история, но active development не планируется.
-
-Lifecycle — не оценка качества проекта. Это инструкция, **как с ним обращаться сейчас**.
-
-## 6. Priority vocabulary
-
-- `P0` — blocking foundation или correctness с высоким системным последствием.
-- `P0/P1` — важный consumer, который частично заблокирован P0 upstream.
-- `P1` — active consolidation, product recovery, safety или governance.
-- `P1/P2` — полезный transitional/support проект без права вытеснять P0.
-- `P2` — research, migration cleanup, portfolio hygiene.
+- `P0` — blocking foundation/correctness;
+- `P0/P1` — важный consumer, частично зависящий от P0 upstream;
+- `P1` — active consolidation/product/safety/governance;
+- `P1/P2` — transitional/support work;
+- `P2` — research/migration cleanup/portfolio hygiene;
 - `P3` — maintenance/incubation/archive work только по явной причине.
 
-Приоритет принадлежит portfolio, а не количеству открытых issues.
+Agent не выводит priority из количества issues и не повышает его сам.
 
-## 7. Gate transition protocol
+## 8. One public repository = one permanent Agent Role
 
-Когда закрывается важный local gate:
+Для каждого repository в exact live public scope существует ровно одна open permanent issue:
 
-1. generated status фиксирует факт автоматически;
-2. проверяется, изменился ли cross-repo dependency;
-3. если изменился — обновляется `data/portfolio.json`;
-4. при необходимости обновляются `EXECUTION.md` / `ARCHITECTURE.md`;
-5. significant decision записывается в `DECISIONS.md`;
-6. obsolete compatibility path получает removal action, а не бессрочный статус legacy.
+```text
+[Agent Role] <repository> developer
+```
 
-Нельзя считать цепочку завершённой только по числу закрытых issues. Exit criterion должен быть проверяемым.
+Machine block:
 
-## 8. Workstream discipline
+```json
+{
+  "protocol": "roadmap-agent-role/v1",
+  "repository": "netkeep80/<repository>",
+  "scope": "public-only",
+  "state": "active",
+  "role_kind": "repository-developer",
+  "portfolio_authority": "propose"
+}
+```
 
-Portfolio issue в `roadmap` описывает только:
+`roadmap` получает ту же repository-developer role, но `portfolio_authority=coordinate`.
 
-- cross-repo problem;
-- canonical ownership;
-- gate sequence;
-- vetoes;
-- exit criterion.
+Role issue URL — полный bootstrap identity. Человеку достаточно передать агенту одну ссылку. Алгоритм входа — [`AGENTS.md`](AGENTS.md), machine protocol — [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md).
 
-Он **не копирует** десятки локальных implementation tasks.
+Permanent role не содержит динамический current SHA/PR/lifecycle snapshot. Новый агент всегда перечитывает current portfolio/live/local state.
 
-Если задача не меняет другой repository и не меняет portfolio-level decision, она должна жить локально.
+Required invariant после rollout:
 
-## 9. Automation
+```text
+live public owner repositories
+== registered repositories in data/portfolio.json
+== repositories represented by exactly one active Agent Role
+```
+
+## 9. Sessions, checkpoints, claims, messages
+
+### Session
+
+Конкретный рабочий отрезок хранится отдельной `[Agent Session]` issue. Session содержит compact operational state, claims/current PR/blockers; длинная история идёт checkpoints.
+
+### Checkpoint
+
+Checkpoint хранит только resumable public facts/decisions/evidence/next action. Hidden chain-of-thought не сохраняется.
+
+Fresh GitHub state всегда сильнее stale checkpoint.
+
+### Claim
+
+Claim предотвращает случайное дублирование одной local issue/PR, но не блокирует repository целиком и не даёт merge authority.
+
+Collision:
+
+```text
+earlier Session created_at wins
+then lower Session issue number
+```
+
+### Message
+
+Durable cross-repo coordination хранится отдельной `[Agent Message]` issue. Local implementation discussion остаётся в local repository.
+
+Finite message kinds/states определены в `AGENT_PROTOCOL.md`.
+
+## 10. Agent refresh protocol
+
+Получив Role URL, агент обязан прочитать central sources и exact local state до mutation.
+
+Refresh выполняется минимум:
+
+- at session start;
+- before selecting/claiming work;
+- after dependency/blocker message;
+- before every repository write;
+- before PR draft/ready/integration transition;
+- after merge/closure of dependency gate;
+- before handoff/completion.
+
+Для target repository reread включает actual default-branch SHA, open issues, open PRs, exact workflows, repo policy/repo-guard, blocking checks и relevant PR head/base/mergeability state.
+
+## 11. repo-guard boundary
+
+Agent Control Plane не реализует второй merge queue и не решает integration correctness самостоятельно.
+
+`roadmap` отвечает:
+
+```text
+who owns the repository?
+what should be inspected/worked on?
+who else is working?
+what is claimed?
+what cross-repo message/blocker exists?
+```
+
+`repo-guard`/local CI отвечает:
+
+```text
+is this exact change valid?
+is this exact integration candidate valid?
+what next_action is allowed?
+```
+
+Если repo-guard отсутствует, агент следует реально существующим local workflows/rules и не выдумывает несуществующую protection surface.
+
+## 12. Automation
 
 ### `portfolio-validate.yml`
 
 На PR проверяет:
 
-- JSON registry parseability;
-- schema/invariants;
-- уникальность repository/workstream identities;
-- разрешимость dependencies внутри registry;
-- blocked lifecycle имеет upstream dependency;
-- roadmap issue refs зарегистрированы как workstreams/meta-epic;
+- registry schema/invariants;
 - live public-owner coverage;
-- существование tracked issues/workstreams;
-- **23/23 child repositories имеют валидный `PORTFOLIO.md` backlink на central roadmap/STATUS**.
+- tracked issue/workstream references;
+- child backlink coverage;
+- Agent protocol unit tests;
+- Agent Control Plane public-only validation.
+
+До первого полного Role rollout missing roles являются advisory diagnostics. После bootstrap отдельный hardening transition переключает exact role coverage в blocking mode.
+
+### `agent-roles.yml`
+
+После accepted changes на `main`:
+
+1. перечитывает registry;
+2. получает и **до projection фильтрует** live inventory до public repositories;
+3. проверяет exact live-public/registry equality;
+4. парсит existing Role issues;
+5. идемпотентно создаёт только missing permanent roles;
+6. повторно валидирует complete 1:1 coverage.
+
+Workflow сериализован через concurrency group и имеет только `contents: read`, `issues: write`.
 
 ### `portfolio-sync.yml`
 
-На `main`:
+Продолжает factual sync; не меняет semantic registry и не является write path для Agent Sessions/Messages.
 
-- запускается после изменения control-plane inputs;
-- запускается по расписанию каждые 6 часов;
-- доступен через `workflow_dispatch`;
-- сверяет registry с public GitHub owner scope;
-- проверяет child backlink coverage;
-- генерирует `STATUS.md` и `data/status.json`;
-- записывает `checked_at` и поэтому сохраняет подтверждение свежести каждого successful scheduled check;
-- коммитит factual snapshot bot-коммитом.
+## 13. Gate transition protocol
 
-Workflow не меняет `data/portfolio.json`.
+Когда закрывается важный local gate:
 
-Четыре служебных snapshot-commit в сутки считаются приемлемой ценой за проверяемую freshness центрального control-plane.
+1. observed status фиксирует факт;
+2. originating Role при необходимости отправляет durable cross-repo Message;
+3. downstream Role ACK/revalidates свою local boundary;
+4. если реально изменился portfolio dependency/ownership/priority/lifecycle — создаётся explicit roadmap change;
+5. significant decision записывается в `DECISIONS.md`;
+6. obsolete path получает removal action, а не бессрочный legacy status.
 
-## 10. Freshness and failure semantics
+Количество закрытых issues само по себе не является exit criterion.
 
-Если sync зелёный, `STATUS.md` является последним сохранённым подтверждённым snapshot GitHub state; поле `Last successful GitHub check` показывает точное время этой проверки.
+## 14. Decision classes
 
-Если sync красный:
-
-- semantic registry остаётся source of truth для intent;
-- factual status считается потенциально stale;
-- failure надо трактовать как control-plane incident, а не игнорировать.
-
-Особенно важны failures:
-
-- unregistered repository;
-- missing registered repository;
-- missing/invalid child `PORTFOLIO.md` backlink;
-- GitHub API failure;
-- broken tracked issue reference;
-- script/schema failure.
-
-Semantic-vs-GitHub workstream mismatch показывается как health warning, а не автоматически исправляется.
-
-## 11. Decision classes
-
-Изменение требует записи в `DECISIONS.md`, если оно меняет хотя бы одно из:
+`DECISIONS.md` обязателен для изменений хотя бы одного из:
 
 - canonical owner;
 - dependency direction;
@@ -234,58 +320,29 @@ Semantic-vs-GitHub workstream mismatch показывается как health wa
 - P0/P1 boundary;
 - accepted foundation semantics;
 - long-term architecture recommendation;
-- правила control-plane governance.
+- control-plane governance rules.
 
-Обычное уточнение текста или автоматически обновлённый factual status ADR не требует.
+Обычный factual sync и local implementation detail ADR не требуют.
 
-## 12. Discoverability from child repositories
+## 15. Discoverability
 
-Каждый из 23 child repositories содержит stable root `PORTFOLIO.md`.
-
-Он указывает на central roadmap/STATUS/EXECUTION и **не копирует** текущие priority/lifecycle/gates. Поэтому вход возможен с любой стороны:
+Каждый child public repository имеет stable root `PORTFOLIO.md`:
 
 ```text
 child repository
 → PORTFOLIO.md
 → central roadmap
-→ live STATUS
+→ STATUS / EXECUTION / ARCHITECTURE
 ```
 
-Это теперь live invariant: validator регулярно проверяет все child repositories и fail-ит при потере ссылки.
-
-Local README/epics остаются свободны описывать локальный продукт и implementation plan.
-
-## 13. Как пользоваться repository
-
-Для ежедневной ориентации:
+Для AI entrypoint direction обратная:
 
 ```text
-README
-  ↓
-STATUS.md          — что происходит сейчас + freshness + drift health
-  ↓
-EXECUTION.md       — что делать раньше/позже
-  ↓
-local epic/issue   — конкретная реализация
+permanent Role issue URL
+→ AGENTS.md / AGENT_PROTOCOL.md
+→ central portfolio/live state
+→ target repository PORTFOLIO.md + local backlog
+→ Session / work / Message / Checkpoint
 ```
 
-Для архитектурного понимания:
-
-```text
-VISION.md
-  ↓
-ARCHITECTURE.md
-  ↓
-ASSOCIATIVE_COMPUTING.md
-  ↓
-DECISIONS.md
-```
-
-Для автоматизации/агентов:
-
-```text
-data/portfolio.json   — intent / semantics
-data/status.json      — observed facts + checked_at + backlink coverage
-```
-
-Это разделение позволяет использовать `roadmap` и человеку, и автоматическому агенту без необходимости каждый раз заново исследовать весь GitHub account.
+Таким образом пользователь может запускать/перезапускать repository developer agent одной и той же URL без переноса chat checkpoint вручную.
