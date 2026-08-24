@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 
@@ -6,6 +7,8 @@ import { validateCheckpointEventEvidence } from './agent-evidence-integrity.mjs'
 
 const START = '<!-- roadmap-agent:start -->';
 const END = '<!-- roadmap-agent:end -->';
+const ATTESTATION_START = '<!-- roadmap-agent-validation-attestation:start -->';
+const ATTESTATION_END = '<!-- roadmap-agent-validation-attestation:end -->';
 const HEAD = '0123456789abcdef0123456789abcdef01234567';
 const BASE = '89abcdef0123456789abcdef0123456789abcdef';
 const REGISTRY = {
@@ -16,6 +19,14 @@ const REGISTRY = {
 
 function block(data) {
   return `${START}\n\`\`\`json\n${JSON.stringify(data)}\n\`\`\`\n${END}`;
+}
+
+function attestationBlock(data) {
+  return `${ATTESTATION_START}\n\`\`\`json\n${JSON.stringify(data)}\n\`\`\`\n${ATTESTATION_END}`;
+}
+
+function sha256(body) {
+  return createHash('sha256').update(body, 'utf8').digest('hex');
 }
 
 function roadmapRoleIssue() {
@@ -82,6 +93,7 @@ function acceptanceData(overrides = {}) {
     acceptance: {
       candidate_session: 900,
       candidate_checkpoint_comment_id: 7001,
+      candidate_validation_attestation_comment_id: 7003,
       work_item: 'netkeep80/roadmap#139',
       pr: 'netkeep80/roadmap#142',
       head_sha: HEAD,
@@ -96,22 +108,54 @@ function exactPr(number = 142) {
   return { number, state: 'open', head: { sha: HEAD }, base: { sha: BASE } };
 }
 
-function candidateIssue({ roleIssueNumber = 49 } = {}) {
+function candidateIssue({ roleIssueNumber = 49, createdAt = '2026-08-24T20:00:00Z' } = {}) {
   return {
     number: 900,
     state: 'open',
-    created_at: '2026-08-24T20:00:00Z',
+    created_at: createdAt,
     body: sessionBody({ state: 'handoff', claims: [], roleIssueNumber }),
   };
 }
 
-function candidateComment(createdAt = '2026-08-24T20:10:00Z', updatedAt = createdAt) {
+function candidateComment(createdAt = '2026-08-24T20:10:00Z', updatedAt = createdAt, body = block(candidateData())) {
   return {
     id: 7001,
     issue_number: 900,
     created_at: createdAt,
     updated_at: updatedAt,
-    body: block(candidateData()),
+    body,
+  };
+}
+
+function validationAttestationData(candidateBody = block(candidateData()), overrides = {}) {
+  return {
+    protocol: 'roadmap-agent-validation-attestation/v1',
+    candidate_session: 900,
+    candidate_checkpoint_comment_id: 7001,
+    candidate_checkpoint_body_sha256: sha256(candidateBody),
+    work_item: 'netkeep80/roadmap#139',
+    pr: 'netkeep80/roadmap#142',
+    head_sha: HEAD,
+    base_sha: BASE,
+    ...overrides,
+  };
+}
+
+function validationAttestationComment({
+  id = 7003,
+  issueNumber = 900,
+  userLogin = 'github-actions[bot]',
+  userType = 'Bot',
+  candidateBody = block(candidateData()),
+  dataOverrides = {},
+} = {}) {
+  return {
+    id,
+    issue_number: issueNumber,
+    created_at: '2026-08-24T20:11:00Z',
+    updated_at: '2026-08-24T20:11:00Z',
+    user: { login: userLogin, type: userType },
+    body: attestationBlock(validationAttestationData(candidateBody, dataOverrides)),
   };
 }
 
@@ -136,15 +180,27 @@ function acceptanceEvent(data = acceptanceData(), {
   };
 }
 
-function acceptanceResolvers({ candidateCommentCreatedAt, candidateCommentUpdatedAt } = {}) {
+function acceptanceResolvers({
+  candidateCommentCreatedAt,
+  candidateCommentUpdatedAt,
+  candidateCommentBody,
+  candidateIssueCreatedAt = '2026-08-24T20:00:00Z',
+  attestation = {},
+} = {}) {
+  const seal = candidateComment(candidateCommentCreatedAt, candidateCommentUpdatedAt, candidateCommentBody);
+  const attestationComment = validationAttestationComment({ candidateBody: seal.body, ...attestation });
   return {
     resolvePullRequest: async (_repository, number) => exactPr(number),
     resolveControlIssue: async (number) => {
       if (number === 49) return roadmapRoleIssue();
-      if (number === 900) return candidateIssue();
+      if (number === 900) return candidateIssue({ createdAt: candidateIssueCreatedAt });
       throw new Error(`control issue #${number} not found`);
     },
-    resolveControlComment: async () => candidateComment(candidateCommentCreatedAt, candidateCommentUpdatedAt),
+    resolveControlComment: async (_issueNumber, commentId) => {
+      if (commentId === 7001) return seal;
+      if (commentId === 7003) return attestationComment;
+      throw new Error(`control comment #${commentId} not found`);
+    },
   };
 }
 
@@ -291,7 +347,11 @@ test('final acceptance fails closed on missing or invalid candidate seal provena
       event,
       registry: REGISTRY,
       ...acceptanceResolvers(),
-      resolveControlComment: async () => comment,
+      resolveControlComment: async (_issueNumber, commentId) => {
+        if (commentId === 7001) return comment;
+        if (commentId === 7003) return validationAttestationComment({ candidateBody: comment.body });
+        throw new Error(`control comment #${commentId} not found`);
+      },
       resolveOpenControlIssues: async () => [event.issue],
     }),
     /candidate.*(provenance|timestamp|updated)|checkpoint.*(provenance|timestamp|updated)/i,
@@ -450,4 +510,172 @@ test('final acceptance fails closed when no current claimant resolver is supplie
     registry: REGISTRY,
     ...acceptanceResolvers(),
   }), /claim.*resolver|required.*claim|current claimant/i);
+});
+
+test('successful created review candidate emits a durable validation attestation body', async () => {
+  const issue = {
+    number: 900,
+    state: 'open',
+    created_at: '2026-08-24T20:00:00Z',
+    body: sessionBody(),
+  };
+  const sealBody = block(candidateData());
+  const result = await validateCheckpointEventEvidence({
+    event: {
+      action: 'created',
+      issue,
+      comment: { id: 7001, created_at: '2026-08-24T20:10:00Z', body: sealBody },
+    },
+    registry: REGISTRY,
+    resolvePullRequest: async (_repository, number) => exactPr(number),
+    resolveControlIssue: async (number) => {
+      if (number === 49) return roadmapRoleIssue();
+      throw new Error(`control issue #${number} not found`);
+    },
+    resolveOpenControlIssues: async () => [issue],
+  });
+
+  assert.equal(typeof result.validation_attestation_body, 'string');
+  assert.match(result.validation_attestation_body, /roadmap-agent-validation-attestation\/v1/);
+  assert.match(result.validation_attestation_body, new RegExp(sha256(sealBody)));
+  assert.match(result.validation_attestation_body, /"candidate_checkpoint_comment_id":\s*7001/);
+});
+
+test('final acceptance requires the exact successful-validation attestation lookup', async () => {
+  const event = acceptanceEvent();
+  const seal = candidateComment();
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event,
+    registry: REGISTRY,
+    ...acceptanceResolvers(),
+    resolveControlComment: async (_issueNumber, commentId) => {
+      if (commentId === 7001) return seal;
+      throw new Error('validation attestation does not resolve');
+    },
+    resolveOpenControlIssues: async () => [event.issue],
+  }), /attestation.*(resolve|required|missing)|validation attestation/i);
+});
+
+test('final acceptance rejects a user-authored validation-attestation lookalike', async () => {
+  const event = acceptanceEvent();
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event,
+    registry: REGISTRY,
+    ...acceptanceResolvers({ attestation: { userLogin: 'netkeep80', userType: 'User' } }),
+    resolveOpenControlIssues: async () => [event.issue],
+  }), /attestation.*(github-actions|Bot|platform|author)|validation.*attestation.*author/i);
+});
+
+test('final acceptance rejects mismatched attestation ownership, tuple and digest', async () => {
+  const event = acceptanceEvent();
+  const invalid = [
+    { issueNumber: 999 },
+    { dataOverrides: { candidate_session: 999 } },
+    { dataOverrides: { candidate_checkpoint_comment_id: 7999 } },
+    { dataOverrides: { work_item: 'netkeep80/roadmap#140' } },
+    { dataOverrides: { pr: 'netkeep80/roadmap#141' } },
+    { dataOverrides: { head_sha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' } },
+    { dataOverrides: { base_sha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' } },
+    { dataOverrides: { candidate_checkpoint_body_sha256: '0'.repeat(64) } },
+  ];
+
+  for (const attestation of invalid) {
+    await assert.rejects(() => validateCheckpointEventEvidence({
+      event,
+      registry: REGISTRY,
+      ...acceptanceResolvers({ attestation }),
+      resolveOpenControlIssues: async () => [event.issue],
+    }), /attestation|digest|sha-?256|ownership|candidate tuple/i);
+  }
+});
+
+test('same-second candidate seal mutation is rejected by attested exact-body digest', async () => {
+  const event = acceptanceEvent();
+  const originalBody = block(candidateData());
+  const mutatedBody = block(candidateData({ completed: ['candidate sealed', 'same-second mutation'] }));
+  const seal = candidateComment('2026-08-24T20:10:00Z', '2026-08-24T20:10:00Z', mutatedBody);
+  const attestation = validationAttestationComment({ candidateBody: originalBody });
+
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event,
+    registry: REGISTRY,
+    ...acceptanceResolvers(),
+    resolveControlComment: async (_issueNumber, commentId) => {
+      if (commentId === 7001) return seal;
+      if (commentId === 7003) return attestation;
+      throw new Error(`control comment #${commentId} not found`);
+    },
+    resolveOpenControlIssues: async () => [event.issue],
+  }), /attestation|digest|sha-?256|body.*mismatch/i);
+});
+
+test('final acceptance requires valid chronology metadata for both Sessions and checkpoints', async () => {
+  const cases = [
+    {
+      name: 'candidate Session created_at missing',
+      event: acceptanceEvent(),
+      resolvers: acceptanceResolvers({ candidateIssueCreatedAt: null }),
+    },
+    {
+      name: 'candidate Session created_at invalid',
+      event: acceptanceEvent(),
+      resolvers: acceptanceResolvers({ candidateIssueCreatedAt: 'not-a-timestamp' }),
+    },
+    {
+      name: 'acceptance Session created_at missing',
+      event: (() => { const value = acceptanceEvent(); delete value.issue.created_at; return value; })(),
+      resolvers: acceptanceResolvers(),
+    },
+    {
+      name: 'acceptance Session created_at invalid',
+      event: acceptanceEvent(acceptanceData(), { sessionCreatedAt: 'not-a-timestamp' }),
+      resolvers: acceptanceResolvers(),
+    },
+    {
+      name: 'acceptance checkpoint created_at missing',
+      event: (() => { const value = acceptanceEvent(); delete value.comment.created_at; return value; })(),
+      resolvers: acceptanceResolvers(),
+    },
+    {
+      name: 'acceptance checkpoint created_at invalid',
+      event: acceptanceEvent(acceptanceData(), { commentCreatedAt: 'not-a-timestamp' }),
+      resolvers: acceptanceResolvers(),
+    },
+  ];
+
+  for (const { name, event, resolvers } of cases) {
+    await assert.rejects(() => validateCheckpointEventEvidence({
+      event,
+      registry: REGISTRY,
+      ...resolvers,
+      resolveOpenControlIssues: async () => [event.issue],
+    }), /created_at|chronolog|timestamp/i, name);
+  }
+});
+
+test('validation attestation edit and delete are append-only authority violations', async () => {
+  const body = validationAttestationComment().body;
+  for (const action of ['edited', 'deleted']) {
+    await assert.rejects(() => validateCheckpointEventEvidence({
+      event: {
+        action,
+        issue: candidateIssue(),
+        comment: { id: 7003, body },
+        ...(action === 'edited' ? { changes: { body: { from: body } } } : {}),
+      },
+      registry: REGISTRY,
+    }), /attestation.*(immutable|append-only|edit|delete)|authority.*attestation/i);
+  }
+});
+
+test('Agent Status workflow publishes successful candidate validation attestation without history scan', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/agent-status.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /id:\s*evidence/);
+  assert.match(workflow, /validation_attestation_body_b64/);
+  assert.match(workflow, /base64\s+--decode/);
+  assert.match(workflow, /gh api --method POST[\s\S]*issues\/\$\{\{ github\.event\.issue\.number \}\}\/comments/);
+  assert.match(workflow, /github\.event\.action == 'created'/);
+  assert.match(workflow, /roadmap-agent-validation-attestation:start/);
+  assert.match(workflow, /changes\.body\.from[\s\S]*roadmap-agent-validation-attestation:start/);
+  assert.doesNotMatch(workflow, /--validate-live/);
 });
