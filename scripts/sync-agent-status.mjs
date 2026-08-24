@@ -171,11 +171,12 @@ async function main() {
   if (validateOnly) return;
 
   const configuredIssueNumber = Number.parseInt(process.env.AGENT_STATUS_ISSUE_NUMBER ?? `${DEFAULT_STATUS_ISSUE_NUMBER}`, 10);
+  const issueBody = `${renderAgentStatus(snapshot).replace('GENERATED FILE — DO NOT EDIT.', 'GENERATED ISSUE VIEW — DO NOT EDIT.')}\n`;
   const updatedIssue = await updateAgentStatusIssue({
     owner: registry.owner,
     repository: registry.control_repository,
     issueNumber: configuredIssueNumber,
-    body: `${renderAgentStatus(snapshot)}\n`,
+    body: issueBody,
   });
   console.log(`agent status sync complete: issue #${updatedIssue.number ?? configuredIssueNumber} updated through GitHub Issues API`);
 }
