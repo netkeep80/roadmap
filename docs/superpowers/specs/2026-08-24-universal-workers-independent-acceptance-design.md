@@ -66,7 +66,7 @@ Final acceptance uses a fresh Session and an exact pointer to the implementation
 }
 ```
 
-Decision is `accepted | changes_requested`. Final acceptance requires a different Session, acceptance phase, identical work item/PR/H/B and unchanged current PR candidate. Head or base movement invalidates integration authority for the old certificate. Partial reviews are factual Checkpoints without a final decision and never add confidence arithmetically.
+Decision is `accepted | changes_requested`. Final acceptance requires a different Session, acceptance phase, identical work item/PR/H/B and unchanged current PR candidate. At decision time the acceptance Session must still own exactly `[work_item]` and be the deterministic current winning claimant in the bounded current open Session set; released or losing acceptance Sessions have zero decision authority. Head or base movement invalidates integration authority for the old certificate. Partial reviews are factual Checkpoints without a final decision and never add confidence arithmetically.
 
 ## PR pointer
 
