@@ -60,6 +60,21 @@ export async function listRepositoryPullRequests(owner, repository) {
   return pullRequests;
 }
 
+export async function listRepositoryBranches(owner, repository) {
+  const branches = [];
+  for (let page = 1; ; page += 1) {
+    const batch = await githubAgentApi(`/repos/${owner}/${repository}/branches?per_page=100&page=${page}`);
+    if (!Array.isArray(batch)) throw new Error(`agent status: branch API for ${owner}/${repository} did not return an array`);
+    branches.push(...batch.map((branch) => ({
+      name: branch.name,
+      sha: branch.commit?.sha ?? null,
+      protected: branch.protected === true,
+    })));
+    if (batch.length < 100) break;
+  }
+  return branches;
+}
+
 function checkpointCommentsOnly(comments) {
   return comments.filter((comment) => typeof comment.body === 'string' && comment.body.includes(AGENT_MARKER));
 }
@@ -108,6 +123,7 @@ export async function buildLiveAgentSnapshot({
   checkedAt = new Date().toISOString(),
   listComments = listIssueComments,
   listPullRequests = listRepositoryPullRequests,
+  listBranches = null,
 }) {
   await validateLiveAgentState({ registry, repositories, issues, enforce: true });
 
@@ -175,18 +191,33 @@ export async function buildLiveAgentSnapshot({
     duplicate_work_items: [],
     unreconciled_supersessions: [],
   };
+  const branchFactsByRepository = {};
   for (const repo of registry.repositories) {
     if (!publicNameSet.has(repo.name)) continue;
     const fullName = `${registry.owner}/${repo.name}`;
-    const pullRequests = await listPullRequests(registry.owner, repo.name);
+    const [pullRequests, branches] = await Promise.all([
+      listPullRequests(registry.owner, repo.name),
+      typeof listBranches === 'function' ? listBranches(registry.owner, repo.name) : Promise.resolve([]),
+    ]);
     const diagnostics = analyzeOpenPullRequests({ repository: fullName, pullRequests });
     prDiagnostics.duplicate_work_items.push(...diagnostics.duplicate_work_items.map((entry) => ({ repository: fullName, ...entry })));
     prDiagnostics.unreconciled_supersessions.push(...diagnostics.unreconciled_supersessions.map((entry) => ({ repository: fullName, ...entry })));
+    branchFactsByRepository[fullName] = branches;
   }
   prDiagnostics.duplicate_work_items.sort((left, right) => left.work_item.localeCompare(right.work_item));
   prDiagnostics.unreconciled_supersessions.sort((left, right) => left.repository.localeCompare(right.repository) || left.replacement_pr - right.replacement_pr || left.superseded_pr - right.superseded_pr);
 
-  return buildAgentSnapshot({ checkedAt, roles, sessions, messages, checkpointsBySession, workerPolicy, prDiagnostics });
+  return buildAgentSnapshot({
+    checkedAt,
+    roles,
+    sessions,
+    historicalSessions: auditSessions,
+    messages,
+    checkpointsBySession,
+    workerPolicy,
+    prDiagnostics,
+    branchFactsByRepository,
+  });
 }
 
 async function main() {
@@ -198,9 +229,16 @@ async function main() {
     collectLiveAgentInputs(registry),
     listAllControlIssues(registry.owner, registry.control_repository),
   ]);
-  const snapshot = await buildLiveAgentSnapshot({ registry, workerPolicy, repositories, issues, historicalIssues });
+  const snapshot = await buildLiveAgentSnapshot({
+    registry,
+    workerPolicy,
+    repositories,
+    issues,
+    historicalIssues,
+    listBranches: listRepositoryBranches,
+  });
 
-  console.log(`agent status live ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.stale_candidate_session_count} stale candidates, ${snapshot.claim_count} active claims, ${snapshot.stale_claim_count} stale claims, ${snapshot.duplicate_work_item_pr_count} duplicate-work PR groups, ${snapshot.unreconciled_supersession_count} unreconciled supersessions, ${snapshot.unresolved_message_count} unresolved messages`);
+  console.log(`agent status live ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.stale_candidate_session_count} stale candidates, ${snapshot.claim_count} active claims, ${snapshot.stale_claim_count} stale claims, ${snapshot.duplicate_work_item_pr_count} duplicate-work PR groups, ${snapshot.unreconciled_supersession_count} unreconciled supersessions, ${snapshot.branch_drift_count} branch drift, ${snapshot.unresolved_message_count} unresolved messages`);
   if (validateOnly) return;
 
   const configuredIssueNumber = Number.parseInt(process.env.AGENT_STATUS_ISSUE_NUMBER ?? `${DEFAULT_STATUS_ISSUE_NUMBER}`, 10);

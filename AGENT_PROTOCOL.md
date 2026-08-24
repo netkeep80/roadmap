@@ -58,7 +58,7 @@ Title:
 [Agent Session] <repository> / <session-id>
 ```
 
-Canonical object:
+Canonical object for new Sessions:
 
 ```json
 {
@@ -67,6 +67,7 @@ Canonical object:
   "repository": "netkeep80/<repository>",
   "state": "working",
   "claims": ["netkeep80/<repository>#456"],
+  "current_branch": null,
   "current_pr": null,
   "blocked_by": []
 }
@@ -74,7 +75,18 @@ Canonical object:
 
 A Session references exactly one Role and the same repository as that Role. The Session issue number is the durable identity of one execution.
 
-Historical public v1 Sessions may contain previously accepted scheduler metadata. It is read-tolerated only and has no authority, liveness, collision, selection, or generated-status meaning.
+Historical public v1 Sessions may omit `current_branch` and may contain previously accepted scheduler metadata. Both are read-tolerated migration cases only; scheduler metadata has no authority, liveness, collision, selection, or generated-status meaning.
+
+`current_branch` is either `null` or an exact same-repository branch identity:
+
+```json
+{
+  "repository": "netkeep80/<repository>",
+  "name": "agent/<working-branch>"
+}
+```
+
+`current_branch` is durable recovery/ownership metadata. It is **not** Role authority, a repository lock, Claim authority, or merge authority. Authority remains Role + deterministic winning Claim.
 
 Finite states:
 
@@ -96,9 +108,9 @@ handoff                               => GitHub issue OPEN only while genuinely 
 completed / abandoned                 => GitHub issue CLOSED
 ```
 
-A terminal Session has zero claims. A handoff has zero claims. No-work invocations create no Session.
+A terminal Session has zero claims and cannot retain non-null `current_branch`. A handoff has zero claims but may retain `current_branch` while that exact branch is part of the durable resumable handoff. No-work invocations create no Session.
 
-When a successor successfully consumes a handoff, the predecessor becomes `completed` with zero claims and is closed. An invalidated handoff becomes `abandoned` and is closed.
+When a successor successfully consumes a handoff, the predecessor becomes `completed` with zero claims and is closed. An invalidated handoff becomes `abandoned` and is closed. `current_branch` is cleared only when that Session no longer owns/resumes the branch.
 
 Closed Sessions remain historical audit evidence and are still fail-closed validated; they are not active control state.
 
@@ -122,8 +134,9 @@ Collision order for LIVE Sessions claiming the same item:
 A worker may optimistically create a Session after selecting apparently-unclaimed work. **After Session creation and before any target-repository write**, it must refresh all competing LIVE Sessions/Claims for that item and apply the collision order.
 
 ```text
-winner => target writes allowed only after PR reconciliation below
+winner => target writes allowed only after PR + branch reconciliation below
 loser  => zero target writes
+          create no target branch
           clear claim
           state=abandoned
           close Session issue
@@ -138,10 +151,11 @@ Explicit work-item binding is derived from normal local PR declarations such as 
 
 ```text
 0 open PRs explicitly bound to selected work item
-  => a new PR may be created when implementation reaches that point
+  => continue to branch reconciliation
 
 1 open PR explicitly bound to selected work item
   => reuse/resume that PR
+  => reconcile its exact head branch with current_branch
   => do not create another PR for the same work item
 
 >1 open PRs explicitly bound to selected work item
@@ -156,6 +170,48 @@ Changed-file overlap alone is **not** collision authority. Independent or stacke
 
 Agent Status may surface duplicate-work and unreconciled-supersession diagnostics, but workers still reconstruct authoritative open PR state directly from the target repository before mutation.
 
+### 4.2 Branch reconciliation and durable ownership
+
+**No open PR != dead branch.** A branch without an open PR may contain the only durable copy of useful unfinished work.
+
+After winning the Claim and reconciling open PRs, refresh the complete target branch inventory, open PR heads/bases, stacked PR topology, exact default branch SHA, and relevant Session/Checkpoint branch ownership before any branch creation or target code write.
+
+Canonical order:
+
+```text
+explicit work item
+→ Session + deterministic Claim winner
+→ open-PR reconciliation
+→ branch reconciliation
+→ choose exact intended branch
+→ persist Session.current_branch
+→ persist matching Checkpoint.current_branch when checkpointing
+→ refresh GitHub and confirm durable ownership
+→ only then create/reuse the exact branch
+→ one canonical PR
+→ CI / repo-guard
+→ merge
+→ ordinary ephemeral branch disappears
+```
+
+If the winning Session has no `current_branch`, selecting a branch name does not authorize branch creation. The worker must first persist that exact branch identity in the Session **before create or push**, then refresh GitHub, and only then create or reuse it.
+
+If a LIVE/resumable Session already has `current_branch` and that exact branch exists without a PR, revalidate its commits and reuse it as owned pre-PR work. Do not create `branch-v2`, `branch-v3`, `tmp-new`, `agent-new`, or another replacement merely because no PR exists.
+
+If `current_branch` points to an absent branch, a winning worker may create that exact branch only after fresh branch/PR reconciliation. A collision loser never creates, pushes, rewrites, or reuses a target branch.
+
+Preservation rules:
+
+- default branch is never a working-branch deletion target;
+- active same-repository open PR heads are preserved;
+- fork PR heads do not grant authority to mutate a local base-repository ref;
+- LIVE/resumable `current_branch` is preserved/reused;
+- explicit persistent release/Pages branches are preserved only when current repository configuration/policy proves persistence;
+- ordinary merged same-repository working branches should disappear through normal lifecycle;
+- a terminal Session plus unexplained surviving ordinary branch is branch drift requiring reconciliation, not automatic deletion authority.
+
+Never infer branch obsolescence from absence of an open PR, age, name, behind count, changed-file overlap, ancestry, or superficially similar work. Destructive branch reconciliation requires current proof and exact-SHA guarding in the repository-local branch-hygiene implementation.
+
 ## 5. Checkpoint
 
 A Checkpoint is a structured Session comment:
@@ -168,7 +224,11 @@ A Checkpoint is a structured Session comment:
   "refs": ["netkeep80/<public-repository>#123", "commit:<public-sha>"],
   "blockers": [],
   "next": ["exact next executable action"],
-  "messages": []
+  "messages": [],
+  "current_branch": {
+    "repository": "netkeep80/<repository>",
+    "name": "agent/<working-branch>"
+  }
 }
 ```
 
@@ -176,6 +236,8 @@ Rules:
 
 - store public observable facts and accepted decisions, not private reasoning;
 - include exact public SHA/PR/check evidence when needed for safe resumption;
+- while an active/handoff Session owns a non-null branch, every new Checkpoint mirrors that exact `current_branch`;
+- terminal history may retain earlier checkpoint evidence showing which branch was owned, while the terminal Session itself clears `current_branch`;
 - every fresh worker revalidates Checkpoint facts against current GitHub before mutation;
 - every marked Checkpoint on every protocol Session validates fail-closed, including closed historical Sessions;
 - `handoff` requires durable context sufficient for a fresh worker to resume from GitHub only.
@@ -188,6 +250,7 @@ Machine policy is `data/worker-policy.json`.
 lease_seconds = 7200
 heartbeat_target_seconds = 3600
 pr_reconciliation_required = true
+branch_reconciliation_required = true
 ```
 
 Authoritative heartbeat:
@@ -206,15 +269,18 @@ handoff                                           => RESUMABLE_HANDOFF
 completed / abandoned                             => TERMINAL
 ```
 
-`STALE_CANDIDATE` is only a recovery signal. It never means a claim is free.
+`STALE_CANDIDATE` is only a recovery signal. It never means a claim or branch is free.
 
 Before changing a stale Session or taking its work, revalidate current GitHub completely:
 
 ```text
 target exact default-branch SHA
+complete branch inventory
 open local issues and PRs
 PR reconciliation for the selected work item
+current_branch existence and exact current SHA if present
 current PR exact head/base if any
+stacked PR topology
 actual CI / repo-guard gates
 LIVE claims + deterministic winners
 Messages
@@ -225,10 +291,12 @@ Then:
 
 ```text
 completed / superseded / blocked / invalidated / held by LIVE winner
-  => old stale Session -> abandoned, zero claims, CLOSED
+  => old stale Session -> abandoned, zero claims, current_branch cleared, CLOSED
+  => unexplained surviving ordinary branch remains reconciliation drift
 
 still executable and no LIVE winner
-  => old stale Session -> abandoned, zero claims, CLOSED
+  => validate/recover any owned current_branch first
+  => old stale Session -> abandoned, zero claims, current_branch cleared, CLOSED
   => create new Session from current GitHub facts
 ```
 
@@ -331,7 +399,7 @@ Examples of valid triggers:
 
 Where the maintenance target is itself an open roadmap issue, claim that exact issue. Do not create a second housekeeping issue merely to track the repair.
 
-A roadmap-management Session uses the same Session/Claim collision rules, PR reconciliation rules, lease rules, CI and repo-guard as every other repository Session. Different roadmap issues may be maintained concurrently; the same issue has only one LIVE winning claimant.
+A roadmap-management Session uses the same Session/Claim collision rules, PR reconciliation rules, branch reconciliation rules, lease rules, CI and repo-guard as every other repository Session. Different roadmap issues may be maintained concurrently; the same issue has only one LIVE winning claimant.
 
 No concrete trigger => no roadmap maintenance candidate.
 
@@ -346,6 +414,9 @@ Refresh relevant GitHub facts:
 - at Session creation;
 - **after Session creation before any target-repository write**;
 - after winning the Session claim, refresh all open target PRs and reconcile the selected work item;
+- after PR reconciliation, refresh complete target branch inventory and reconcile branch ownership;
+- before choosing/persisting `current_branch`;
+- after persisting `current_branch` and **before branch create or push**;
 - before branch creation or new PR creation;
 - after dependency/blocker changes;
 - before stale recovery;
@@ -353,6 +424,7 @@ Refresh relevant GitHub facts:
 - before PR draft/ready/integration transitions;
 - before Session/Message close transitions;
 - after merge/close transitions;
+- before clearing `current_branch`;
 - before handoff/completion.
 
 Target repository CI/repo-guard rules remain integration authority.
@@ -365,6 +437,8 @@ Structured fields may reference only:
 netkeep80/<registered-public-repository>
 netkeep80/<registered-public-repository>#<issue-or-pr-number>
 commit:<sha> when the surrounding object identifies a registered public repository
+current_branch.repository = same registered public Session repository
+current_branch.name = canonical Git branch name, not refs/heads/...
 roadmap Role issue numbers
 ```
 
@@ -379,7 +453,7 @@ If a repository leaves public scope:
 3. its Role is closed/inactivated;
 4. active Sessions terminate without importing new non-public facts;
 5. generated active state stops exposing it;
-6. future Messages must not reference it.
+6. future Messages and `current_branch` ownership must not reference it.
 
 ## 12. Authority / non-goals
 
@@ -387,9 +461,10 @@ The protocol does not:
 
 - choose portfolio priority or canonical ownership automatically;
 - create work because a timer fired or a worker is idle;
-- grant merge authority from a Claim or Session;
+- grant merge authority from a Claim, Session, or `current_branch`;
 - replace repository issues/PRs, local CI, or repo-guard;
 - infer work-item identity from changed-file overlap alone;
+- infer deletion authority from branch age/name/ancestry/behind state;
 - introduce a merge queue or global repository lock;
 - create a privileged roadmap-admin execution mode outside Role #49;
 - coordinate private repositories;
