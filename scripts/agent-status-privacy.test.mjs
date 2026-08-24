@@ -12,6 +12,7 @@ const workerPolicy = {
   no_work_action: 'exit',
   allow_speculative_work: false,
   coordinator_requires_declared_trigger: true,
+  pr_reconciliation_required: true,
 };
 
 test('generated status does not duplicate free-form checkpoint handoff text', () => {
