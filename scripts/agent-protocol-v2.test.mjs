@@ -10,15 +10,26 @@ function block(data) {
   return `${START}\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n${END}`;
 }
 
-const roleMap = new Map([[49, {
-  protocol: 'roadmap-agent-role/v1',
-  repository: 'netkeep80/roadmap',
-  scope: 'public-only',
-  state: 'active',
-  role_kind: 'repository-developer',
-  portfolio_authority: 'coordinate',
-  issue_number: 49,
-}]]);
+const roleMap = new Map([
+  [49, {
+    protocol: 'roadmap-agent-role/v1',
+    repository: 'netkeep80/roadmap',
+    scope: 'public-only',
+    state: 'active',
+    role_kind: 'repository-developer',
+    portfolio_authority: 'coordinate',
+    issue_number: 49,
+  }],
+  [48, {
+    protocol: 'roadmap-agent-role/v1',
+    repository: 'netkeep80/repo-guard',
+    scope: 'public-only',
+    state: 'active',
+    role_kind: 'repository-developer',
+    portfolio_authority: 'propose',
+    issue_number: 48,
+  }],
+]);
 
 function sessionIssue(overrides = {}) {
   const data = {
@@ -62,8 +73,8 @@ test('Session v2 claim must be empty or exactly its work_item', () => {
 
 test('Session v2 work_item must belong to the Session repository', () => {
   assert.throws(
-    () => validateSession(sessionIssue({ work_item: 'netkeep80/other#1', claims: [] }), roleMap),
-    /work_item .* must belong to repository roadmap/,
+    () => validateSession(sessionIssue({ work_item: 'netkeep80/repo-guard#1', claims: [] }), roleMap),
+    /work_item netkeep80\/repo-guard#1 must belong to repository roadmap/,
   );
 });
 
