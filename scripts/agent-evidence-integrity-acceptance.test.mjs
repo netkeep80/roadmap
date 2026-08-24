@@ -243,3 +243,28 @@ test('workflow routing sees previous body when an edited v2 Session removes the 
   assert.match(workflow, /name: Publish current worker state to permanent Issue[\s\S]*?github\.event_name != 'issue_comment'/);
   assert.doesNotMatch(workflow, /--validate-live/);
 });
+
+test('Session authority rejects pull request conversations at event and referenced-candidate boundaries', async () => {
+  const pullSession = { number: 900, created_at: '2026-08-24T20:00:00Z', body: sessionBody(), pull_request: {} };
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event: { action: 'created', issue: pullSession, comment: { id: 7001, body: block(candidateData()) } },
+    registry: REGISTRY,
+    resolvePullRequest: async (_repository, number) => exactPr(number),
+  }), /Session.*Issue|pull request/i);
+
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event: acceptanceEvent(), registry: REGISTRY, ...acceptanceResolvers(),
+    resolveControlIssue: async () => ({ ...candidateIssue(), pull_request: {} }),
+  }), /candidate Session.*Issue|pull request/i);
+});
+
+test('review candidate rejects a later claimant when an earlier open claimant exists', async () => {
+  const current = { number: 901, created_at: '2026-08-24T20:01:00Z', body: sessionBody() };
+  const earlier = { number: 900, created_at: '2026-08-24T20:00:00Z', body: sessionBody() };
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event: { action: 'created', issue: current, comment: { id: 7002, body: block(candidateData()) } },
+    registry: REGISTRY,
+    resolvePullRequest: async (_repository, number) => exactPr(number),
+    resolveOpenControlIssues: async () => [earlier, current],
+  }), /winning Claim|claim winner|earlier claimant/i);
+});
