@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 async function loadIntegrityModule() {
   try {
@@ -88,4 +89,17 @@ test('INVALID status is explicit and never echoes raw failure payload', async ()
   assert.match(body, /2026-08-24T18:50:00.000Z/);
   assert.match(body, /https:\/\/github\.com\/netkeep80\/roadmap\/actions\/runs\/123/);
   assert.doesNotMatch(body, /SECRET-OR-PRIVATE-RAW-PAYLOAD/);
+});
+
+test('Agent Status validates live evidence and publishes an explicit INVALID state on failure', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/agent-status.yml', import.meta.url), 'utf8');
+
+  assert.match(workflow, /scripts\/agent-evidence-integrity\.mjs/);
+  assert.match(workflow, /Validate live checkpoint commit evidence/i);
+  assert.match(workflow, /node scripts\/agent-evidence-integrity\.mjs --validate-live/);
+  assert.match(workflow, /if:\s*failure\(\)/);
+  assert.match(workflow, /CONTROL PLANE INVALID/);
+  assert.match(workflow, /issues\/103/);
+  assert.doesNotMatch(workflow, /continue-on-error:\s*true/);
+  assert.doesNotMatch(workflow, /\|\|\s*true/);
 });
