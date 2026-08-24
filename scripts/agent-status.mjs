@@ -1,4 +1,5 @@
 import { compareClaimPriority } from './agent-protocol.mjs';
+import { classifySessionLease, validateWorkerPolicy } from './worker-runtime.mjs';
 
 const LEASED_SESSION_STATES = new Set(['starting', 'working', 'waiting', 'blocked']);
 const BLOCKING_MESSAGE_KINDS = new Set(['blocker', 'dependency-broken']);
@@ -35,7 +36,7 @@ function roleLookup(roles) {
   return new Map(roles.map((role) => [role.issue_number, role]));
 }
 
-function projectSession(session, checkpointsBySession) {
+function projectSession(session, checkpointsBySession, lease = null) {
   const checkpoint = latestCheckpoint(checkpointsBySession[session.number] ?? []);
   return {
     issue_number: session.number,
@@ -51,13 +52,17 @@ function projectSession(session, checkpointsBySession) {
     updated_at: session.updated_at ?? null,
     last_activity_at: maxTimestamp(session.updated_at, checkpoint?.created_at),
     latest_checkpoint: safeCheckpointProjection(checkpoint),
+    lease_status: lease?.status ?? null,
+    heartbeat_at: lease?.heartbeat_at ?? null,
+    lease_age_seconds: lease?.age_seconds ?? null,
   };
 }
 
-export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, checkpointsBySession = {} }) {
+export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, checkpointsBySession = {}, workerPolicy }) {
   if (!Array.isArray(roles) || !Array.isArray(sessions) || !Array.isArray(messages)) {
     throw new Error('agent status projection requires role/session/message arrays');
   }
+  const checkedPolicy = validateWorkerPolicy(workerPolicy);
 
   const sortedRoles = [...roles]
     .map((role) => ({
@@ -69,10 +74,19 @@ export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, check
     .sort((a, b) => a.repository.localeCompare(b.repository));
 
   const roleByIssue = roleLookup(roles);
-  const activeSessions = sessions
-    .filter((session) => LEASED_SESSION_STATES.has(session?.data?.state))
-    .map((session) => projectSession(session, checkpointsBySession))
-    .sort((a, b) => a.issue_number - b.issue_number);
+  const activeSessions = [];
+  const staleCandidateSessions = [];
+  for (const session of sessions) {
+    if (!LEASED_SESSION_STATES.has(session?.data?.state)) continue;
+    const checkpoints = checkpointsBySession[session.number] ?? [];
+    const lease = classifySessionLease({ session, checkpoints, now: checkedAt, policy: checkedPolicy });
+    const projected = projectSession(session, checkpointsBySession, lease);
+    if (lease.status === 'live') activeSessions.push(projected);
+    else if (lease.status === 'stale_candidate') staleCandidateSessions.push(projected);
+  }
+  activeSessions.sort((a, b) => a.issue_number - b.issue_number);
+  staleCandidateSessions.sort((a, b) => a.issue_number - b.issue_number);
+
   const resumableHandoffs = sessions
     .filter((session) => session?.data?.state === 'handoff')
     .map((session) => projectSession(session, checkpointsBySession))
@@ -100,6 +114,14 @@ export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, check
       };
     })
     .sort((a, b) => a.ref.localeCompare(b.ref));
+
+  const staleClaims = staleCandidateSessions
+    .flatMap((session) => session.claims.map((ref) => ({
+      ref,
+      session_issue: session.issue_number,
+      state: 'recovery-required',
+    })))
+    .sort((left, right) => left.ref.localeCompare(right.ref) || left.session_issue - right.session_issue);
 
   const unresolvedMessages = messages
     .filter((message) => message?.data?.state !== 'resolved')
@@ -143,14 +165,18 @@ export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, check
     repository_count: sortedRoles.length,
     role_count: sortedRoles.length,
     active_session_count: activeSessions.length,
+    stale_candidate_session_count: staleCandidateSessions.length,
     resumable_handoff_count: resumableHandoffs.length,
     unresolved_message_count: unresolvedMessages.length,
     claim_count: claims.length,
+    stale_claim_count: staleClaims.length,
     claim_collision_count: claims.filter((claim) => claim.conflict).length,
     roles: sortedRoles,
     active_sessions: activeSessions,
+    stale_candidate_sessions: staleCandidateSessions,
     resumable_handoffs: resumableHandoffs,
     claims,
+    stale_claims: staleClaims,
     unresolved_messages: unresolvedMessages,
     blockers,
   };
@@ -185,8 +211,10 @@ export function renderAgentStatus(snapshot) {
     `- Last successful agent-state check: **${snapshot.checked_at}**`,
     `- Permanent public roles: **${snapshot.role_count}/${snapshot.repository_count}**`,
     `- Active sessions: **${snapshot.active_session_count}**`,
+    `- Stale candidates: **${snapshot.stale_candidate_session_count ?? 0}**`,
     `- Resumable handoffs: **${snapshot.resumable_handoff_count ?? 0}**`,
     `- Active claims: **${snapshot.claim_count}**`,
+    `- Stale claims pending recovery: **${snapshot.stale_claim_count ?? 0}**`,
     `- Claim collisions: **${snapshot.claim_collision_count}**`,
     `- Unresolved messages: **${snapshot.unresolved_message_count}**`,
     `- Blockers: **${snapshot.blockers.length}**`,
@@ -204,6 +232,9 @@ export function renderAgentStatus(snapshot) {
   lines.push('', '## Active sessions', '');
   renderSessionTable(lines, snapshot.active_sessions, '_No active protocol sessions._');
 
+  lines.push('', '## STALE_CANDIDATE sessions', '');
+  renderSessionTable(lines, snapshot.stale_candidate_sessions ?? [], '_No stale candidate sessions._');
+
   lines.push('', '## Resumable handoffs', '');
   renderSessionTable(lines, snapshot.resumable_handoffs ?? [], '_No resumable handoffs._');
 
@@ -215,6 +246,16 @@ export function renderAgentStatus(snapshot) {
     for (const claim of snapshot.claims) {
       const state = claim.conflict ? '⚠️ claim collision' : 'active';
       lines.push(`| \`${esc(claim.ref)}\` | ${roadmapIssueRef(claim.winner_session_issue)} | ${claim.contenders.map((issue) => roadmapIssueRef(issue)).join(', ')} | ${state} |`);
+    }
+  }
+
+  lines.push('', '## Stale claims pending recovery', '');
+  if (!(snapshot.stale_claims ?? []).length) {
+    lines.push('_No stale claims pending recovery._');
+  } else {
+    lines.push('| Claim | Session | State |', '|---|---|---|');
+    for (const claim of snapshot.stale_claims) {
+      lines.push(`| \`${esc(claim.ref)}\` | ${roadmapIssueRef(claim.session_issue)} | \`${claim.state}\` |`);
     }
   }
 
@@ -241,6 +282,6 @@ export function renderAgentStatus(snapshot) {
     }
   }
 
-  lines.push('', '## Reading rule', '', '- This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.', '- `worker_slot` identifies the Scheduled Task slot for observability only; it grants no Role, claim, lease or authority.', '- A `handoff` is resumable context, not a live executor and not a claim holder.', '- Checkpoint free text remains only in the original Session comment and is not duplicated here.', '- Agents must re-read GitHub before every write or lifecycle transition.', '');
+  lines.push('', '## Reading rule', '', '- This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.', '- `worker_slot` identifies the Scheduled Task slot for observability only; it grants no Role, claim, lease or authority.', '- A `STALE_CANDIDATE` is not LIVE and its retained claims require complete GitHub revalidation before recovery; they are not automatically free.', '- A `handoff` is resumable context, not a live executor and not a claim holder.', '- Checkpoint free text remains only in the original Session comment and is not duplicated here.', '- Agents must re-read GitHub before every write or lifecycle transition.', '');
   return lines.join('\n');
 }
