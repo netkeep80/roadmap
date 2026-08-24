@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-24T16:24:25Z",
+  "latest_observed_github_change": "2026-08-24T18:42:24Z",
   "repository_count": 26,
   "child_repository_count": 25,
   "verified_child_backlinks": 25,
@@ -18,10 +18,10 @@
     },
     {
       "number": 3,
-      "title": "[P0] МТС v0.7 → AVM → aprover: один нормативный и один runtime path",
+      "title": "[P0] MTS semantics/proof → aprover functional prover + AVM runtime + independent visual lane",
       "state": "open",
       "state_reason": null,
-      "updated_at": "2026-08-12T20:24:38Z",
+      "updated_at": "2026-08-24T18:32:37Z",
       "html_url": "https://github.com/netkeep80/roadmap/issues/3",
       "is_pull_request": false
     },
@@ -114,10 +114,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T16:24:25Z",
-      "updated_at": "2026-08-24T15:27:27Z",
-      "open_issues": 50,
-      "open_pull_requests": 0,
+      "pushed_at": "2026-08-24T18:42:24Z",
+      "updated_at": "2026-08-24T17:35:37Z",
+      "open_issues": 57,
+      "open_pull_requests": 1,
       "tracked_issues": [
         {
           "number": 13,
@@ -145,9 +145,9 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-09T09:56:41Z",
+      "pushed_at": "2026-08-24T17:47:37Z",
       "updated_at": "2026-08-09T09:56:44Z",
-      "open_issues": 15,
+      "open_issues": 16,
       "open_pull_requests": 6,
       "tracked_issues": [
         {
@@ -205,7 +205,7 @@
       "visibility": "public",
       "pushed_at": "2026-08-09T09:56:53Z",
       "updated_at": "2026-08-09T09:57:23Z",
-      "open_issues": 16,
+      "open_issues": 17,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
@@ -324,9 +324,9 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T16:04:47Z",
-      "updated_at": "2026-08-24T12:03:13Z",
-      "open_issues": 7,
+      "pushed_at": "2026-08-24T18:38:28Z",
+      "updated_at": "2026-08-24T18:41:05Z",
+      "open_issues": 12,
       "open_pull_requests": 2,
       "tracked_issues": [
         {
@@ -357,7 +357,7 @@
       "visibility": "public",
       "pushed_at": "2026-08-24T11:09:04Z",
       "updated_at": "2026-08-24T11:10:31Z",
-      "open_issues": 1,
+      "open_issues": 2,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
@@ -379,7 +379,7 @@
       "visibility": "public",
       "pushed_at": "2026-08-24T12:32:48Z",
       "updated_at": "2026-08-24T12:35:35Z",
-      "open_issues": 1,
+      "open_issues": 2,
       "open_pull_requests": 0,
       "tracked_issues": []
     },
@@ -391,7 +391,7 @@
       "visibility": "public",
       "pushed_at": "2026-08-15T09:13:18Z",
       "updated_at": "2026-08-15T09:13:22Z",
-      "open_issues": 0,
+      "open_issues": 1,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
@@ -440,34 +440,52 @@
       "visibility": "public",
       "pushed_at": "2026-08-24T15:58:25Z",
       "updated_at": "2026-08-24T11:25:29Z",
-      "open_issues": 5,
+      "open_issues": 6,
       "open_pull_requests": 1,
       "tracked_issues": [
         {
-          "number": 139,
-          "title": "[Superseded by #153] aprover v0.3 — multi-step proof search поверх trusted МТС v0.3",
-          "state": "closed",
-          "state_reason": "not_planned",
-          "updated_at": "2026-08-21T15:34:09Z",
-          "html_url": "https://github.com/netkeep80/aprover/issues/139",
+          "number": 153,
+          "title": "[Roadmap] `aprover` → mathematical MTS prover: trusted replay, exact Theory binding, theorem library + search",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-24T18:31:13Z",
+          "html_url": "https://github.com/netkeep80/aprover/issues/153",
           "is_pull_request": false
         },
         {
-          "number": 144,
-          "title": "[Superseded by #153] v0.4 multi-step: exact-pin MTS v0.5 и untrusted DefinitionOpeningPath search",
-          "state": "closed",
-          "state_reason": "not_planned",
-          "updated_at": "2026-08-21T15:34:17Z",
-          "html_url": "https://github.com/netkeep80/aprover/issues/144",
+          "number": 157,
+          "title": "[R3] Functional mathematical prover: theorem library → deterministic search → C1-C6 corpus",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-24T18:31:55Z",
+          "html_url": "https://github.com/netkeep80/aprover/issues/157",
           "is_pull_request": false
         },
         {
-          "number": 152,
-          "title": "[Superseded by #153/#155] Exact-pin accepted MTS v0.7 / rooted Foundation-v2 boundary",
-          "state": "closed",
-          "state_reason": "not_planned",
-          "updated_at": "2026-08-21T15:34:27Z",
-          "html_url": "https://github.com/netkeep80/aprover/issues/152",
+          "number": 168,
+          "title": "[Visual migration] Перейти на standalone @mts/visual без расширения trusted proof boundary",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-24T11:22:45Z",
+          "html_url": "https://github.com/netkeep80/aprover/issues/168",
+          "is_pull_request": false
+        },
+        {
+          "number": 181,
+          "title": "[R3.1] Versioned replayable theorem record без stored-truth authority",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-23T10:35:38Z",
+          "html_url": "https://github.com/netkeep80/aprover/issues/181",
+          "is_pull_request": false
+        },
+        {
+          "number": 183,
+          "title": "[Architecture] Убрать canonical AST: direct Syntax Aset + Aset-native prover/UI",
+          "state": "open",
+          "state_reason": null,
+          "updated_at": "2026-08-24T11:29:25Z",
+          "html_url": "https://github.com/netkeep80/aprover/issues/183",
           "is_pull_request": false
         }
       ]
@@ -478,8 +496,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T15:29:15Z",
-      "updated_at": "2026-08-09T09:58:06Z",
+      "pushed_at": "2026-08-24T18:23:52Z",
+      "updated_at": "2026-08-24T18:10:08Z",
       "open_issues": 11,
       "open_pull_requests": 1,
       "tracked_issues": [
@@ -565,7 +583,7 @@
       "visibility": "public",
       "pushed_at": "2026-08-24T12:00:46Z",
       "updated_at": "2026-08-24T12:04:27Z",
-      "open_issues": 5,
+      "open_issues": 7,
       "open_pull_requests": 0,
       "tracked_issues": []
     },
@@ -644,7 +662,7 @@
       "visibility": "public",
       "pushed_at": "2026-08-09T09:58:08Z",
       "updated_at": "2026-08-09T09:59:24Z",
-      "open_issues": 12,
+      "open_issues": 13,
       "open_pull_requests": 1,
       "tracked_issues": [
         {
@@ -834,7 +852,7 @@
       "visibility": "public",
       "pushed_at": "2026-08-09T09:59:08Z",
       "updated_at": "2026-08-09T09:59:12Z",
-      "open_issues": 1,
+      "open_issues": 2,
       "open_pull_requests": 0,
       "tracked_issues": []
     },
@@ -846,7 +864,7 @@
       "visibility": "public",
       "pushed_at": "2026-08-09T09:59:38Z",
       "updated_at": "2026-08-09T09:59:31Z",
-      "open_issues": 0,
+      "open_issues": 1,
       "open_pull_requests": 1,
       "tracked_issues": []
     },
@@ -935,6 +953,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-24T16:25:01.188Z",
-  "state_hash": "4e396e161b1d34a753fe6ded1b59b3a7929920b7f20380e5ddc5c9db9c817cdd"
+  "checked_at": "2026-08-24T18:43:02.722Z",
+  "state_hash": "c0cf7eefd6de438c9d13bb5b39bb2d51befe3e1a00745f42bb5c2068789b9ee2"
 }
