@@ -41,6 +41,7 @@ function projectSession(session, checkpointsBySession) {
     issue_number: session.number,
     url: session.html_url ?? issueUrl(session.number),
     role_issue: session.data.role_issue,
+    worker_slot: session.data.worker_slot ?? null,
     repository: session.data.repository,
     state: session.data.state,
     claims: [...session.data.claims],
@@ -168,9 +169,10 @@ function renderSessionTable(lines, sessions, emptyText) {
     lines.push(emptyText);
     return;
   }
-  lines.push('| Session | Repository | State | Claims | Current PR | Last activity |', '|---|---|---|---|---|---|');
+  lines.push('| Session | Worker slot | Repository | State | Claims | Current PR | Last activity |', '|---|---|---|---|---|---|---|');
   for (const session of sessions) {
-    lines.push(`| [#${session.issue_number}](${session.url}) | \`${esc(session.repository)}\` | \`${session.state}\` | ${session.claims.map((claim) => `\`${esc(claim)}\``).join(', ') || '—'} | ${session.current_pr ? `\`${esc(session.current_pr)}\`` : '—'} | ${session.last_activity_at ?? '—'} |`);
+    const slot = session.worker_slot === null ? '—' : `\`${session.worker_slot}\``;
+    lines.push(`| [#${session.issue_number}](${session.url}) | ${slot} | \`${esc(session.repository)}\` | \`${session.state}\` | ${session.claims.map((claim) => `\`${esc(claim)}\``).join(', ') || '—'} | ${session.current_pr ? `\`${esc(session.current_pr)}\`` : '—'} | ${session.last_activity_at ?? '—'} |`);
   }
 }
 
@@ -239,6 +241,6 @@ export function renderAgentStatus(snapshot) {
     }
   }
 
-  lines.push('', '## Reading rule', '', '- This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.', '- A `handoff` is resumable context, not a live executor and not a claim holder.', '- Checkpoint free text remains only in the original Session comment and is not duplicated here.', '- Agents must re-read GitHub before every write or lifecycle transition.', '');
+  lines.push('', '## Reading rule', '', '- This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.', '- `worker_slot` identifies the Scheduled Task slot for observability only; it grants no Role, claim, lease or authority.', '- A `handoff` is resumable context, not a live executor and not a claim holder.', '- Checkpoint free text remains only in the original Session comment and is not duplicated here.', '- Agents must re-read GitHub before every write or lifecycle transition.', '');
   return lines.join('\n');
 }
