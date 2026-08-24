@@ -6,6 +6,17 @@ import { buildAgentSnapshot } from './agent-status.mjs';
 
 const block = (value) => `before\n<!-- roadmap-agent:start -->\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\`\n<!-- roadmap-agent:end -->\nafter`;
 
+const workerPolicy = {
+  schema_version: 1,
+  scope: 'public-owner-repositories',
+  lease_seconds: 7200,
+  heartbeat_target_seconds: 3600,
+  work_source_order: ['handoff', 'message', 'local-issue'],
+  no_work_action: 'exit',
+  allow_speculative_work: false,
+  coordinator_requires_declared_trigger: true,
+};
+
 const role = {
   number: 10,
   state: 'open',
@@ -85,6 +96,7 @@ test('generated Session status exposes worker_slot without changing Role or clai
     roles: [{ issue_number: 10, repository: 'netkeep80/alpha', portfolio_authority: 'propose' }],
     sessions: [session],
     messages: [],
+    workerPolicy,
   });
   assert.equal(snapshot.active_sessions[0].worker_slot, 7);
   assert.equal(snapshot.active_sessions[0].role_issue, 10);
