@@ -56,6 +56,27 @@ test('validateWorkerPolicy rejects speculative work and non-exit idle policy', (
   assert.throws(() => validateWorkerPolicy({ ...rawPolicy, pr_reconciliation_required: false }), /pr_reconciliation/i);
 });
 
+test('worker policy v1 remains migration-readable while v2 requires branch reconciliation explicitly', () => {
+  assert.doesNotThrow(() => validateWorkerPolicy(structuredClone(rawPolicy)));
+  assert.throws(
+    () => validateWorkerPolicy({ ...rawPolicy, schema_version: 2 }),
+    /schema_version 2|branch_reconciliation/i,
+  );
+  assert.equal(validateWorkerPolicy({
+    ...rawPolicy,
+    schema_version: 2,
+    branch_reconciliation_required: true,
+  }).branch_reconciliation_required, true);
+  assert.throws(
+    () => validateWorkerPolicy({
+      ...rawPolicy,
+      schema_version: 2,
+      branch_reconciliation_required: false,
+    }),
+    /branch_reconciliation/i,
+  );
+});
+
 test('latest valid checkpoint server timestamp controls LIVE versus STALE_CANDIDATE', () => {
   const session = workerSession();
   const checkpoints = [{ created_at: '2026-08-24T10:00:00Z', data: { state: 'working' } }];
