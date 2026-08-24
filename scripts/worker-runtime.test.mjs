@@ -30,6 +30,19 @@ function workerSession({ state = 'working', createdAt = '2026-08-24T09:00:00Z', 
   };
 }
 
+function executableIssue(ref, overrides = {}) {
+  return {
+    ref,
+    open: true,
+    portfolio_consistent: true,
+    executable_now: true,
+    blocked: false,
+    occupied_by_live_winner: false,
+    stale_recovery_required: false,
+    ...overrides,
+  };
+}
+
 test('validateWorkerPolicy accepts exact bounded public scheduled-worker policy', () => {
   assert.deepEqual(validateWorkerPolicy(structuredClone(rawPolicy)), rawPolicy);
 });
@@ -86,15 +99,7 @@ test('no explicit executable candidate returns exit_no_work', () => {
 });
 
 test('bounded selection honors handoff then message then local issue', () => {
-  const issue = {
-    ref: 'netkeep80/alpha#3',
-    open: true,
-    portfolio_consistent: true,
-    executable_now: true,
-    blocked: false,
-    occupied_by_live_winner: false,
-    stale_recovery_required: false,
-  };
+  const issue = executableIssue('netkeep80/alpha#3');
   const message = { ref: 'netkeep80/roadmap#20', actionable: true };
   const handoff = { ref: 'netkeep80/roadmap#21', valid: true, executable_now: true, occupied_by_live_winner: false };
 
@@ -108,13 +113,54 @@ test('bounded selection never chooses blocked, live-occupied or stale-recovery l
     handoffs: [],
     messages: [],
     issues: [
-      { ref: 'netkeep80/alpha#1', open: true, portfolio_consistent: true, executable_now: true, blocked: true, occupied_by_live_winner: false, stale_recovery_required: false },
-      { ref: 'netkeep80/alpha#2', open: true, portfolio_consistent: true, executable_now: true, blocked: false, occupied_by_live_winner: true, stale_recovery_required: false },
-      { ref: 'netkeep80/alpha#3', open: true, portfolio_consistent: true, executable_now: true, blocked: false, occupied_by_live_winner: false, stale_recovery_required: true },
+      executableIssue('netkeep80/alpha#1', { blocked: true }),
+      executableIssue('netkeep80/alpha#2', { occupied_by_live_winner: true }),
+      executableIssue('netkeep80/alpha#3', { stale_recovery_required: true }),
     ],
   });
   assert.equal(result.action, 'exit_no_work');
   assert.equal(result.candidate, null);
+});
+
+test('live overlap skips occupied work and selects another explicit issue', () => {
+  const occupied = executableIssue('netkeep80/alpha#1', { occupied_by_live_winner: true });
+  const free = executableIssue('netkeep80/alpha#2');
+  const result = selectBoundedWork({ handoffs: [], messages: [], issues: [occupied, free] });
+  assert.equal(result.action, 'claim_issue');
+  assert.equal(result.candidate.ref, 'netkeep80/alpha#2');
+});
+
+test('obvious cleanup observation without an explicit work item cannot create work', () => {
+  const result = selectBoundedWork({
+    handoffs: [],
+    messages: [],
+    issues: [],
+    observations: [{ kind: 'cleanup-opportunity', obvious: true }],
+  });
+  assert.deepEqual(result, { action: 'exit_no_work', candidate: null });
+});
+
+test('idle coordinator observations without a declared work candidate also exit', () => {
+  const result = selectBoundedWork({
+    role_authority: 'coordinate',
+    handoffs: [],
+    messages: [],
+    issues: [],
+    observations: [{ kind: 'interesting-idea' }],
+  });
+  assert.deepEqual(result, { action: 'exit_no_work', candidate: null });
+});
+
+test('same explicit GitHub candidate state produces the same bounded decision', () => {
+  const input = {
+    handoffs: [],
+    messages: [],
+    issues: [
+      executableIssue('netkeep80/alpha#1', { occupied_by_live_winner: true }),
+      executableIssue('netkeep80/alpha#2'),
+    ],
+  };
+  assert.deepEqual(selectBoundedWork(structuredClone(input)), selectBoundedWork(structuredClone(input)));
 });
 
 test('stale work cannot resume before complete GitHub revalidation', () => {
