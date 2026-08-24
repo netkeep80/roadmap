@@ -3,6 +3,17 @@ import test from 'node:test';
 
 import { buildAgentSnapshot } from './agent-status.mjs';
 
+const workerPolicy = {
+  schema_version: 1,
+  scope: 'public-owner-repositories',
+  lease_seconds: 7200,
+  heartbeat_target_seconds: 3600,
+  work_source_order: ['handoff', 'message', 'local-issue'],
+  no_work_action: 'exit',
+  allow_speculative_work: false,
+  coordinator_requires_declared_trigger: true,
+};
+
 test('generated status does not duplicate free-form checkpoint handoff text', () => {
   const snapshot = buildAgentSnapshot({
     checkedAt: '2026-08-24T10:00:00Z',
@@ -26,6 +37,7 @@ test('generated status does not duplicate free-form checkpoint handoff text', ()
       },
     ],
     messages: [],
+    workerPolicy,
     checkpointsBySession: {
       101: [
         {

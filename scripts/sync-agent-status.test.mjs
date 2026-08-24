@@ -13,6 +13,17 @@ const registry = {
   repositories: [{ name: 'roadmap' }],
 };
 
+const workerPolicy = {
+  schema_version: 1,
+  scope: 'public-owner-repositories',
+  lease_seconds: 7200,
+  heartbeat_target_seconds: 3600,
+  work_source_order: ['handoff', 'message', 'local-issue'],
+  no_work_action: 'exit',
+  allow_speculative_work: false,
+  coordinator_requires_declared_trigger: true,
+};
+
 const repositories = [
   { name: 'roadmap', private: false, visibility: 'public' },
 ];
@@ -62,6 +73,7 @@ test('terminal Session marked comments are still validated fail-closed', async (
   await assert.rejects(
     () => buildLiveAgentSnapshot({
       registry,
+      workerPolicy,
       repositories,
       issues: [roleIssue, terminalSessionIssue],
       checkedAt: '2026-08-24T12:00:00Z',
@@ -91,6 +103,7 @@ test('terminal Session marked comments are still validated fail-closed', async (
 test('valid terminal Checkpoint history is validated but terminal Session is not projected active', async () => {
   const snapshot = await buildLiveAgentSnapshot({
     registry,
+    workerPolicy,
     repositories,
     issues: [roleIssue, terminalSessionIssue],
     checkedAt: '2026-08-24T12:00:00Z',
@@ -118,6 +131,7 @@ test('closed historical protocol Session comments are audited without resurrecti
   await assert.rejects(
     () => buildLiveAgentSnapshot({
       registry,
+      workerPolicy,
       repositories,
       issues: [roleIssue],
       historicalIssues: [roleIssue, closedHistoricalSessionIssue],
