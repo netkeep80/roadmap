@@ -11,6 +11,7 @@ import {
   validateSession,
 } from './agent-protocol.mjs';
 import { buildAgentSnapshot, renderAgentStatus } from './agent-status.mjs';
+import { analyzeOpenPullRequests } from './pr-reconciliation.mjs';
 import {
   AGENT_MARKER,
   agentIssuesOnly,
@@ -42,6 +43,21 @@ async function listIssueComments(owner, repository, issueNumber) {
     if (batch.length < 100) break;
   }
   return comments;
+}
+
+export async function listRepositoryPullRequests(owner, repository) {
+  const pullRequests = [];
+  for (let page = 1; ; page += 1) {
+    const batch = await githubAgentApi(`/repos/${owner}/${repository}/pulls?state=open&per_page=100&page=${page}`);
+    if (!Array.isArray(batch)) throw new Error(`agent status: pull request API for ${owner}/${repository} did not return an array`);
+    pullRequests.push(...batch.map((pr) => ({
+      number: pr.number,
+      state: pr.state,
+      body: pr.body ?? '',
+    })));
+    if (batch.length < 100) break;
+  }
+  return pullRequests;
 }
 
 function checkpointCommentsOnly(comments) {
@@ -91,6 +107,7 @@ export async function buildLiveAgentSnapshot({
   historicalIssues = issues,
   checkedAt = new Date().toISOString(),
   listComments = listIssueComments,
+  listPullRequests = listRepositoryPullRequests,
 }) {
   await validateLiveAgentState({ registry, repositories, issues, enforce: true });
 
@@ -153,7 +170,22 @@ export async function buildLiveAgentSnapshot({
     checkpointsBySession[session.number] = checkpoints;
   }
 
-  return buildAgentSnapshot({ checkedAt, roles, sessions, messages, checkpointsBySession, workerPolicy });
+  const prDiagnostics = {
+    duplicate_work_items: [],
+    unreconciled_supersessions: [],
+  };
+  for (const repo of registry.repositories) {
+    if (!publicNames.has(repo.name)) continue;
+    const fullName = `${registry.owner}/${repo.name}`;
+    const pullRequests = await listPullRequests(registry.owner, repo.name);
+    const diagnostics = analyzeOpenPullRequests({ repository: fullName, pullRequests });
+    prDiagnostics.duplicate_work_items.push(...diagnostics.duplicate_work_items.map((entry) => ({ repository: fullName, ...entry })));
+    prDiagnostics.unreconciled_supersessions.push(...diagnostics.unreconciled_supersessions.map((entry) => ({ repository: fullName, ...entry })));
+  }
+  prDiagnostics.duplicate_work_items.sort((left, right) => left.work_item.localeCompare(right.work_item));
+  prDiagnostics.unreconciled_supersessions.sort((left, right) => left.repository.localeCompare(right.repository) || left.replacement_pr - right.replacement_pr || left.superseded_pr - right.superseded_pr);
+
+  return buildAgentSnapshot({ checkedAt, roles, sessions, messages, checkpointsBySession, workerPolicy, prDiagnostics });
 }
 
 async function main() {
@@ -167,7 +199,7 @@ async function main() {
   ]);
   const snapshot = await buildLiveAgentSnapshot({ registry, workerPolicy, repositories, issues, historicalIssues });
 
-  console.log(`agent status live ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.stale_candidate_session_count} stale candidates, ${snapshot.claim_count} active claims, ${snapshot.stale_claim_count} stale claims, ${snapshot.unresolved_message_count} unresolved messages`);
+  console.log(`agent status live ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.stale_candidate_session_count} stale candidates, ${snapshot.claim_count} active claims, ${snapshot.stale_claim_count} stale claims, ${snapshot.duplicate_work_item_pr_count} duplicate-work PR groups, ${snapshot.unreconciled_supersession_count} unreconciled supersessions, ${snapshot.unresolved_message_count} unresolved messages`);
   if (validateOnly) return;
 
   const configuredIssueNumber = Number.parseInt(process.env.AGENT_STATUS_ISSUE_NUMBER ?? `${DEFAULT_STATUS_ISSUE_NUMBER}`, 10);
