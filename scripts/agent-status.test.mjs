@@ -9,6 +9,17 @@ const roles = [
   { issue_number: 32, repository: 'netkeep80/anum_docs', portfolio_authority: 'propose' },
 ];
 
+const workerPolicy = {
+  schema_version: 1,
+  scope: 'public-owner-repositories',
+  lease_seconds: 7200,
+  heartbeat_target_seconds: 3600,
+  work_source_order: ['handoff', 'message', 'local-issue'],
+  no_work_action: 'exit',
+  allow_speculative_work: false,
+  coordinator_requires_declared_trigger: true,
+};
+
 const sessions = [
   {
     number: 101,
@@ -228,4 +239,58 @@ test('renderAgentStatus exposes copyable role URLs and separates resumable hando
   assert.match(markdown, /#201/);
   assert.match(markdown, /Resumable handoffs/i);
   assert.match(markdown, /#104/);
+});
+
+test('lease-aware projection keeps the exact boundary LIVE and exposes expired claims as recovery-required', () => {
+  const boundary = {
+    number: 301,
+    html_url: 'https://github.com/netkeep80/roadmap/issues/301',
+    created_at: '2026-08-24T08:00:00Z',
+    updated_at: '2026-08-24T09:59:59Z',
+    data: {
+      role_issue: 45,
+      repository: 'netkeep80/mts_visual',
+      state: 'working',
+      claims: ['netkeep80/mts_visual#30'],
+      current_pr: null,
+      blocked_by: [],
+    },
+  };
+  const expired = {
+    number: 302,
+    html_url: 'https://github.com/netkeep80/roadmap/issues/302',
+    created_at: '2026-08-24T07:59:59Z',
+    updated_at: '2026-08-24T09:59:59Z',
+    data: {
+      role_issue: 32,
+      repository: 'netkeep80/anum_docs',
+      state: 'working',
+      claims: ['netkeep80/anum_docs#925'],
+      current_pr: null,
+      blocked_by: [],
+    },
+  };
+
+  const snapshot = buildAgentSnapshot({
+    checkedAt: '2026-08-24T10:00:00Z',
+    roles,
+    sessions: [boundary, expired],
+    messages: [],
+    checkpointsBySession: {},
+    workerPolicy,
+  });
+
+  assert.deepEqual(snapshot.active_sessions.map((session) => session.issue_number), [301]);
+  assert.deepEqual(snapshot.stale_candidate_sessions.map((session) => session.issue_number), [302]);
+  assert.deepEqual(snapshot.claims.map((claim) => claim.ref), ['netkeep80/mts_visual#30']);
+  assert.deepEqual(snapshot.stale_claims, [{
+    ref: 'netkeep80/anum_docs#925',
+    session_issue: 302,
+    state: 'recovery-required',
+  }]);
+
+  const markdown = renderAgentStatus(snapshot);
+  assert.match(markdown, /STALE_CANDIDATE/);
+  assert.match(markdown, /recovery-required/);
+  assert.match(markdown, /#302/);
 });
