@@ -225,6 +225,9 @@ export function validateSession(issue, roleMap) {
   if (TERMINAL_SESSION_STATES.has(data.state) && claims.length) {
     fail(`terminal session state ${data.state} cannot retain claims`);
   }
+  if (data.state === 'handoff' && claims.length) {
+    fail('handoff session cannot retain claims');
+  }
 
   if (data.current_pr !== null) {
     validatePublicIssueReference(data.current_pr, publicRepositories, 'current_pr', repository);
