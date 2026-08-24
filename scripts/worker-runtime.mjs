@@ -32,7 +32,7 @@ function sameBranch(left, right) {
 
 export function validateWorkerPolicy(policy) {
   if (!policy || Array.isArray(policy) || typeof policy !== 'object') fail('policy object is required');
-  if (policy.schema_version !== 1) fail('schema_version must be 1');
+  if (![1, 2].includes(policy.schema_version)) fail('schema_version must be 1 or 2');
   if (policy.scope !== 'public-owner-repositories') fail('scope must be public-owner-repositories');
   if (!Number.isInteger(policy.lease_seconds) || policy.lease_seconds <= 0) fail('lease_seconds must be a positive integer');
   if (!Number.isInteger(policy.heartbeat_target_seconds) || policy.heartbeat_target_seconds <= 0) fail('heartbeat_target_seconds must be a positive integer');
@@ -44,7 +44,12 @@ export function validateWorkerPolicy(policy) {
   if (policy.allow_speculative_work !== false) fail('allow_speculative_work must be false');
   if (policy.coordinator_requires_declared_trigger !== true) fail('coordinator_requires_declared_trigger must be true');
   if (policy.pr_reconciliation_required !== true) fail('pr_reconciliation_required must be true');
-  if (policy.branch_reconciliation_required !== true) fail('branch_reconciliation_required must be true');
+  if (policy.branch_reconciliation_required !== undefined && policy.branch_reconciliation_required !== true) {
+    fail('branch_reconciliation_required must be true when present');
+  }
+  if (policy.schema_version >= 2 && policy.branch_reconciliation_required !== true) {
+    fail('schema_version 2 requires branch_reconciliation_required=true');
+  }
   return policy;
 }
 
