@@ -43,7 +43,7 @@ test('generated status does not duplicate free-form checkpoint handoff text', ()
     },
   });
 
-  const checkpoint = snapshot.active_sessions[0].latest_checkpoint;
+  const checkpoint = snapshot.resumable_handoffs[0].latest_checkpoint;
   assert.deepEqual(checkpoint, {
     created_at: '2026-08-24T09:15:00Z',
     state: 'handoff',
