@@ -26,7 +26,6 @@ const REGISTRY_PATH = path.join(ROOT, 'data', 'portfolio.json');
 const AGENTS_JSON_PATH = path.join(ROOT, 'data', 'agents.json');
 const AGENTS_MD_PATH = path.join(ROOT, 'AGENTS_STATUS.md');
 const validateOnly = process.argv.includes('--validate-live');
-const ACTIVE_SESSION_STATES = new Set(['starting', 'working', 'waiting', 'blocked', 'handoff']);
 
 async function readRegistry() {
   return JSON.parse(await fs.readFile(REGISTRY_PATH, 'utf8'));
@@ -57,7 +56,13 @@ async function writeIfChanged(file, content) {
   return true;
 }
 
-export async function buildLiveAgentSnapshot({ registry, repositories, issues, checkedAt = new Date().toISOString() }) {
+export async function buildLiveAgentSnapshot({
+  registry,
+  repositories,
+  issues,
+  checkedAt = new Date().toISOString(),
+  listComments = listIssueComments,
+}) {
   await validateLiveAgentState({ registry, repositories, issues, enforce: true });
 
   const publicNames = publicRepositoryNames(repositories);
@@ -91,8 +96,8 @@ export async function buildLiveAgentSnapshot({ registry, repositories, issues, c
     }));
 
   const checkpointsBySession = {};
-  for (const session of sessions.filter((item) => ACTIVE_SESSION_STATES.has(item.data.state))) {
-    const comments = await listIssueComments(registry.owner, registry.control_repository, session.number);
+  for (const session of sessions) {
+    const comments = await listComments(registry.owner, registry.control_repository, session.number);
     const checkpoints = [];
     for (const comment of checkpointCommentsOnly(comments)) {
       const parsed = parseProtocolBlock(comment.body);
