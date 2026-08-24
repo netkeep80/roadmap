@@ -19,6 +19,17 @@ function assertArray(value, field) {
   return value;
 }
 
+function normalizeBranch(value, field) {
+  if (!value || Array.isArray(value) || typeof value !== 'object') fail(`${field} must be a branch object`);
+  if (typeof value.repository !== 'string' || !value.repository.trim()) fail(`${field}.repository must be a non-empty string`);
+  if (typeof value.name !== 'string' || !value.name.trim()) fail(`${field}.name must be a non-empty string`);
+  return { repository: value.repository, name: value.name };
+}
+
+function sameBranch(left, right) {
+  return left.repository === right.repository && left.name === right.name;
+}
+
 export function validateWorkerPolicy(policy) {
   if (!policy || Array.isArray(policy) || typeof policy !== 'object') fail('policy object is required');
   if (policy.schema_version !== 1) fail('schema_version must be 1');
@@ -33,6 +44,7 @@ export function validateWorkerPolicy(policy) {
   if (policy.allow_speculative_work !== false) fail('allow_speculative_work must be false');
   if (policy.coordinator_requires_declared_trigger !== true) fail('coordinator_requires_declared_trigger must be true');
   if (policy.pr_reconciliation_required !== true) fail('pr_reconciliation_required must be true');
+  if (policy.branch_reconciliation_required !== true) fail('branch_reconciliation_required must be true');
   return policy;
 }
 
@@ -140,6 +152,66 @@ export function decidePostSessionClaim({ claim, contender, liveClaimers = [] }) 
     action: 'release_and_reselect_or_exit',
     winner_session_issue: winner.number,
     target_writes_allowed: false,
+  };
+}
+
+export function decideBranchPreparation({
+  claimWon,
+  currentBranch = null,
+  intendedBranch,
+  branchExists,
+  matchingOpenPr = null,
+}) {
+  const intended = normalizeBranch(intendedBranch, 'intendedBranch');
+  const current = currentBranch === null ? null : normalizeBranch(currentBranch, 'currentBranch');
+  if (typeof branchExists !== 'boolean') fail('branchExists must be boolean');
+
+  if (claimWon !== true) {
+    return {
+      action: 'claim_not_won',
+      current_branch: current ?? intended,
+      branch_creation_allowed: false,
+      target_writes_allowed: false,
+    };
+  }
+
+  if (current === null) {
+    return {
+      action: 'persist_current_branch',
+      current_branch: intended,
+      branch_creation_allowed: false,
+      target_writes_allowed: false,
+    };
+  }
+
+  if (!sameBranch(current, intended)) {
+    fail('intended branch must match durable currentBranch ownership before target writes');
+  }
+
+  if (!branchExists) {
+    if (matchingOpenPr !== null) fail('open PR cannot be reused while its owned branch is absent');
+    return {
+      action: 'create_owned_branch',
+      current_branch: current,
+      branch_creation_allowed: true,
+      target_writes_allowed: true,
+    };
+  }
+
+  if (matchingOpenPr === null) {
+    return {
+      action: 'reuse_owned_pre_pr_branch',
+      current_branch: current,
+      branch_creation_allowed: false,
+      target_writes_allowed: true,
+    };
+  }
+
+  return {
+    action: 'reuse_owned_branch_and_pr',
+    current_branch: current,
+    branch_creation_allowed: false,
+    target_writes_allowed: true,
   };
 }
 
