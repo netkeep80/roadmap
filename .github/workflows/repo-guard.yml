@@ -1,0 +1,44 @@
+name: repo-guard advisory
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  advisory:
+    name: repo-guard advisory
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Detect trusted base policy
+        id: base_policy
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git cat-file -e "${BASE_SHA}:repo-policy.json" 2>/dev/null; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "### repo-guard advisory" >> "$GITHUB_STEP_SUMMARY"
+            echo "Bootstrap PR: the trusted base branch has no repo-policy.json yet, so repo-guard execution is deferred until the next PR." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Run repo-guard advisory
+        if: steps.base_policy.outputs.present == 'true'
+        uses: netkeep80/repo-guard@03e24a781f024ab1c91e79678737fe4ded743d48
+        with:
+          mode: check-pr
+          enforcement: advisory
+        env:
+          GH_TOKEN: ${{ github.token }}
