@@ -171,6 +171,7 @@ test('buildAgentSnapshot projects stable roles, leased sessions and resumable ha
     sessions,
     messages,
     checkpointsBySession,
+    workerPolicy,
   });
 
   assert.equal(snapshot.schema_version, 1);
@@ -196,6 +197,7 @@ test('claim projection resolves collisions deterministically without treating ha
     sessions,
     messages,
     checkpointsBySession,
+    workerPolicy,
   });
 
   assert.equal(snapshot.claims.length, 1);
@@ -214,6 +216,7 @@ test('unresolved messages and blocker projection exclude resolved messages', () 
     sessions,
     messages,
     checkpointsBySession,
+    workerPolicy,
   });
 
   assert.deepEqual(snapshot.unresolved_messages.map((message) => message.issue_number), [201, 202]);
@@ -229,6 +232,7 @@ test('renderAgentStatus exposes copyable role URLs and separates resumable hando
     sessions,
     messages,
     checkpointsBySession,
+    workerPolicy,
   });
   const markdown = renderAgentStatus(snapshot);
 
