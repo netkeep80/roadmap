@@ -8,6 +8,10 @@ function issueUrl(number) {
   return `https://github.com/netkeep80/roadmap/issues/${number}`;
 }
 
+function pullUrl(repository, number) {
+  return `https://github.com/${repository}/pull/${number}`;
+}
+
 function maxTimestamp(...values) {
   const valid = values.filter(Boolean).map((value) => ({ value, time: Date.parse(value) })).filter(({ time }) => Number.isFinite(time));
   if (!valid.length) return null;
@@ -57,11 +61,33 @@ function projectSession(session, checkpointsBySession, lease = null) {
   };
 }
 
-export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, checkpointsBySession = {}, workerPolicy }) {
+function normalizePrDiagnostics(prDiagnostics = {}) {
+  const duplicateWorkItems = Array.isArray(prDiagnostics.duplicate_work_items)
+    ? prDiagnostics.duplicate_work_items.map((entry) => ({
+      repository: entry.repository,
+      work_item: entry.work_item,
+      pr_numbers: [...entry.pr_numbers],
+    }))
+    : [];
+  const unreconciledSupersessions = Array.isArray(prDiagnostics.unreconciled_supersessions)
+    ? prDiagnostics.unreconciled_supersessions.map((entry) => ({
+      repository: entry.repository,
+      replacement_pr: entry.replacement_pr,
+      superseded_pr: entry.superseded_pr,
+    }))
+    : [];
+  return {
+    duplicate_work_items: duplicateWorkItems,
+    unreconciled_supersessions: unreconciledSupersessions,
+  };
+}
+
+export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, checkpointsBySession = {}, workerPolicy, prDiagnostics = {} }) {
   if (!Array.isArray(roles) || !Array.isArray(sessions) || !Array.isArray(messages)) {
     throw new Error('agent status projection requires role/session/message arrays');
   }
   const checkedPolicy = validateWorkerPolicy(workerPolicy);
+  const checkedPrDiagnostics = normalizePrDiagnostics(prDiagnostics);
 
   const sortedRoles = [...roles]
     .map((role) => ({
@@ -170,6 +196,8 @@ export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, check
     claim_count: claims.length,
     stale_claim_count: staleClaims.length,
     claim_collision_count: claims.filter((claim) => claim.conflict).length,
+    duplicate_work_item_pr_count: checkedPrDiagnostics.duplicate_work_items.length,
+    unreconciled_supersession_count: checkedPrDiagnostics.unreconciled_supersessions.length,
     roles: sortedRoles,
     active_sessions: activeSessions,
     stale_candidate_sessions: staleCandidateSessions,
@@ -178,6 +206,7 @@ export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, check
     stale_claims: staleClaims,
     unresolved_messages: unresolvedMessages,
     blockers,
+    pr_diagnostics: checkedPrDiagnostics,
   };
 }
 
@@ -187,6 +216,10 @@ function esc(value) {
 
 function roadmapIssueRef(issue) {
   return `[#${issue}](${issueUrl(issue)})`;
+}
+
+function prRef(repository, number) {
+  return `[#${number}](${pullUrl(repository, number)})`;
 }
 
 function renderSessionTable(lines, sessions, emptyText) {
@@ -214,6 +247,8 @@ export function renderAgentStatus(snapshot) {
     `- Active claims: **${snapshot.claim_count}**`,
     `- Stale claims pending recovery: **${snapshot.stale_claim_count ?? 0}**`,
     `- Claim collisions: **${snapshot.claim_collision_count}**`,
+    `- Duplicate work-item PRs: **${snapshot.duplicate_work_item_pr_count ?? 0}**`,
+    `- Unreconciled supersessions: **${snapshot.unreconciled_supersession_count ?? 0}**`,
     `- Unresolved messages: **${snapshot.unresolved_message_count}**`,
     `- Blockers: **${snapshot.blockers.length}**`,
     '',
@@ -257,6 +292,26 @@ export function renderAgentStatus(snapshot) {
     }
   }
 
+  lines.push('', '## Duplicate work-item PRs', '');
+  if (!(snapshot.pr_diagnostics?.duplicate_work_items ?? []).length) {
+    lines.push('_No explicit work item has multiple open PRs._');
+  } else {
+    lines.push('| Repository | Work item | Open PRs |', '|---|---|---|');
+    for (const duplicate of snapshot.pr_diagnostics.duplicate_work_items) {
+      lines.push(`| \`${esc(duplicate.repository)}\` | \`${esc(duplicate.work_item)}\` | ${duplicate.pr_numbers.map((number) => prRef(duplicate.repository, number)).join(', ')} |`);
+    }
+  }
+
+  lines.push('', '## Unreconciled supersessions', '');
+  if (!(snapshot.pr_diagnostics?.unreconciled_supersessions ?? []).length) {
+    lines.push('_No open replacement PR explicitly supersedes another still-open PR._');
+  } else {
+    lines.push('| Repository | Replacement | Superseded but still open |', '|---|---|---|');
+    for (const entry of snapshot.pr_diagnostics.unreconciled_supersessions) {
+      lines.push(`| \`${esc(entry.repository)}\` | ${prRef(entry.repository, entry.replacement_pr)} | ${prRef(entry.repository, entry.superseded_pr)} |`);
+    }
+  }
+
   lines.push('', '## Unresolved messages', '');
   if (!snapshot.unresolved_messages.length) {
     lines.push('_No unresolved protocol messages._');
@@ -280,6 +335,6 @@ export function renderAgentStatus(snapshot) {
     }
   }
 
-  lines.push('', '## Reading rule', '', '- This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.', '- A `STALE_CANDIDATE` is not LIVE and its retained claims require complete GitHub revalidation before recovery; they are not automatically free.', '- A `handoff` is resumable context, not a live executor and not a claim holder.', '- Checkpoint free text remains only in the original Session comment and is not duplicated here.', '- Agents must re-read GitHub before every write or lifecycle transition.', '');
+  lines.push('', '## Reading rule', '', '- This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.', '- A `STALE_CANDIDATE` is not LIVE and its retained claims require complete GitHub revalidation before recovery; they are not automatically free.', '- A `handoff` is resumable context, not a live executor and not a claim holder.', '- Duplicate work-item PR diagnostics use explicit PR work-item declarations; shared changed files alone are not treated as a collision.', '- An unreconciled supersession means a replacement PR explicitly names another PR as superseded while both remain open.', '- Checkpoint free text remains only in the original Session comment and is not duplicated here.', '- Agents must re-read GitHub before every write or lifecycle transition.', '');
   return lines.join('\n');
 }
