@@ -39,7 +39,7 @@ jobs:
         github.event_name == 'workflow_dispatch' ||
         github.event_name == 'push' ||
         (github.event_name == 'issues' && github.event.issue.number != 103 && contains(github.event.issue.body || '', '<!-- roadmap-agent:start -->')) ||
-        (github.event_name == 'issue_comment' && contains(github.event.issue.body || '', '<!-- roadmap-agent:start -->'))
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body || '', '<!-- roadmap-agent:start -->'))
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -87,6 +87,8 @@ jobs:
           node scripts/agent-evidence-integrity.mjs --validate-event
 
       - name: Publish current worker state to permanent Issue
+        if: >-
+          ${{ github.event_name != 'issue_comment' }}
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
