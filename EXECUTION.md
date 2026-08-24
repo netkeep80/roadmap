@@ -1,14 +1,41 @@
 # Порядок исполнения
 
-Срез: 2026-08-12.
+Срез: 2026-08-24.
 
 Центральный roadmap не означает, что вся работа сериализована. Ниже выделены независимые lanes и hard dependency gates.
 
 > **Актуальность:** factual open/closed state всегда читать в [`STATUS.md`](STATUS.md). Этот документ хранит **осознанный порядок исполнения**. Если live status выявляет новый blocker, `data/portfolio.json` и этот документ обновляются отдельным portfolio decision.
 
-## NOW — blocking foundations
+## PRIMARY FOCUS — МТС / aprover
 
-### Lane A — PMM → pjson
+До следующего явного portfolio decision `roadmap#3` является **единственным P0 workstream**.
+
+При выборе **новой** работы действует порядок:
+
+```text
+1. сохранить корректность уже существующих LIVE Sessions / valid handoffs / actionable Messages;
+2. для fresh unclaimed local-issue work сначала выбирать executable work из P0;
+3. P1/P2/P3 рассматривать как residual queue только если нет доступного executable unclaimed P0 work;
+4. priority не разрешает invent work, обход blockers или дублирование LIVE claims.
+```
+
+Текущий P0 focus:
+
+```text
+anum_docs   — normative МТС/Anum semantics
+aprover     — главный proof/search consumer
+mts_visual  — standalone visual support lane
+avm         — link-native runtime lane, связанный с accepted МТС boundary
+anum_parser — P0/P1 supporting laboratory/consumer lane
+```
+
+Внутри этого focus основной product/theory delivery — `anum_docs + aprover`; `mts_visual`, `avm` и `anum_parser` выполняются как связанные support/runtime/consumer lanes по их явным local gates.
+
+PMM→pjson, mast-calculator и остальные направления **не отменены и не заморожены**: их backlog и dependency gates сохраняются, но до следующего решения они относятся к остаточной очереди.
+
+## Dependency lanes — focus and residual queues
+
+### Lane A — PMM → pjson (P1 residual)
 
 ```text
 PMM #410/#415/#416/#426
@@ -22,7 +49,7 @@ pjson #55 → #34
 
 **Hard rule:** пока `PMM#421` не закрыт, не реализовывать pjson object storage через временный compatibility container.
 
-### Lane B — accepted MTS v0.7 → downstream consumers
+### Lane B — accepted MTS v0.7 → downstream consumers (P0 focus)
 
 Foundation-reset и production migration больше не являются текущим blocker. Эта цепочка завершена в `anum_docs`:
 
@@ -64,7 +91,7 @@ current-upstream pointer / historical replay remains version-scoped
 - `anum_docs#122/#123` — отдельные research/versioned extension tracks и не мутируют v0.7 задним числом;
 - Link identity остаётся только функцией упорядоченных semantic poles; runtime/storage/source/path ids не создают тождество связи.
 
-### Lane C — AVM 1.5
+### Lane C — AVM 1.5 (P0 related runtime lane)
 
 AVM может идти параллельно МТС work там, где contract frontend-neutral. Теперь accepted MTS v0.7 существует, поэтому ожидание Foundation-v2 acceptance снято; однако repin не нужен gates, которые вообще не зависят от MTS frontend.
 
@@ -108,7 +135,7 @@ AVM может идти параллельно МТС work там, где contra
 
 Если MTS-dependent frontend действительно нужен конкретному AVM шагу, использовать exact accepted `anum_docs` v0.7 boundary, а не дублировать semantics внутри AVM.
 
-### Lane D — mast-calculator physics
+### Lane D — mast-calculator physics (P1 residual)
 
 ```text
 modal/eigen validation
@@ -181,7 +208,7 @@ Rollout выполнять небольшими consumer PR:
 
 ### Safety/commissioning
 
-`termowood` и `aes` не ждут software foundation lanes. Их можно развивать параллельно, но ordering внутри каждого проекта safety-first:
+`termowood` и `aes` не ждут software foundation lanes. Их внутренний ordering остаётся safety-first, но как portfolio work они сейчас находятся ниже P0 focus:
 
 ```text
 failure modes → protection → test procedure → measured evidence → as-built → new features
@@ -216,15 +243,17 @@ Roadmap намеренно ориентирован на gates, а не на п�
 
 ## Что можно делать одновременно
 
-Следующие lanes в основном независимы и могут идти параллельно:
+Concurrency сохраняется, но **не отменяет priority ordering**. Если есть executable unclaimed P0 work, fresh workers сначала выбирают его.
 
-1. PMM/pjson foundation;
-2. `aprover#152` exact MTS v0.7 repin и независимые `anum_docs#122/#123` research tracks;
+Текущий практический порядок:
+
+1. `anum_docs` normative MTS work + `aprover` consumer/proof work;
+2. связанные `mts_visual` и `anum_parser` gates;
 3. AVM gates, включая frontend-neutral `#174 → #131`, а MTS-dependent work — только через accepted v0.7;
-4. mast-calculator physical validation;
-5. isocubic Phase 15 core recovery;
-6. termowood/aes commissioning work;
-7. repo-guard consumer rollout;
-8. central portfolio drift reconciliation.
+4. PMM/pjson foundation как P1 residual;
+5. mast-calculator physical validation как P1 residual;
+6. isocubic, termowood/aes, repo-guard и прочие P1 lanes как residual capacity;
+7. P2/P3 research/hygiene после более высоких приоритетов;
+8. central portfolio drift reconciliation по явному trigger независимо от product backlog, но без invent strategy.
 
-Главная оптимизация portfolio — **не запускать downstream workaround, когда blocker уже локализован upstream**.
+Главная оптимизация portfolio — **не запускать downstream workaround, когда blocker уже локализован upstream**, и не расходовать свободный worker slot на lower-priority backlog, пока есть доступная P0 работа.
