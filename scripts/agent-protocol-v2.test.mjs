@@ -135,6 +135,42 @@ test('Checkpoint v2 cannot drift from Session work_item', () => {
   );
 });
 
+test('Checkpoint v2 acceptance requires an exact validation attestation pointer', () => {
+  const sessionData = validateSession(sessionIssue({
+    work_phase: 'acceptance',
+    current_pr: 'netkeep80/roadmap#150',
+  }), roleMap);
+  const acceptance = {
+    candidate_session: 900,
+    candidate_checkpoint_comment_id: 7001,
+    work_item: 'netkeep80/roadmap#139',
+    pr: 'netkeep80/roadmap#150',
+    head_sha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    base_sha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    decision: 'accepted',
+  };
+  const checkpoint = (value) => ({
+    body: block({
+      protocol: 'roadmap-agent-checkpoint/v2',
+      state: 'working',
+      work_item: 'netkeep80/roadmap#139',
+      completed: ['review complete'], refs: [], blockers: [], next: [], messages: [],
+      acceptance: value,
+    }),
+  });
+
+  assert.throws(
+    () => validateCheckpoint(checkpoint(acceptance), roleMap, sessionData),
+    /candidate_validation_attestation_comment_id.*positive integer/i,
+  );
+
+  const data = validateCheckpoint(checkpoint({
+    ...acceptance,
+    candidate_validation_attestation_comment_id: 7002,
+  }), roleMap, sessionData);
+  assert.equal(data.acceptance.candidate_validation_attestation_comment_id, 7002);
+});
+
 test('v1 Session remains readable without v2 fields', () => {
   const issue = sessionIssue({
     protocol: 'roadmap-agent-session/v1',
