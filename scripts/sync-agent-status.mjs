@@ -112,6 +112,7 @@ export async function buildLiveAgentSnapshot({
   await validateLiveAgentState({ registry, repositories, issues, enforce: true });
 
   const publicNames = publicRepositoryNames(repositories);
+  const publicNameSet = new Set(publicNames);
   const classified = agentIssuesOnly(issues).map((issue) => classifyAgentIssue(issue));
   const roleIssues = classified.filter(({ kind }) => kind === 'role').map(({ issue }) => issue);
   const coverage = validateRoleCoverage(
@@ -175,7 +176,7 @@ export async function buildLiveAgentSnapshot({
     unreconciled_supersessions: [],
   };
   for (const repo of registry.repositories) {
-    if (!publicNames.has(repo.name)) continue;
+    if (!publicNameSet.has(repo.name)) continue;
     const fullName = `${registry.owner}/${repo.name}`;
     const pullRequests = await listPullRequests(registry.owner, repo.name);
     const diagnostics = analyzeOpenPullRequests({ repository: fullName, pullRequests });
