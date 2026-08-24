@@ -54,7 +54,7 @@ A failed `issue_comment.created` workflow does not roll the GitHub comment back.
 
 After and only after a `review_candidate` creation event passes the complete event-local validation, the Agent Status workflow publishes a separate durable comment on the same candidate Session Issue using `GITHUB_TOKEN`. GitHub records that comment as authored by the platform identity `github-actions[bot]`. It uses a distinct marker so it does not recursively route through ordinary Agent Checkpoint handling:
 
-```text
+````text
 <!-- roadmap-agent-validation-attestation:start -->
 ```json
 {
@@ -69,7 +69,7 @@ After and only after a `review_candidate` creation event passes the complete eve
 }
 ```
 <!-- roadmap-agent-validation-attestation:end -->
-```
+````
 
 The digest is SHA-256 over the exact UTF-8 bytes of the seal comment body from the successful event payload. The attestation binds successful seal-time validation to the exact candidate Session, exact seal comment id, exact seal body and exact candidate tuple. A seal that failed validation receives no attestation. If the referenced seal body later changes, even inside the same timestamp second, its digest no longer matches.
 
