@@ -46,7 +46,7 @@ Implementation may seal an immutable candidate:
 }
 ```
 
-The validator resolves only the changed Checkpoint, attached Session and exact PR. It proves implementation phase, matching work item, current winning claim, canonical PR and exact H/B.
+The validator resolves the changed Checkpoint, attached Session, exact PR and current open Session claimant set for that exact work item. The claimant lookup is bounded current-state evidence only: it does not read Checkpoint history or use Agent Status as authority. It proves implementation phase, matching work item, current deterministic winning Claim, canonical PR and exact H/B.
 
 ## Acceptance certificate
 
