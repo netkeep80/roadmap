@@ -48,15 +48,45 @@ Implementation may seal an immutable candidate:
 
 The validator resolves the changed Checkpoint, attached Session, exact PR and current open Session claimant set for that exact work item. The claimant lookup is bounded current-state evidence only: it does not read Checkpoint history or use Agent Status as authority. It proves implementation phase, matching work item, current deterministic winning Claim, canonical PR and exact H/B.
 
+A failed `issue_comment.created` workflow does not roll the GitHub comment back. Therefore the continued existence of a syntactically valid seal is not proof that the seal ever passed its write-boundary authority checks. Timestamp equality is also not an immutability proof because GitHub comment timestamps do not distinguish every possible same-second mutation.
+
+## Successful-validation attestation
+
+After and only after a `review_candidate` creation event passes the complete event-local validation, the Agent Status workflow publishes a separate durable comment on the same candidate Session Issue using `GITHUB_TOKEN`. GitHub records that comment as authored by the platform identity `github-actions[bot]`. It uses a distinct marker so it does not recursively route through ordinary Agent Checkpoint handling:
+
+```text
+<!-- roadmap-agent-validation-attestation:start -->
+```json
+{
+  "protocol": "roadmap-agent-validation-attestation/v1",
+  "candidate_session": 141,
+  "candidate_checkpoint_comment_id": 5400123456,
+  "candidate_checkpoint_body_sha256": "<64-lowercase-hex>",
+  "work_item": "netkeep80/foo#123",
+  "pr": "netkeep80/foo#456",
+  "head_sha": "<H>",
+  "base_sha": "<B>"
+}
+```
+<!-- roadmap-agent-validation-attestation:end -->
+```
+
+The digest is SHA-256 over the exact UTF-8 bytes of the seal comment body from the successful event payload. The attestation binds successful seal-time validation to the exact candidate Session, exact seal comment id, exact seal body and exact candidate tuple. A seal that failed validation receives no attestation. If the referenced seal body later changes, even inside the same timestamp second, its digest no longer matches.
+
+An attestation has authority only when the bounded verifier resolves the exact referenced comment, proves it belongs to the candidate Session Issue, proves `user.login == github-actions[bot]` and `user.type == Bot`, parses exactly one attestation block, and matches every bound field. User-authored lookalikes have zero authority. Duplicate valid attestations from a rerun are harmless because an acceptance certificate references one exact attestation comment id; no attestation history scan is required.
+
+Attestation comments are append-only authority evidence. Editing or deleting an attestation routes through the event-local integrity boundary and fails closed. Timestamp fields remain chronology metadata only; they never substitute for the body digest or platform author identity.
+
 ## Acceptance certificate
 
-Final acceptance uses a fresh Session and an exact pointer to the implementation seal:
+Final acceptance uses a fresh Session and exact pointers to both the implementation seal and its successful-validation attestation:
 
 ```json
 {
   "acceptance": {
     "candidate_session": 141,
     "candidate_checkpoint_comment_id": 5400123456,
+    "candidate_validation_attestation_comment_id": 5400123499,
     "work_item": "netkeep80/foo#123",
     "pr": "netkeep80/foo#456",
     "head_sha": "<H>",
@@ -66,7 +96,11 @@ Final acceptance uses a fresh Session and an exact pointer to the implementation
 }
 ```
 
-Decision is `accepted | changes_requested`. Final acceptance requires a different Session, acceptance phase, identical work item/PR/H/B and unchanged current PR candidate. At decision time the acceptance Session must still own exactly `[work_item]` and be the deterministic current winning claimant in the bounded current open Session set; released or losing acceptance Sessions have zero decision authority. Head or base movement invalidates integration authority for the old certificate. Partial reviews are factual Checkpoints without a final decision and never add confidence arithmetically.
+Decision is `accepted | changes_requested`. Final acceptance requires a different Session, acceptance phase, identical work item/PR/H/B and unchanged current PR candidate. It bounded-fetches the exact candidate Session, seal comment and attestation comment; validates the seal body against the attested SHA-256; and validates the exact tuple against both comments. No historical comment scan is permitted.
+
+Candidate Session `created_at`, candidate seal `created_at`, acceptance Session `created_at`, and acceptance checkpoint `created_at` are mandatory valid timestamps. Missing or invalid chronology metadata fails closed. The candidate Session must predate or equal its seal, the seal must strictly predate the fresh acceptance Session, and the acceptance Session must predate or equal its acceptance checkpoint. Timestamp metadata proves ordering only, not immutability.
+
+At decision time the acceptance Session must still own exactly `[work_item]` and be the deterministic current winning claimant in the bounded current open Session set; released or losing acceptance Sessions have zero decision authority. Head or base movement invalidates integration authority for the old certificate. Partial reviews are factual Checkpoints without a final decision and never add confidence arithmetically.
 
 ## PR pointer
 
@@ -116,10 +150,10 @@ Unknown material classification defaults to material. No global docs-only exempt
 ## Rollout
 
 1. dual-read v1/v2 parser and validators;
-2. event-local v2 write-boundary integrity;
+2. event-local v2 write-boundary integrity plus successful-validation attestation;
 3. normalized selector and policy v3;
 4. overlap-before-clear handoff transfer;
-5. candidate sealing and acceptance certificates;
+5. candidate sealing and independently attested acceptance certificates;
 6. bounded target verifier;
 7. target pilot with positive and negative enforcement evidence;
 8. reconcile legacy active state without rewriting history;
@@ -128,4 +162,4 @@ Unknown material classification defaults to material. No global docs-only exempt
 
 ## Restart gate
 
-Five workers remain paused until v2 is deployed, v1 dual-read stays green, automatic historical scans remain absent, selector/transfer/acceptance are proven, target fail-closed enforcement has real no-bypass evidence, non-enforced targets are explicit no-auto-merge, a two-worker overlap soak passes, and current control-plane status is valid.
+Five workers remain paused until v2 is deployed, v1 dual-read stays green, automatic historical scans remain absent, successful-validation attestation and selector/transfer/acceptance are proven, target fail-closed enforcement has real no-bypass evidence, non-enforced targets are explicit no-auto-merge, a two-worker overlap soak passes, and current control-plane status is valid.
