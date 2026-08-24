@@ -2,12 +2,13 @@
 import fs from 'node:fs/promises';
 import process from 'node:process';
 
-import { parseProtocolBlock, validateCheckpoint } from './agent-protocol.mjs';
+import { compareClaimPriority, parseProtocolBlock, validateCheckpoint } from './agent-protocol.mjs';
 import {
   AGENT_MARKER,
   agentIssuesOnly,
   githubAgentApi,
   listAllControlIssues,
+  listOpenControlIssues,
 } from './validate-agents.mjs';
 
 const REGISTRY_PATH = new URL('../data/portfolio.json', import.meta.url);
@@ -105,6 +106,10 @@ async function defaultResolvePullRequest(repository, number) {
 async function defaultResolveControlIssue(registry, number) {
   const controlRepository = registry.control_repository ?? 'roadmap';
   return githubAgentApi(`/repos/${encodeURIComponent(registry.owner)}/${encodeURIComponent(controlRepository)}/issues/${number}`);
+}
+
+function assertSessionIssue(issue, label) {
+  if (issue?.pull_request) fail(`${label} must be a Session Issue, not a pull request`);
 }
 
 function issueNumberFromUrl(url) {
@@ -215,7 +220,22 @@ async function resolveExactPullRequest({ registry, repository, ref, headSha, bas
   return pr;
 }
 
-async function validateReviewCandidateEvidence({ checkpoint, session, registry, resolvePullRequest }) {
+async function assertWinningOpenClaim({ eventIssue, session, resolveOpenControlIssues }) {
+  const issues = await resolveOpenControlIssues();
+  if (!Array.isArray(issues)) fail('open control Session resolver must return an array');
+  const claimers = [];
+  for (const issue of issues) {
+    if (issue?.pull_request || typeof issue?.body !== 'string' || !issue.body.includes(AGENT_MARKER) || !issue.body.includes(session.work_item)) continue;
+    const contender = parseProtocolBlock(issue.body);
+    if (SESSION_PROTOCOLS.has(contender.protocol) && Array.isArray(contender.claims) && contender.claims.includes(session.work_item)) claimers.push(issue);
+  }
+  const currentNumber = Number(eventIssue?.number);
+  if (!claimers.some((issue) => Number(issue.number) === currentNumber)) fail('review candidate Session is absent from the current Claim set');
+  const winner = [...claimers].sort(compareClaimPriority)[0];
+  if (Number(winner.number) !== currentNumber) fail('review candidate requires the current winning Claim');
+}
+
+async function validateReviewCandidateEvidence({ checkpoint, session, eventIssue, registry, resolvePullRequest, resolveOpenControlIssues }) {
   const candidate = checkpoint.review_candidate;
   if (!candidate) return false;
   if (session.work_phase !== 'implementation') fail('review candidate requires implementation Session phase');
@@ -223,6 +243,7 @@ async function validateReviewCandidateEvidence({ checkpoint, session, registry, 
   if (!Array.isArray(session.claims) || session.claims.length !== 1 || session.claims[0] !== session.work_item) {
     fail('review candidate requires the implementation Session to own its exact work_item Claim at seal time');
   }
+  await assertWinningOpenClaim({ eventIssue, session, resolveOpenControlIssues });
   if (session.current_pr !== candidate.pr) fail('review candidate PR must match Session current_pr');
   await resolveExactPullRequest({
     registry,
@@ -329,6 +350,7 @@ async function validateAcceptanceEvidence({
   if (!candidateIssue || Number(candidateIssue.number) !== acceptance.candidate_session || typeof candidateIssue.body !== 'string') {
     fail(`candidate Session #${acceptance.candidate_session} does not resolve exactly`);
   }
+  assertSessionIssue(candidateIssue, 'acceptance candidate Session');
   const candidateSession = parseProtocolBlock(candidateIssue.body);
   if (candidateSession.protocol !== SESSION_PROTOCOL_V2 || candidateSession.work_phase !== 'implementation') {
     fail('acceptance candidate Session must be a v2 implementation Session');
@@ -384,6 +406,7 @@ export async function validateCheckpointEventEvidence({
   resolvePullRequest = defaultResolvePullRequest,
   resolveControlIssue,
   resolveControlComment,
+  resolveOpenControlIssues,
 }) {
   if (!event || typeof event !== 'object') fail('GitHub event payload is required');
   if (!registry || typeof registry !== 'object') fail('registry is required');
@@ -409,6 +432,7 @@ export async function validateCheckpointEventEvidence({
   if (!event.issue || typeof event.issue.body !== 'string' || !event.issue.body.includes(AGENT_MARKER)) {
     fail('checkpoint comment is not attached to a protocol Session');
   }
+  assertSessionIssue(event.issue, 'checkpoint Session');
   const session = parseProtocolBlock(event.issue.body);
   if (!SESSION_PROTOCOLS.has(session.protocol)) fail('checkpoint comment is not attached to a Session');
 
@@ -428,11 +452,14 @@ export async function validateCheckpointEventEvidence({
     return { checked: true, ...commitResult };
   }
 
+  const effectiveResolveOpenControlIssues = resolveOpenControlIssues ?? (async () => [event.issue]);
   const reviewCandidateChecked = await validateReviewCandidateEvidence({
     checkpoint,
     session,
+    eventIssue: event.issue,
     registry,
     resolvePullRequest,
+    resolveOpenControlIssues: effectiveResolveOpenControlIssues,
   });
   if (reviewCandidateChecked) {
     return { checked: true, ...commitResult, review_candidate_checked: true };
@@ -539,7 +566,11 @@ async function main() {
       fs.readFile(REGISTRY_PATH, 'utf8').then(JSON.parse),
       fs.readFile(process.env.GITHUB_EVENT_PATH, 'utf8').then(JSON.parse),
     ]);
-    const result = await validateCheckpointEventEvidence({ event, registry });
+    const result = await validateCheckpointEventEvidence({
+      event,
+      registry,
+      resolveOpenControlIssues: () => listOpenControlIssues(registry.owner, registry.control_repository ?? 'roadmap'),
+    });
     console.log(`control plane protocol event evidence ok: checked=${result.checked}, ${result.unique_commit_evidence} unique repository-scoped commits`);
     return;
   }
