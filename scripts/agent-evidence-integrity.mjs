@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import process from 'node:process';
 
-import { parseProtocolBlock } from './agent-protocol.mjs';
+import { parseProtocolBlock, validateCheckpoint } from './agent-protocol.mjs';
 import {
   AGENT_MARKER,
   agentIssuesOnly,
@@ -79,6 +79,19 @@ function checkpointCommitRecords(checkpoint, repository) {
   return records;
 }
 
+function registryRoleMap(registry) {
+  if (!Array.isArray(registry?.repositories)) fail('registry repositories must be an array');
+  const owner = registry.owner ?? 'netkeep80';
+  return new Map(registry.repositories.map((entry, index) => {
+    if (!entry || typeof entry.name !== 'string' || !entry.name) fail('registry repository entry is invalid');
+    return [index + 1, { repository: `${owner}/${entry.name}` }];
+  }));
+}
+
+function strictCheckpointFromBody(body, registry, session) {
+  return validateCheckpoint({ body }, registryRoleMap(registry), session);
+}
+
 async function defaultResolveCommit(repository, sha) {
   const [owner, name] = repository.split('/');
   return githubAgentApi(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/commits/${encodeURIComponent(sha)}`);
@@ -147,6 +160,33 @@ function validateSessionEditImmutability(event) {
   return true;
 }
 
+function authorityBearingV2Checkpoint(body) {
+  if (typeof body !== 'string' || !body.includes(AGENT_MARKER)) return false;
+  const data = parseProtocolBlock(body);
+  return data.protocol === CHECKPOINT_PROTOCOL_V2
+    && (Object.hasOwn(data, 'review_candidate') || Object.hasOwn(data, 'acceptance'));
+}
+
+function validateAuthorityCommentMutation(event) {
+  if (!event.comment) return false;
+
+  if (event.action === 'deleted') {
+    if (authorityBearingV2Checkpoint(event.comment.body)) {
+      fail('authority-bearing v2 Checkpoint is immutable and cannot be deleted');
+    }
+    return false;
+  }
+
+  if (event.action !== 'edited') return false;
+  const previousBody = event.changes?.body?.from;
+  const currentAuthority = authorityBearingV2Checkpoint(event.comment.body);
+  const previousAuthority = authorityBearingV2Checkpoint(previousBody);
+  if (currentAuthority || previousAuthority) {
+    fail('authority-bearing v2 Checkpoint is immutable and cannot be edited in place');
+  }
+  return false;
+}
+
 function assertV2SessionForCheckpoint(session, checkpoint, eventIssueNumber) {
   if (session.protocol !== SESSION_PROTOCOL_V2) fail('v2 Checkpoint must be attached to a v2 Session');
   if (session.repository === undefined || checkpoint.work_item !== session.work_item) {
@@ -212,10 +252,41 @@ function sameCandidateTuple(left, right) {
     && left.base_sha === right.base_sha;
 }
 
+function timestamp(record, label) {
+  if (record?.created_at === undefined || record?.created_at === null) return null;
+  const value = Date.parse(record.created_at);
+  if (!Number.isFinite(value)) fail(`${label} created_at is invalid`);
+  return value;
+}
+
+function validateAcceptanceChronology({ candidateIssue, candidateComment, acceptanceIssue, acceptanceComment }) {
+  const candidateNumber = Number(candidateIssue?.number);
+  const acceptanceNumber = Number(acceptanceIssue?.number);
+  if (!Number.isInteger(candidateNumber) || !Number.isInteger(acceptanceNumber) || candidateNumber >= acceptanceNumber) {
+    fail('final acceptance requires a fresh Session created after the implementation candidate Session');
+  }
+
+  const candidateSessionAt = timestamp(candidateIssue, 'candidate Session');
+  const candidateSealAt = timestamp(candidateComment, 'candidate checkpoint');
+  const acceptanceSessionAt = timestamp(acceptanceIssue, 'acceptance Session');
+  const acceptanceCheckpointAt = timestamp(acceptanceComment, 'acceptance checkpoint');
+
+  if (candidateSessionAt !== null && candidateSealAt !== null && candidateSessionAt > candidateSealAt) {
+    fail('candidate checkpoint chronology is invalid');
+  }
+  if (candidateSealAt !== null && acceptanceSessionAt !== null && candidateSealAt > acceptanceSessionAt) {
+    fail('candidate seal must predate the fresh acceptance Session');
+  }
+  if (acceptanceSessionAt !== null && acceptanceCheckpointAt !== null && acceptanceSessionAt > acceptanceCheckpointAt) {
+    fail('acceptance checkpoint chronology is invalid');
+  }
+}
+
 async function validateAcceptanceEvidence({
   checkpoint,
   session,
-  eventIssueNumber,
+  eventIssue,
+  eventComment,
   registry,
   resolvePullRequest,
   resolveControlIssue,
@@ -230,7 +301,7 @@ async function validateAcceptanceEvidence({
   if (!Number.isInteger(acceptance.candidate_session) || acceptance.candidate_session <= 0) {
     fail('acceptance candidate_session must be a positive Session issue number');
   }
-  if (acceptance.candidate_session === eventIssueNumber) {
+  if (acceptance.candidate_session === eventIssue.number) {
     fail('final acceptance must use a different Session from its implementation candidate');
   }
   if (!Number.isInteger(acceptance.candidate_checkpoint_comment_id) || acceptance.candidate_checkpoint_comment_id <= 0) {
@@ -284,13 +355,21 @@ async function validateAcceptanceEvidence({
       || commentIssueNumber !== acceptance.candidate_session) {
     fail('candidate checkpoint ownership does not match the referenced candidate Session');
   }
-  const candidateCheckpoint = parseProtocolBlock(candidateComment.body);
+
+  const candidateCheckpoint = strictCheckpointFromBody(candidateComment.body, registry, candidateSession);
   if (candidateCheckpoint.protocol !== CHECKPOINT_PROTOCOL_V2 || !candidateCheckpoint.review_candidate) {
     fail('candidate checkpoint must contain one v2 review_candidate seal');
   }
   if (candidateCheckpoint.work_item !== candidateSession.work_item) {
     fail('candidate checkpoint work_item does not match candidate Session');
   }
+
+  validateAcceptanceChronology({
+    candidateIssue,
+    candidateComment,
+    acceptanceIssue: eventIssue,
+    acceptanceComment: eventComment,
+  });
 
   const sealed = exactCandidateTuple(candidateCheckpoint.review_candidate);
   const accepted = exactCandidateTuple(acceptance);
@@ -313,6 +392,8 @@ export async function validateCheckpointEventEvidence({
     return { checked: true, unique_commit_evidence: 0, session_immutability_checked: true };
   }
 
+  validateAuthorityCommentMutation(event);
+
   if (!['created', 'edited'].includes(event.action) || !event.comment || typeof event.comment.body !== 'string') {
     return { checked: false, unique_commit_evidence: 0 };
   }
@@ -320,7 +401,7 @@ export async function validateCheckpointEventEvidence({
     return { checked: false, unique_commit_evidence: 0 };
   }
 
-  const checkpoint = parseProtocolBlock(event.comment.body);
+  let checkpoint = parseProtocolBlock(event.comment.body);
   if (!CHECKPOINT_PROTOCOLS.has(checkpoint.protocol)) {
     return { checked: false, unique_commit_evidence: 0 };
   }
@@ -335,19 +416,16 @@ export async function validateCheckpointEventEvidence({
   if (checkpoint.protocol !== expectedCheckpointProtocol) fail('Checkpoint protocol version must match attached Session protocol version');
 
   const repository = assertRegisteredSessionRepository(registry, session.repository);
+  if (checkpoint.protocol === CHECKPOINT_PROTOCOL_V2) {
+    checkpoint = strictCheckpointFromBody(event.comment.body, registry, session);
+    assertV2SessionForCheckpoint(session, checkpoint, event.issue.number);
+  }
+
   const records = checkpointCommitRecords(checkpoint, repository);
   const commitResult = await validateCommitEvidence(records, resolveCommit);
 
   if (checkpoint.protocol === CHECKPOINT_PROTOCOL_V1) {
     return { checked: true, ...commitResult };
-  }
-
-  assertV2SessionForCheckpoint(session, checkpoint, event.issue.number);
-  if (event.action === 'edited' && (checkpoint.review_candidate || checkpoint.acceptance)) {
-    fail('authority-bearing v2 Checkpoint is immutable and cannot be edited in place');
-  }
-  if (checkpoint.review_candidate && checkpoint.acceptance) {
-    fail('v2 Checkpoint cannot contain both review_candidate and acceptance authority');
   }
 
   const reviewCandidateChecked = await validateReviewCandidateEvidence({
@@ -367,7 +445,8 @@ export async function validateCheckpointEventEvidence({
   const acceptanceChecked = await validateAcceptanceEvidence({
     checkpoint,
     session,
-    eventIssueNumber: event.issue.number,
+    eventIssue: event.issue,
+    eventComment: event.comment,
     registry,
     resolvePullRequest,
     resolveControlIssue: effectiveResolveControlIssue,
@@ -426,7 +505,7 @@ export async function validateLiveCheckpointCommitEvidence({ registry, issues, l
 }
 
 export function renderInvalidAgentStatus({ checkedAt, runUrl } = {}) {
-  const timestamp = typeof checkedAt === 'string' && checkedAt ? checkedAt : new Date().toISOString();
+  const timestampValue = typeof checkedAt === 'string' && checkedAt ? checkedAt : new Date().toISOString();
   const publicRunUrl = typeof runUrl === 'string' && /^https:\/\/github\.com\/netkeep80\/roadmap\/actions\/runs\/[0-9]+$/.test(runUrl)
     ? runUrl
     : null;
@@ -436,7 +515,7 @@ export function renderInvalidAgentStatus({ checkedAt, runUrl } = {}) {
     '',
     '> **CONTROL PLANE INVALID — DO NOT USE THE PREVIOUS SNAPSHOT FOR WORK SELECTION.**',
     '',
-    `- Detected at: ${timestamp}`,
+    `- Detected at: ${timestampValue}`,
     '- Live protocol/evidence validation failed closed.',
     '- Scheduled workers must not infer authority or executable work from the previous generated snapshot.',
     '- Re-read GitHub after the control-plane defect is repaired and a fresh successful status run is observed.',
