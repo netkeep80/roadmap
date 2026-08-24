@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-24T09:37:37Z",
+  "latest_observed_github_change": "2026-08-24T09:52:22Z",
   "repository_count": 26,
   "child_repository_count": 25,
   "verified_child_backlinks": 25,
@@ -114,9 +114,9 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T09:37:37Z",
-      "updated_at": "2026-08-23T18:50:22Z",
-      "open_issues": 10,
+      "pushed_at": "2026-08-24T09:52:22Z",
+      "updated_at": "2026-08-24T09:43:51Z",
+      "open_issues": 36,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
@@ -377,10 +377,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T09:36:18Z",
+      "pushed_at": "2026-08-24T09:48:44Z",
       "updated_at": "2026-08-24T09:20:47Z",
       "open_issues": 2,
-      "open_pull_requests": 0,
+      "open_pull_requests": 1,
       "tracked_issues": []
     },
     {
@@ -438,7 +438,7 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T09:24:54Z",
+      "pushed_at": "2026-08-24T09:49:16Z",
       "updated_at": "2026-08-24T09:10:03Z",
       "open_issues": 6,
       "open_pull_requests": 1,
@@ -563,10 +563,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T08:42:48Z",
+      "pushed_at": "2026-08-24T09:48:14Z",
       "updated_at": "2026-08-24T08:44:41Z",
-      "open_issues": 5,
-      "open_pull_requests": 0,
+      "open_issues": 6,
+      "open_pull_requests": 1,
       "tracked_issues": []
     },
     {
@@ -935,6 +935,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-24T09:38:04.288Z",
-  "state_hash": "b1b25eb11017c9cc7d01ea3eeb1a83d492e07ed080a0380841b83709e2854593"
+  "checked_at": "2026-08-24T09:52:50.813Z",
+  "state_hash": "6bd90b631fbec4e14835dc3f24af50675f2c37043a697b1364bbff6c06a7044a"
 }

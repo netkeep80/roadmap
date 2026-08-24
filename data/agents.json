@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-08-24T09:52:51.783Z",
+  "repository_count": 26,
+  "role_count": 26,
+  "active_session_count": 0,
+  "unresolved_message_count": 0,
+  "claim_count": 0,
+  "claim_collision_count": 0,
+  "roles": [
+    {
+      "repository": "netkeep80/a-num-",
+      "role_issue": 30,
+      "url": "https://github.com/netkeep80/roadmap/issues/30",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/aes",
+      "role_issue": 31,
+      "url": "https://github.com/netkeep80/roadmap/issues/31",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/anum_docs",
+      "role_issue": 32,
+      "url": "https://github.com/netkeep80/roadmap/issues/32",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/anum_parser",
+      "role_issue": 33,
+      "url": "https://github.com/netkeep80/roadmap/issues/33",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/aprover",
+      "role_issue": 34,
+      "url": "https://github.com/netkeep80/roadmap/issues/34",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/associative_proofs",
+      "role_issue": 35,
+      "url": "https://github.com/netkeep80/roadmap/issues/35",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/avm",
+      "role_issue": 36,
+      "url": "https://github.com/netkeep80/roadmap/issues/36",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/BinDiffSynchronizer",
+      "role_issue": 27,
+      "url": "https://github.com/netkeep80/roadmap/issues/27",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/god-mode",
+      "role_issue": 37,
+      "url": "https://github.com/netkeep80/roadmap/issues/37",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/isocubic",
+      "role_issue": 38,
+      "url": "https://github.com/netkeep80/roadmap/issues/38",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/jgit",
+      "role_issue": 39,
+      "url": "https://github.com/netkeep80/roadmap/issues/39",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/jhub",
+      "role_issue": 40,
+      "url": "https://github.com/netkeep80/roadmap/issues/40",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/jsonRVM",
+      "role_issue": 41,
+      "url": "https://github.com/netkeep80/roadmap/issues/41",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/mast-calculator",
+      "role_issue": 42,
+      "url": "https://github.com/netkeep80/roadmap/issues/42",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/meta_rm",
+      "role_issue": 43,
+      "url": "https://github.com/netkeep80/roadmap/issues/43",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/mts_visual",
+      "role_issue": 45,
+      "url": "https://github.com/netkeep80/roadmap/issues/45",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/mts-genesis",
+      "role_issue": 44,
+      "url": "https://github.com/netkeep80/roadmap/issues/44",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/NNets",
+      "role_issue": 28,
+      "url": "https://github.com/netkeep80/roadmap/issues/28",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/PersistMemoryManager",
+      "role_issue": 29,
+      "url": "https://github.com/netkeep80/roadmap/issues/29",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/phprvm",
+      "role_issue": 46,
+      "url": "https://github.com/netkeep80/roadmap/issues/46",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/pjson",
+      "role_issue": 47,
+      "url": "https://github.com/netkeep80/roadmap/issues/47",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/repo-guard",
+      "role_issue": 48,
+      "url": "https://github.com/netkeep80/roadmap/issues/48",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/roadmap",
+      "role_issue": 49,
+      "url": "https://github.com/netkeep80/roadmap/issues/49",
+      "portfolio_authority": "coordinate"
+    },
+    {
+      "repository": "netkeep80/sample_cmake",
+      "role_issue": 50,
+      "url": "https://github.com/netkeep80/roadmap/issues/50",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/termowood",
+      "role_issue": 51,
+      "url": "https://github.com/netkeep80/roadmap/issues/51",
+      "portfolio_authority": "propose"
+    },
+    {
+      "repository": "netkeep80/usefull",
+      "role_issue": 52,
+      "url": "https://github.com/netkeep80/roadmap/issues/52",
+      "portfolio_authority": "propose"
+    }
+  ],
+  "active_sessions": [],
+  "claims": [],
+  "unresolved_messages": [],
+  "blockers": []
+}
