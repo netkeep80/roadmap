@@ -22,13 +22,14 @@ After receiving the role issue URL, the agent MUST execute this sequence before 
 6. Read the target repository's `PORTFOLIO.md`, README, open issues, open PRs, exact current default-branch SHA, exact workflows, repository policy/repo-guard configuration, and actual blocking checks.
 7. Resume a valid handoff if one exists; otherwise select the next executable unclaimed local issue consistent with portfolio lifecycle/priority and local backlog.
 8. Create or continue one Agent Session and record durable checkpoints after meaningful gate transitions.
-9. Before every repository write or lifecycle/integration transition, refresh the relevant GitHub source-of-truth state. A checkpoint never overrides fresher GitHub facts.
-10. Send a durable Agent Message when a change materially crosses repository boundaries, changes dependency readiness, creates a blocker, or requires another role to act.
-11. Finish with a checkpoint and mark the Session `handoff` or `completed` as appropriate.
+9. After creating a new claiming Session, refresh all competing LIVE Sessions/Claims for the selected work and apply deterministic claim ordering before any target-repository write.
+10. Before every repository write or lifecycle/integration transition, refresh the relevant GitHub source-of-truth state. A checkpoint never overrides fresher GitHub facts.
+11. Send a durable Agent Message when a change materially crosses repository boundaries, changes dependency readiness, creates a blocker, or requires another role to act.
+12. Finish with a checkpoint and mark the Session `handoff` or `completed` as appropriate.
 
 The structured protocols for Role, Session, Checkpoint, Claim, and Message are defined in [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md).
 
-Timer-driven worker-pool bootstrap is defined separately in [`SCHEDULED_WORKERS.md`](SCHEDULED_WORKERS.md). A timer is only a wake-up mechanism; it is not a Role, Session, context store, or source of authority.
+Timer-driven pool bootstrap is defined separately in [`SCHEDULED_WORKERS.md`](SCHEDULED_WORKERS.md). Every Scheduled Task starts a fresh anonymous worker; the Session issue created in GitHub is the durable execution identity.
 
 ## Hard bounded-autonomy rule
 
@@ -40,11 +41,11 @@ NO EXPLICIT EXECUTABLE WORK
 => EXIT
 ```
 
-Repository-developer agents may start work only from a valid handoff, an actionable incoming Message, or an existing open local issue that is currently portfolio-consistent, executable, unblocked, and not occupied by another live winning Session.
+Repository-developer agents may start work only from a valid handoff, an actionable incoming Message, or an existing open local issue that is currently portfolio-consistent, executable, unblocked, and not occupied by another LIVE winning Session.
 
 There is no implicit step that creates a new task because the agent is idle. Do not generate speculative backlog, cleanup work, unrelated refactors, dependency upgrades, architecture redesigns, new milestones, or issues merely to remain busy.
 
-If the agent is a scheduled pool worker, it MUST reconstruct current GitHub state before selecting a Role. An idle scheduled invocation creates no Session merely to record idleness. Once a worker enters a Role/Session, it does not switch repositories merely because that Role has no further work; a collision loser may release/terminate the losing Session and return to pool selection or exit.
+A scheduled pool worker reconstructs current GitHub state before selecting a Role. An idle invocation creates no Session. A collision loser releases/terminates its losing Session without target-repository writes, then may return to bounded pool selection or exit.
 
 The `roadmap` coordinator Role is bounded too. `portfolio_authority=coordinate` means it may execute declared portfolio transitions in response to real drift, blockers, Messages, or explicit control-plane work. It does not authorize autonomous strategy invention. No declared trigger means exit.
 
@@ -91,16 +92,18 @@ An agent may propose a portfolio transition, but must not infer a new priority, 
 
 A claim prevents duplicate effort on one local issue/PR; it never locks an entire repository and never grants merge authority.
 
-Before claiming work, read active Sessions for this role. If two active Sessions claim the same local work item, the deterministic winner is:
+Two fresh workers may select the same apparently-unclaimed candidate before either Session exists. After Session creation, each contender must refresh the complete LIVE claimant set before touching the target repository.
+
+If two LIVE Sessions claim the same local work item, the deterministic winner is:
 
 1. earlier Session issue `created_at`;
 2. if timestamps are equal, lower Session issue number.
 
-The losing Session releases the claim and selects another explicit executable item or exits.
+The winner may proceed. The losing Session performs zero target-repository writes, releases the claim, terminates, and selects another explicit executable item or exits.
 
 A `handoff` Session is resumable context, not a running executor. It MUST hold zero claims.
 
-A Session that appears stale does not automatically release a claim. Stale recovery MUST follow the lease/revalidation protocol in `AGENT_PROTOCOL.md` / `SCHEDULED_WORKERS.md`: re-read current GitHub facts first, then abandon/replace only if the work is still valid and not occupied by a live winner.
+A Session that appears stale does not automatically release a claim. Stale recovery MUST follow the lease/revalidation protocol in `AGENT_PROTOCOL.md` / `SCHEDULED_WORKERS.md`: re-read current GitHub facts first, then abandon/replace only if the work is still valid and not occupied by a LIVE winner.
 
 ## Context discipline
 
