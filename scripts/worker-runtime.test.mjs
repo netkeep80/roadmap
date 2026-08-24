@@ -110,6 +110,21 @@ test('bounded selection honors handoff then message then local issue', () => {
   assert.equal(selectBoundedWork({ handoffs: [], messages: [], issues: [issue] }).action, 'claim_issue');
 });
 
+test('roadmap maintenance uses the ordinary explicit-issue selector', () => {
+  const maintenance = executableIssue('netkeep80/roadmap#62');
+  const selected = selectBoundedWork({ handoffs: [], messages: [], issues: [maintenance] });
+  assert.equal(selected.action, 'claim_issue');
+  assert.equal(selected.candidate.ref, 'netkeep80/roadmap#62');
+
+  const noDeclaredWork = selectBoundedWork({
+    handoffs: [],
+    messages: [],
+    issues: [],
+    observations: [{ kind: 'roadmap-housekeeping-opportunity', obvious: true }],
+  });
+  assert.deepEqual(noDeclaredWork, { action: 'exit_no_work', candidate: null });
+});
+
 test('bounded selection never chooses blocked, live-occupied or stale-recovery local issues', () => {
   const result = selectBoundedWork({
     handoffs: [],
@@ -167,6 +182,7 @@ test('anonymous scheduled-worker bootstrap is one parameter-free prompt', async 
   assert.match(text, /fresh anonymous worker/i);
   assert.match(text, /after Session creation[\s\S]*refresh[\s\S]*claim/i);
   assert.match(text, /no executable work[\s\S]*zero repository changes[\s\S]*no idle Session/i);
+  assert.match(text, /roadmap Role #49/i);
 });
 
 test('obvious cleanup observation without an explicit work item cannot create work', () => {
