@@ -47,7 +47,28 @@ Scheduled workers add runtime selection/liveness rules; they do not add a second
 
 A scheduled invocation starts from `netkeep80/roadmap`, not from prior chat and not from a permanently assigned repository.
 
-Before creating any Session it must reconstruct:
+Human provisioning intentionally has one per-task parameter:
+
+```text
+WORKER_SLOT=<positive integer>
+```
+
+The intended deployment is a pool of equivalent hourly Scheduled Tasks:
+
+```text
+worker_slot=1 -> hourly Scheduled Task
+worker_slot=2 -> hourly Scheduled Task
+...
+worker_slot=N -> hourly Scheduled Task
+        ↓
+netkeep80/roadmap
+        ↓
+dynamic Role/work selection from current GitHub
+```
+
+`worker_slot` is observability metadata only. It is not Role identity, Session identity, repository assignment, authority, durable context, lease authority, a lock, or claim priority. The same slot may select another Role on a later invocation; two invocations of the same slot may overlap and must still coordinate through ordinary Session/Claim rules. Slot equality never supersedes a LIVE Session.
+
+Before creating any Session an invocation must reconstruct:
 
 ```text
 public portfolio + lifecycle/priority
@@ -59,7 +80,9 @@ unresolved Messages
 local repository exact GitHub state for candidate work
 ```
 
-A worker creates a Session only after an explicit executable candidate exists. Therefore a no-work run creates no Session merely to record idleness.
+A worker creates a Session only after an explicit executable candidate exists. Therefore a no-work run creates no Session merely to record idleness and performs no repository write.
+
+When a Scheduled Task invocation creates a Session it records its positive integer `WORKER_SLOT` as optional Session field `worker_slot`. Manual/non-scheduled Sessions omit that field.
 
 Pool-level selection scans eligible public Roles. Once a worker enters a Role/Session it does not opportunistically switch repositories merely because that Role later has no work. A claim-collision loser may release/terminate the losing Session and return to pool selection, or exit.
 
@@ -93,7 +116,7 @@ For one Session, `heartbeat_at` is:
 1. GitHub server `created_at` of the latest **valid structured Checkpoint comment**;
 2. if no valid Checkpoint exists yet, GitHub server `created_at` of the Session issue.
 
-`updated_at` is not a heartbeat because an unrelated issue-body edit could refresh it.
+`updated_at` is not a heartbeat because an unrelated issue-body edit could refresh it. `worker_slot` also has no liveness authority.
 
 ### Classes
 
@@ -116,6 +139,8 @@ starting / working / waiting / blocked
 ```
 
 A new Session should leave an initial Checkpoint immediately. A long-running worker holding execution/claims targets at least one valid Checkpoint every `heartbeat_target_seconds` and at meaningful gate transitions.
+
+A fresh hourly invocation of the same `worker_slot` does not replace an older invocation. It performs the same liveness and claim checks as every other worker.
 
 ### Stale recovery is two-phase
 
@@ -140,11 +165,13 @@ Phase 2 — decide:
 - otherwise old stale Session is first transitioned to `abandoned` with no claims;
 - only after abandonment may a replacement Session claim/resume still-valid work.
 
+A matching `worker_slot` never bypasses this sequence.
+
 This prevents both false duplicate work and permanent locks caused by dead workers.
 
 ## Checkpoint history validation
 
-Every structured Checkpoint comment attached to every protocol Session must validate fail-closed, including terminal and historical Sessions.
+Every structured Checkpoint comment attached to every protocol Session must validate fail-closed, including terminal and historical Sessions, whether their GitHub Issue is open or closed.
 
 Generated operational status may project only current live/resumable state, but validation cannot skip malformed terminal history. This is required because stale recovery and future audit depend on durable evidence being structurally trustworthy.
 
@@ -244,22 +271,28 @@ No `abandon_then_replace` result is possible until a complete revalidation objec
 
 ## Generated status
 
-`AGENTS_STATUS.md` / `data/agents.json` remain disposable read-only projections. They may expose lease classification for operator visibility, but Scheduled workers must refresh live GitHub before acting because generated status has a `checked_at` time and can become stale.
+`AGENTS_STATUS.md` / `data/agents.json` remain disposable read-only projections. They separate leased active Sessions from resumable handoffs and expose `worker_slot` when present so an operator can see which Scheduled Task produced a Session. Slot visibility is diagnostic only and grants no control authority.
+
+Scheduled workers must refresh live GitHub before acting because generated status has a `checked_at` time and can become stale.
 
 ## Idempotent scheduled prompt
 
-`SCHEDULED_WORKERS.md` publishes a minimal prompt equivalent to:
+`SCHEDULED_WORKERS.md` publishes one copyable prompt. Provisioning changes only `<N>`:
 
 ```text
+WORKER_SLOT=<N>
+
 Open netkeep80/roadmap.
-Bootstrap strictly through the Agent Control Plane.
-Reconstruct current Role/Session/Claim/Message/portfolio state from GitHub.
+Bootstrap strictly through the public Agent Control Plane.
+Treat WORKER_SLOT only as this Scheduled Task slot identifier; it grants no Role, repository, priority or authority and stores no durable context.
+Reconstruct current Role/Session/Checkpoint/Claim/Message/portfolio state from GitHub.
 Perform only explicitly executable work permitted by the Agent Control Plane.
 Never invent work.
-Never duplicate work held by a live winning Session.
-Recover stale Session only through documented lease/revalidation protocol.
+Never duplicate work held by a LIVE winning Session.
+Recover STALE_CANDIDATE work only through documented complete GitHub revalidation.
 Before every repository write/lifecycle transition refresh exact GitHub state and obey local CI/repo-guard.
-If no executable unclaimed work exists, make no repository changes and terminate this run.
+If no executable work exists, make zero repository changes, create no idle Session, and terminate this run.
+When this invocation creates a Session, record WORKER_SLOT as `worker_slot` observability metadata only.
 Before finishing meaningful work, leave a durable Checkpoint.
 ```
 
@@ -269,24 +302,25 @@ Target property:
 same prompt + same GitHub state => safe idempotent decision
 ```
 
-Identical chosen work is not required under concurrency; deterministic claim collision handling is required.
+Identical chosen work is not required under concurrency; deterministic claim collision handling is required. Collision priority remains Session GitHub `created_at`, then lower Session issue number; `worker_slot` is deliberately absent.
 
 ## Acceptance matrix
 
 1. LIVE overlap: second worker sees LIVE winner and does not duplicate.
 2. Dead worker: STALE_CANDIDATE requires full revalidation before abandonment/replacement.
 3. Claim race: earlier Session `created_at`, then lower issue number wins; loser releases and reselects/exits.
-4. No work: zero repository writes, zero speculative issues, clean exit.
+4. No work: zero repository writes, zero speculative issues, zero idle Session creation, clean exit.
 5. Obvious cleanup without explicit issue: clean exit.
 6. Fresh handoff resume: Role URL + GitHub only; no previous chat context.
 7. Stale Checkpoint invalidated by current GitHub: current GitHub wins and no stale resume occurs.
 8. Coordinator idle: no declared trigger means no strategy mutation and clean exit.
+9. Numbered worker pool: positive-integer `worker_slot` is visible but does not affect authority, lease, repository selection, claims, or same-slot overlap behavior.
 
 A8 issues #56–#61 and Message #60 are reusable acceptance evidence for collision, cross-role handoff/ACK, independent lane, and Role-URL-only resume. A10 adds lease/no-work/pool semantics on top.
 
 ## Production gate
 
-Real Scheduled Tasks must not be treated as production workers until #62 records green evidence for:
+Protocol/runtime implementation may merge after its exact-head repository gates. Real Scheduled Tasks must not be treated as production workers until #62 additionally records green operational evidence for:
 
 ```text
 lease/stale recovery
@@ -294,4 +328,6 @@ bounded-autonomy/no-work
 idempotent bootstrap
 concurrent acceptance
 fresh Role-URL-only resume
+worker_slot observability without authority
+real numbered hourly-pool smoke/soak observation
 ```
