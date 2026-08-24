@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import process from 'node:process';
 
-import { compareClaimPriority, parseProtocolBlock, validateCheckpoint } from './agent-protocol.mjs';
+import { compareClaimPriority, parseProtocolBlock, validateCheckpoint, validateRoleCoverage, validateSession } from './agent-protocol.mjs';
 import {
   AGENT_MARKER,
   agentIssuesOnly,
@@ -85,12 +85,32 @@ function registryRoleMap(registry) {
   const owner = registry.owner ?? 'netkeep80';
   return new Map(registry.repositories.map((entry, index) => {
     if (!entry || typeof entry.name !== 'string' || !entry.name) fail('registry repository entry is invalid');
-    return [index + 1, { repository: `${owner}/${entry.name}` }];
+    return [-(index + 1), { repository: `${owner}/${entry.name}` }];
   }));
 }
 
 function strictCheckpointFromBody(body, registry, session) {
   return validateCheckpoint({ body }, registryRoleMap(registry), session);
+}
+
+async function strictAuthoritySession(issue, registry, resolveControlIssue, label) {
+  assertSessionIssue(issue, label);
+  const parsed = parseProtocolBlock(issue.body);
+  if (!SESSION_PROTOCOLS.has(parsed.protocol) || !Number.isInteger(parsed.role_issue)) fail(`${label} must declare a valid Session role_issue`);
+  let roleIssue;
+  try {
+    roleIssue = await resolveControlIssue(parsed.role_issue);
+  } catch (cause) {
+    const error = new Error(`control plane evidence: ${label} Role #${parsed.role_issue} does not resolve`);
+    error.cause = cause;
+    throw error;
+  }
+  if (!roleIssue || Number(roleIssue.number) !== parsed.role_issue || roleIssue.pull_request) fail(`${label} Role #${parsed.role_issue} does not resolve exactly`);
+  const names = registry.repositories.map((entry) => entry.name);
+  const { roleMap } = validateRoleCoverage(names, names, [roleIssue], { enforceComplete: false });
+  const fullRoleMap = registryRoleMap(registry);
+  fullRoleMap.set(parsed.role_issue, roleMap.get(parsed.role_issue));
+  return validateSession(issue, fullRoleMap);
 }
 
 async function defaultResolveCommit(repository, sha) {
@@ -350,8 +370,12 @@ async function validateAcceptanceEvidence({
   if (!candidateIssue || Number(candidateIssue.number) !== acceptance.candidate_session || typeof candidateIssue.body !== 'string') {
     fail(`candidate Session #${acceptance.candidate_session} does not resolve exactly`);
   }
-  assertSessionIssue(candidateIssue, 'acceptance candidate Session');
-  const candidateSession = parseProtocolBlock(candidateIssue.body);
+  const candidateSession = await strictAuthoritySession(
+    candidateIssue,
+    registry,
+    resolveControlIssue,
+    'acceptance candidate Session',
+  );
   if (candidateSession.protocol !== SESSION_PROTOCOL_V2 || candidateSession.work_phase !== 'implementation') {
     fail('acceptance candidate Session must be a v2 implementation Session');
   }
@@ -433,15 +457,18 @@ export async function validateCheckpointEventEvidence({
     fail('checkpoint comment is not attached to a protocol Session');
   }
   assertSessionIssue(event.issue, 'checkpoint Session');
-  const session = parseProtocolBlock(event.issue.body);
+  let session = parseProtocolBlock(event.issue.body);
   if (!SESSION_PROTOCOLS.has(session.protocol)) fail('checkpoint comment is not attached to a Session');
 
   const expectedCheckpointProtocol = session.protocol === SESSION_PROTOCOL_V2 ? CHECKPOINT_PROTOCOL_V2 : CHECKPOINT_PROTOCOL_V1;
   if (checkpoint.protocol !== expectedCheckpointProtocol) fail('Checkpoint protocol version must match attached Session protocol version');
 
   const repository = assertRegisteredSessionRepository(registry, session.repository);
+  const effectiveResolveControlIssue = resolveControlIssue
+    ?? ((number) => defaultResolveControlIssue(registry, number));
   if (checkpoint.protocol === CHECKPOINT_PROTOCOL_V2) {
     checkpoint = strictCheckpointFromBody(event.comment.body, registry, session);
+    session = await strictAuthoritySession(event.issue, registry, effectiveResolveControlIssue, 'checkpoint Session');
     assertV2SessionForCheckpoint(session, checkpoint, event.issue.number);
   }
 
@@ -452,21 +479,21 @@ export async function validateCheckpointEventEvidence({
     return { checked: true, ...commitResult };
   }
 
-  const effectiveResolveOpenControlIssues = resolveOpenControlIssues ?? (async () => [event.issue]);
+  if (checkpoint.review_candidate && typeof resolveOpenControlIssues !== 'function') {
+    fail('review candidate requires a current claimant resolver');
+  }
   const reviewCandidateChecked = await validateReviewCandidateEvidence({
     checkpoint,
     session,
     eventIssue: event.issue,
     registry,
     resolvePullRequest,
-    resolveOpenControlIssues: effectiveResolveOpenControlIssues,
+    resolveOpenControlIssues,
   });
   if (reviewCandidateChecked) {
     return { checked: true, ...commitResult, review_candidate_checked: true };
   }
 
-  const effectiveResolveControlIssue = resolveControlIssue
-    ?? ((number) => defaultResolveControlIssue(registry, number));
   const effectiveResolveControlComment = resolveControlComment
     ?? ((issueNumber, commentId) => defaultResolveControlComment(registry, issueNumber, commentId));
   const acceptanceChecked = await validateAcceptanceEvidence({
