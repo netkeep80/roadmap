@@ -12,6 +12,67 @@ async function loadIntegrityModule() {
 
 const VALID_SHA = '0123456789abcdef0123456789abcdef01234567';
 const OTHER_VALID_SHA = '89abcdef0123456789abcdef0123456789abcdef';
+const THIRD_VALID_SHA = 'fedcba9876543210fedcba9876543210fedcba98';
+
+function agentBlock(data) {
+  return `<!-- roadmap-agent:start -->\n\`\`\`json\n${JSON.stringify(data)}\n\`\`\`\n<!-- roadmap-agent:end -->`;
+}
+
+const ROADMAP_REGISTRY = {
+  owner: 'netkeep80',
+  control_repository: 'roadmap',
+  repositories: [{ name: 'roadmap' }],
+};
+
+function v2Session({ phase = 'implementation', state = 'working', claims, currentPr = 'netkeep80/roadmap#142', workItem = 'netkeep80/roadmap#139' } = {}) {
+  return agentBlock({
+    protocol: 'roadmap-agent-session/v2',
+    role_issue: 49,
+    repository: 'netkeep80/roadmap',
+    work_item: workItem,
+    work_phase: phase,
+    state,
+    claims: claims ?? (state === 'working' ? [workItem] : []),
+    current_branch: null,
+    current_pr: currentPr,
+    blocked_by: [],
+  });
+}
+
+function candidateCheckpoint({ head = VALID_SHA, base = OTHER_VALID_SHA } = {}) {
+  return agentBlock({
+    protocol: 'roadmap-agent-checkpoint/v2',
+    state: 'working',
+    work_item: 'netkeep80/roadmap#139',
+    completed: ['candidate sealed'],
+    refs: [], blockers: [], next: ['independent acceptance'], messages: [],
+    review_candidate: {
+      work_item: 'netkeep80/roadmap#139',
+      pr: 'netkeep80/roadmap#142',
+      head_sha: head,
+      base_sha: base,
+    },
+  });
+}
+
+function acceptanceCheckpoint({ candidateSession = 900, candidateComment = 7001, head = VALID_SHA, base = OTHER_VALID_SHA, decision = 'accepted' } = {}) {
+  return agentBlock({
+    protocol: 'roadmap-agent-checkpoint/v2',
+    state: 'working',
+    work_item: 'netkeep80/roadmap#139',
+    completed: ['independent review complete'],
+    refs: [], blockers: [], next: [], messages: [],
+    acceptance: {
+      candidate_session: candidateSession,
+      candidate_checkpoint_comment_id: candidateComment,
+      work_item: 'netkeep80/roadmap#139',
+      pr: 'netkeep80/roadmap#142',
+      head_sha: head,
+      base_sha: base,
+      decision,
+    },
+  });
+}
 
 test('evidence integrity module exposes the required public boundary', async () => {
   const module = await loadIntegrityModule();
@@ -104,6 +165,144 @@ test('non-checkpoint events require zero commit API calls', async () => {
   });
   assert.equal(calls, 0);
   assert.deepEqual(result, { checked: false, unique_commit_evidence: 0 });
+});
+
+test('v2 review candidate validates exact current PR head/base with one bounded PR lookup', async () => {
+  const module = await loadIntegrityModule();
+  const calls = [];
+  const result = await module.validateCheckpointEventEvidence({
+    event: {
+      action: 'created',
+      issue: { number: 900, body: v2Session() },
+      comment: { id: 7001, body: candidateCheckpoint() },
+    },
+    registry: ROADMAP_REGISTRY,
+    resolveCommit: async () => { throw new Error('no commit refs expected'); },
+    resolvePullRequest: async (repository, number) => {
+      calls.push([repository, number]);
+      return { number, state: 'open', head: { sha: VALID_SHA }, base: { sha: OTHER_VALID_SHA } };
+    },
+  });
+
+  assert.deepEqual(calls, [['netkeep80/roadmap', 142]]);
+  assert.deepEqual(result, { checked: true, unique_commit_evidence: 0, review_candidate_checked: true });
+});
+
+test('v2 review candidate fails closed when current PR head or base moved', async () => {
+  const module = await loadIntegrityModule();
+  await assert.rejects(
+    () => module.validateCheckpointEventEvidence({
+      event: {
+        action: 'created',
+        issue: { number: 900, body: v2Session() },
+        comment: { id: 7001, body: candidateCheckpoint() },
+      },
+      registry: ROADMAP_REGISTRY,
+      resolvePullRequest: async (repository, number) => ({
+        number,
+        state: 'open',
+        head: { sha: THIRD_VALID_SHA },
+        base: { sha: OTHER_VALID_SHA },
+      }),
+    }),
+    /review candidate.*head|candidate.*head.*mismatch/i,
+  );
+});
+
+test('v2 final acceptance must use a different Session from its candidate', async () => {
+  const module = await loadIntegrityModule();
+  await assert.rejects(
+    () => module.validateCheckpointEventEvidence({
+      event: {
+        action: 'created',
+        issue: { number: 900, body: v2Session({ phase: 'acceptance' }) },
+        comment: { id: 7002, body: acceptanceCheckpoint({ candidateSession: 900 }) },
+      },
+      registry: ROADMAP_REGISTRY,
+      resolvePullRequest: async (repository, number) => ({ number, state: 'open', head: { sha: VALID_SHA }, base: { sha: OTHER_VALID_SHA } }),
+      resolveControlIssue: async () => { throw new Error('same-session rejection must happen before lookup'); },
+      resolveControlComment: async () => { throw new Error('same-session rejection must happen before lookup'); },
+    }),
+    /different Session|cannot accept its own candidate/i,
+  );
+});
+
+test('v2 final acceptance fails closed on forged candidate checkpoint ownership', async () => {
+  const module = await loadIntegrityModule();
+  await assert.rejects(
+    () => module.validateCheckpointEventEvidence({
+      event: {
+        action: 'created',
+        issue: { number: 901, body: v2Session({ phase: 'acceptance' }) },
+        comment: { id: 7002, body: acceptanceCheckpoint({ candidateSession: 900, candidateComment: 7001 }) },
+      },
+      registry: ROADMAP_REGISTRY,
+      resolvePullRequest: async (repository, number) => ({ number, state: 'open', head: { sha: VALID_SHA }, base: { sha: OTHER_VALID_SHA } }),
+      resolveControlIssue: async (number) => ({ number, body: v2Session({ state: 'handoff', claims: [] }) }),
+      resolveControlComment: async () => ({ id: 7001, issue_number: 999, body: candidateCheckpoint() }),
+    }),
+    /candidate checkpoint.*Session|ownership/i,
+  );
+});
+
+test('v2 final acceptance validates exact candidate tuple and target PR', async () => {
+  const module = await loadIntegrityModule();
+  const calls = { pr: 0, issue: 0, comment: 0 };
+  const result = await module.validateCheckpointEventEvidence({
+    event: {
+      action: 'created',
+      issue: { number: 901, body: v2Session({ phase: 'acceptance' }) },
+      comment: { id: 7002, body: acceptanceCheckpoint({ candidateSession: 900, candidateComment: 7001 }) },
+    },
+    registry: ROADMAP_REGISTRY,
+    resolvePullRequest: async (repository, number) => {
+      calls.pr += 1;
+      return { number, state: 'open', head: { sha: VALID_SHA }, base: { sha: OTHER_VALID_SHA } };
+    },
+    resolveControlIssue: async (number) => {
+      calls.issue += 1;
+      return { number, body: v2Session({ state: 'handoff', claims: [] }) };
+    },
+    resolveControlComment: async (issueNumber, commentId) => {
+      calls.comment += 1;
+      return { id: commentId, issue_number: issueNumber, body: candidateCheckpoint() };
+    },
+  });
+
+  assert.deepEqual(calls, { pr: 1, issue: 1, comment: 1 });
+  assert.deepEqual(result, { checked: true, unique_commit_evidence: 0, acceptance_checked: true });
+});
+
+test('v2 Session work_item and work_phase are immutable across body edits', async () => {
+  const module = await loadIntegrityModule();
+  await assert.rejects(
+    () => module.validateCheckpointEventEvidence({
+      event: {
+        action: 'edited',
+        issue: { number: 901, body: v2Session({ phase: 'acceptance' }) },
+        changes: { body: { from: v2Session({ phase: 'implementation' }) } },
+      },
+      registry: ROADMAP_REGISTRY,
+    }),
+    /work_phase.*immutable/i,
+  );
+});
+
+test('authority-bearing v2 checkpoint cannot be edited in place', async () => {
+  const module = await loadIntegrityModule();
+  await assert.rejects(
+    () => module.validateCheckpointEventEvidence({
+      event: {
+        action: 'edited',
+        issue: { number: 900, body: v2Session() },
+        comment: { id: 7001, body: candidateCheckpoint() },
+        changes: { body: { from: candidateCheckpoint({ head: THIRD_VALID_SHA }) } },
+      },
+      registry: ROADMAP_REGISTRY,
+      resolvePullRequest: async () => ({ number: 142, state: 'open', head: { sha: VALID_SHA }, base: { sha: OTHER_VALID_SHA } }),
+    }),
+    /authority-bearing.*cannot be edited|immutable/i,
+  );
 });
 
 test('INVALID status is explicit and never echoes raw failure payload', async () => {
