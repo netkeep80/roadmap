@@ -311,7 +311,13 @@ test('v2 final acceptance validates exact candidate tuple and target PR', async 
     },
     resolveControlComment: async (issueNumber, commentId) => {
       calls.comment += 1;
-      return { id: commentId, issue_number: issueNumber, created_at: '2026-08-24T20:10:00Z', body: candidateCheckpoint() };
+      return {
+        id: commentId,
+        issue_number: issueNumber,
+        created_at: '2026-08-24T20:10:00Z',
+        updated_at: '2026-08-24T20:10:00Z',
+        body: candidateCheckpoint(),
+      };
     },
     resolveOpenControlIssues: async () => [
       openSessionIssue(901, v2Session({ phase: 'acceptance' }), '2026-08-24T20:20:00Z'),
