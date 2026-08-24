@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 async function loadIntegrityModule() {
@@ -13,9 +14,19 @@ async function loadIntegrityModule() {
 const VALID_SHA = '0123456789abcdef0123456789abcdef01234567';
 const OTHER_VALID_SHA = '89abcdef0123456789abcdef0123456789abcdef';
 const THIRD_VALID_SHA = 'fedcba9876543210fedcba9876543210fedcba98';
+const ATTESTATION_START = '<!-- roadmap-agent-validation-attestation:start -->';
+const ATTESTATION_END = '<!-- roadmap-agent-validation-attestation:end -->';
 
 function agentBlock(data) {
   return `<!-- roadmap-agent:start -->\n\`\`\`json\n${JSON.stringify(data)}\n\`\`\`\n<!-- roadmap-agent:end -->`;
+}
+
+function attestationBlock(data) {
+  return `${ATTESTATION_START}\n\`\`\`json\n${JSON.stringify(data)}\n\`\`\`\n${ATTESTATION_END}`;
+}
+
+function sha256(body) {
+  return createHash('sha256').update(body, 'utf8').digest('hex');
 }
 
 const ROADMAP_REGISTRY = {
@@ -78,7 +89,7 @@ function candidateCheckpoint({ head = VALID_SHA, base = OTHER_VALID_SHA } = {}) 
   });
 }
 
-function acceptanceCheckpoint({ candidateSession = 900, candidateComment = 7001, head = VALID_SHA, base = OTHER_VALID_SHA, decision = 'accepted' } = {}) {
+function acceptanceCheckpoint({ candidateSession = 900, candidateComment = 7001, attestationComment = 7003, head = VALID_SHA, base = OTHER_VALID_SHA, decision = 'accepted' } = {}) {
   return agentBlock({
     protocol: 'roadmap-agent-checkpoint/v2',
     state: 'working',
@@ -88,6 +99,7 @@ function acceptanceCheckpoint({ candidateSession = 900, candidateComment = 7001,
     acceptance: {
       candidate_session: candidateSession,
       candidate_checkpoint_comment_id: candidateComment,
+      candidate_validation_attestation_comment_id: attestationComment,
       work_item: 'netkeep80/roadmap#139',
       pr: 'netkeep80/roadmap#142',
       head_sha: head,
@@ -95,6 +107,26 @@ function acceptanceCheckpoint({ candidateSession = 900, candidateComment = 7001,
       decision,
     },
   });
+}
+
+function validationAttestationComment(candidateBody = candidateCheckpoint()) {
+  return {
+    id: 7003,
+    issue_number: 900,
+    created_at: '2026-08-24T20:11:00Z',
+    updated_at: '2026-08-24T20:11:00Z',
+    user: { login: 'github-actions[bot]', type: 'Bot' },
+    body: attestationBlock({
+      protocol: 'roadmap-agent-validation-attestation/v1',
+      candidate_session: 900,
+      candidate_checkpoint_comment_id: 7001,
+      candidate_checkpoint_body_sha256: sha256(candidateBody),
+      work_item: 'netkeep80/roadmap#139',
+      pr: 'netkeep80/roadmap#142',
+      head_sha: VALID_SHA,
+      base_sha: OTHER_VALID_SHA,
+    }),
+  };
 }
 
 function reviewAuthorityResolvers(issue) {
@@ -220,7 +252,11 @@ test('v2 review candidate validates exact current PR head/base with one bounded 
   });
 
   assert.deepEqual(calls, [['netkeep80/roadmap', 142]]);
-  assert.deepEqual(result, { checked: true, unique_commit_evidence: 0, review_candidate_checked: true });
+  assert.equal(result.checked, true);
+  assert.equal(result.unique_commit_evidence, 0);
+  assert.equal(result.review_candidate_checked, true);
+  assert.equal(typeof result.validation_attestation_body, 'string');
+  assert.match(result.validation_attestation_body, /roadmap-agent-validation-attestation\/v1/);
 });
 
 test('v2 review candidate fails closed when current PR head or base moved', async () => {
@@ -292,11 +328,16 @@ test('v2 final acceptance fails closed on forged candidate checkpoint ownership'
 test('v2 final acceptance validates exact candidate tuple and target PR', async () => {
   const module = await loadIntegrityModule();
   const calls = { pr: 0, issue: 0, comment: 0 };
+  const candidateBody = candidateCheckpoint();
   const result = await module.validateCheckpointEventEvidence({
     event: {
       action: 'created',
       issue: openSessionIssue(901, v2Session({ phase: 'acceptance' }), '2026-08-24T20:20:00Z'),
-      comment: { id: 7002, body: acceptanceCheckpoint({ candidateSession: 900, candidateComment: 7001 }) },
+      comment: {
+        id: 7002,
+        created_at: '2026-08-24T20:30:00Z',
+        body: acceptanceCheckpoint({ candidateSession: 900, candidateComment: 7001, attestationComment: 7003 }),
+      },
     },
     registry: ROADMAP_REGISTRY,
     resolvePullRequest: async (repository, number) => {
@@ -311,13 +352,17 @@ test('v2 final acceptance validates exact candidate tuple and target PR', async 
     },
     resolveControlComment: async (issueNumber, commentId) => {
       calls.comment += 1;
-      return {
-        id: commentId,
-        issue_number: issueNumber,
-        created_at: '2026-08-24T20:10:00Z',
-        updated_at: '2026-08-24T20:10:00Z',
-        body: candidateCheckpoint(),
-      };
+      if (commentId === 7001) {
+        return {
+          id: commentId,
+          issue_number: issueNumber,
+          created_at: '2026-08-24T20:10:00Z',
+          updated_at: '2026-08-24T20:10:00Z',
+          body: candidateBody,
+        };
+      }
+      if (commentId === 7003) return validationAttestationComment(candidateBody);
+      throw new Error(`comment #${commentId} not found`);
     },
     resolveOpenControlIssues: async () => [
       openSessionIssue(901, v2Session({ phase: 'acceptance' }), '2026-08-24T20:20:00Z'),
@@ -326,7 +371,7 @@ test('v2 final acceptance validates exact candidate tuple and target PR', async 
 
   assert.equal(calls.pr, 1);
   assert.ok(calls.issue >= 1 && calls.issue <= 3, `expected bounded control-issue lookups, got ${calls.issue}`);
-  assert.equal(calls.comment, 1);
+  assert.equal(calls.comment, 2);
   assert.deepEqual(result, { checked: true, unique_commit_evidence: 0, acceptance_checked: true });
 });
 
