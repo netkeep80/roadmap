@@ -135,6 +135,12 @@ test('Agent Status validates only changed checkpoint evidence and publishes INVA
   assert.doesNotMatch(workflow, /\|\|\s*true/);
 });
 
+test('checkpoint comments do not trigger a full Agent Status rebuild', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/agent-status.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /contains\(github\.event\.comment\.body \|\| '', '<!-- roadmap-agent:start -->'\)/);
+  assert.match(workflow, /name: Publish current worker state to permanent Issue[\s\S]*?if:\s*>-[\s\S]*?github\.event_name != 'issue_comment'/);
+});
+
 test('automatic evidence workflow does not rescan complete GitHub history', async () => {
   const workflow = await readFile(new URL('../.github/workflows/agent-evidence-integrity.yml', import.meta.url), 'utf8');
   assert.doesNotMatch(workflow, /--validate-live/);
