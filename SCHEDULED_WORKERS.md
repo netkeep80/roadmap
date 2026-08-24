@@ -13,21 +13,73 @@ Timer = wake-up mechanism only
 
 Every invocation may be a fresh worker with no useful conversational history. GitHub is the durable source of coordination truth.
 
-## Minimal worker prompt
+## Provisioning model: copy prompt, change one number
 
-A Scheduled Task may use this prompt verbatim:
+The intended operating model is a pool of equivalent hourly Scheduled Tasks. Human provisioning has exactly one per-task parameter:
 
 ```text
+WORKER_SLOT=<positive integer>
+```
+
+Example:
+
+```text
+Scheduled Task 1: WORKER_SLOT=1, every hour
+Scheduled Task 2: WORKER_SLOT=2, every hour
+Scheduled Task 3: WORKER_SLOT=3, every hour
+...
+Scheduled Task N: WORKER_SLOT=N, every hour
+```
+
+`worker_slot` is **observability metadata only**. It identifies which timer slot produced a Session when a Session is actually created.
+
+It is not:
+
+```text
+worker_slot != Role
+worker_slot != Session identity
+worker_slot != repository assignment
+worker_slot != authority
+worker_slot != durable context
+worker_slot != lock
+worker_slot != claim priority
+```
+
+Therefore:
+
+- the same slot starts every invocation from fresh GitHub state;
+- the same slot may select a different Role on a later invocation;
+- two invocations of the same slot may overlap and must still coordinate through Sessions/Claims;
+- different slots may enter the same Role when different explicit unclaimed work is available;
+- slot number never changes lease classification or deterministic claim-collision ordering;
+- an idle slot creates no Session and performs no repository write.
+
+## Copyable scheduled-worker prompt
+
+Create each Scheduled Task from this same prompt and replace only `<N>`:
+
+```text
+WORKER_SLOT=<N>
+
 Open netkeep80/roadmap.
-Bootstrap strictly through the Agent Control Plane.
-Reconstruct current Role/Session/Claim/Message/portfolio state from GitHub.
-Perform only explicitly executable work permitted by the Agent Control Plane.
+Bootstrap strictly through the public Agent Control Plane.
+
+Treat WORKER_SLOT only as this Scheduled Task slot identifier.
+It grants no Role, repository, priority or authority and stores no durable context.
+
+Reconstruct current Role/Session/Checkpoint/Claim/Message/portfolio state from GitHub.
+Before creating a Session, dynamically select only explicitly executable unclaimed work permitted by the control plane, then enter the corresponding permanent Role issue.
+
 Never invent work.
-Never duplicate work held by a live winning Session.
-Recover a stale Session only through the documented lease/revalidation protocol.
-Before every repository write or lifecycle transition, refresh exact GitHub state and obey local CI/repo-guard.
-If no executable unclaimed work exists, make no repository changes and terminate this run.
-Before finishing meaningful work, leave a durable Checkpoint.
+Never duplicate work held by a LIVE winning Session.
+Recover STALE_CANDIDATE work only through the documented complete GitHub revalidation protocol.
+Before every repository write or lifecycle transition, refresh exact GitHub state and obey the target repository's actual CI/repo-guard policy.
+
+If no executable work exists, make zero repository changes, create no idle Session, and terminate this run.
+
+When this invocation creates a Session, record WORKER_SLOT as the positive integer `worker_slot` field. `worker_slot` is observability metadata only and never affects Role authority, claims, leases or collision ordering.
+
+Before finishing meaningful work, leave a durable Checkpoint sufficient for a fresh future invocation to revalidate and resume from GitHub only.
 ```
 
 The prompt intentionally does not assign a repository. The worker slot is not a repository identity.
@@ -142,6 +194,8 @@ starting / working / waiting / blocked
 
 A worker holding active execution/claims SHOULD leave an initial Checkpoint immediately after Session creation and SHOULD refresh durable Checkpoint evidence at meaningful lifecycle gates. For long continuous work, target at least one valid Checkpoint per `heartbeat_target_seconds`.
 
+A new hourly invocation of the same `worker_slot` does not supersede an older invocation. It performs ordinary liveness/claim checks exactly like any other worker.
+
 ## Stale recovery
 
 `STALE_CANDIDATE` does **not** mean the claim is free and does **not** authorize immediate resume.
@@ -179,17 +233,17 @@ Never continue from stale assumptions merely because an old Checkpoint says `nex
 
 ## Claim collisions and overlap
 
-Scheduled tasks are not assumed to serialize.
+Scheduled tasks are not assumed to serialize, including repeated invocations of the **same** slot.
 
 Example:
 
 ```text
-12:00 worker A starts
+12:00 worker_slot=2 invocation A starts
 12:40 A still runs
-13:00 worker B starts
+13:00 worker_slot=2 invocation B starts
 ```
 
-B reconstructs live Sessions and claims. If A is LIVE and wins the relevant claim, B does not duplicate A's work; it selects another explicit candidate or exits.
+B reconstructs live Sessions and claims. If A is LIVE and wins the relevant claim, B does not duplicate A's work; it selects another explicit candidate or exits. Slot equality gives B no special right to replace A.
 
 If two Sessions race for the same claim, existing deterministic ordering remains authoritative:
 
@@ -198,7 +252,9 @@ earlier Session GitHub created_at wins
 then lower Session issue number
 ```
 
-The loser releases the claim and selects another explicit candidate or exits. There is no global repository lock.
+`worker_slot` is deliberately absent from this ordering.
+
+The loser releases the claim and selects another explicit candidate or exits. There is no global repository lock and no per-slot lock.
 
 ## Coordinator worker is bounded too
 
@@ -215,6 +271,22 @@ real drift / pending transition / blocker / actionable Message / explicit contro
 ```
 
 With no such trigger, the coordinator exits and makes no strategy changes.
+
+## User operating model
+
+After production acceptance, the normal human workflow is intentionally small:
+
+```text
+create N hourly Scheduled Tasks from one prompt
+        ↓
+workers dynamically consume explicit GitHub work
+        ↓
+observe portfolio / Sessions / claims / blockers in netkeep80/roadmap
+        ↓
+create or reprioritize explicit Issues when new work is desired
+```
+
+Local repository Issues remain the implementation backlog. When a worker claims and completes an issue, normal repository PR/CI/repo-guard lifecycle determines whether it may close that issue. The timer itself never grants permission to close or merge anything.
 
 ## Public-only boundary
 
@@ -246,6 +318,8 @@ idempotent bootstrap
 concurrent-worker acceptance
 +
 fresh Role-URL-only resume
++
+worker_slot observability without authority
 ```
 
 Until then, the worker policy and tests are control-plane preparation, not permission to run unattended production workers.
