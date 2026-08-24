@@ -24,12 +24,17 @@ import {
 
 const ROOT = process.cwd();
 const REGISTRY_PATH = path.join(ROOT, 'data', 'portfolio.json');
+const WORKER_POLICY_PATH = path.join(ROOT, 'data', 'worker-policy.json');
 const AGENTS_JSON_PATH = path.join(ROOT, 'data', 'agents.json');
 const AGENTS_MD_PATH = path.join(ROOT, 'AGENTS_STATUS.md');
 const validateOnly = process.argv.includes('--validate-live');
 
 async function readRegistry() {
   return JSON.parse(await fs.readFile(REGISTRY_PATH, 'utf8'));
+}
+
+async function readWorkerPolicy() {
+  return JSON.parse(await fs.readFile(WORKER_POLICY_PATH, 'utf8'));
 }
 
 async function listIssueComments(owner, repository, issueNumber) {
@@ -59,6 +64,7 @@ async function writeIfChanged(file, content) {
 
 export async function buildLiveAgentSnapshot({
   registry,
+  workerPolicy,
   repositories,
   issues,
   historicalIssues = issues,
@@ -126,11 +132,11 @@ export async function buildLiveAgentSnapshot({
     checkpointsBySession[session.number] = checkpoints;
   }
 
-  return buildAgentSnapshot({ checkedAt, roles, sessions, messages, checkpointsBySession });
+  return buildAgentSnapshot({ checkedAt, roles, sessions, messages, checkpointsBySession, workerPolicy });
 }
 
 async function main() {
-  const registry = await readRegistry();
+  const [registry, workerPolicy] = await Promise.all([readRegistry(), readWorkerPolicy()]);
   if (!process.env.GITHUB_TOKEN) {
     console.warn('WARN: GITHUB_TOKEN is not set; public API rate limits may apply.');
   }
@@ -138,9 +144,9 @@ async function main() {
     collectLiveAgentInputs(registry),
     listAllControlIssues(registry.owner, registry.control_repository),
   ]);
-  const snapshot = await buildLiveAgentSnapshot({ registry, repositories, issues, historicalIssues });
+  const snapshot = await buildLiveAgentSnapshot({ registry, workerPolicy, repositories, issues, historicalIssues });
 
-  console.log(`agent status live ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.claim_count} claims, ${snapshot.unresolved_message_count} unresolved messages`);
+  console.log(`agent status live ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.stale_candidate_session_count} stale candidates, ${snapshot.claim_count} active claims, ${snapshot.stale_claim_count} stale claims, ${snapshot.unresolved_message_count} unresolved messages`);
   if (validateOnly) return;
 
   const jsonChanged = await writeIfChanged(AGENTS_JSON_PATH, `${JSON.stringify(snapshot, null, 2)}\n`);
