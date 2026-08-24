@@ -105,11 +105,12 @@ function candidateIssue({ roleIssueNumber = 49 } = {}) {
   };
 }
 
-function candidateComment(createdAt = '2026-08-24T20:10:00Z') {
+function candidateComment(createdAt = '2026-08-24T20:10:00Z', updatedAt = createdAt) {
   return {
     id: 7001,
     issue_number: 900,
     created_at: createdAt,
+    updated_at: updatedAt,
     body: block(candidateData()),
   };
 }
@@ -135,7 +136,7 @@ function acceptanceEvent(data = acceptanceData(), {
   };
 }
 
-function acceptanceResolvers({ candidateCommentCreatedAt } = {}) {
+function acceptanceResolvers({ candidateCommentCreatedAt, candidateCommentUpdatedAt } = {}) {
   return {
     resolvePullRequest: async (_repository, number) => exactPr(number),
     resolveControlIssue: async (number) => {
@@ -143,7 +144,7 @@ function acceptanceResolvers({ candidateCommentCreatedAt } = {}) {
       if (number === 900) return candidateIssue();
       throw new Error(`control issue #${number} not found`);
     },
-    resolveControlComment: async () => candidateComment(candidateCommentCreatedAt),
+    resolveControlComment: async () => candidateComment(candidateCommentCreatedAt, candidateCommentUpdatedAt),
   };
 }
 
@@ -261,6 +262,40 @@ test('final acceptance fails closed when candidate seal and acceptance Session s
     }),
     /fresh|chronolog|candidate.*precede|predate/i,
   );
+});
+
+test('final acceptance rejects a mutated referenced candidate seal', async () => {
+  const event = acceptanceEvent();
+  await assert.rejects(
+    () => validateCheckpointEventEvidence({
+      event,
+      registry: REGISTRY,
+      ...acceptanceResolvers({
+        candidateCommentCreatedAt: '2026-08-24T20:10:00Z',
+        candidateCommentUpdatedAt: '2026-08-24T20:11:00Z',
+      }),
+      resolveOpenControlIssues: async () => [event.issue],
+    }),
+    /candidate.*(provenance|mutat|updated|append-only)|checkpoint.*(provenance|mutat|updated|append-only)/i,
+  );
+});
+
+test('final acceptance fails closed on missing or invalid candidate seal provenance', async () => {
+  const event = acceptanceEvent();
+  const invalidComments = [
+    (() => { const comment = candidateComment(); delete comment.updated_at; return comment; })(),
+    candidateComment('2026-08-24T20:10:00Z', 'not-a-timestamp'),
+  ];
+  await Promise.all(invalidComments.map((comment) => assert.rejects(
+    () => validateCheckpointEventEvidence({
+      event,
+      registry: REGISTRY,
+      ...acceptanceResolvers(),
+      resolveControlComment: async () => comment,
+      resolveOpenControlIssues: async () => [event.issue],
+    }),
+    /candidate.*(provenance|timestamp|updated)|checkpoint.*(provenance|timestamp|updated)/i,
+  )));
 });
 
 test('automatic Agent Status event validator includes issue_comment deletion', async () => {
