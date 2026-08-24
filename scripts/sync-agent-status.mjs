@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
-import path from 'node:path';
 import process from 'node:process';
 
 import {
@@ -22,11 +21,9 @@ import {
   validateLiveAgentState,
 } from './validate-agents.mjs';
 
-const ROOT = process.cwd();
-const REGISTRY_PATH = path.join(ROOT, 'data', 'portfolio.json');
-const WORKER_POLICY_PATH = path.join(ROOT, 'data', 'worker-policy.json');
-const AGENTS_JSON_PATH = path.join(ROOT, 'data', 'agents.json');
-const AGENTS_MD_PATH = path.join(ROOT, 'AGENTS_STATUS.md');
+const REGISTRY_PATH = new URL('../data/portfolio.json', import.meta.url);
+const WORKER_POLICY_PATH = new URL('../data/worker-policy.json', import.meta.url);
+const DEFAULT_STATUS_ISSUE_NUMBER = 103;
 const validateOnly = process.argv.includes('--validate-live');
 
 async function readRegistry() {
@@ -51,15 +48,39 @@ function checkpointCommentsOnly(comments) {
   return comments.filter((comment) => typeof comment.body === 'string' && comment.body.includes(AGENT_MARKER));
 }
 
-async function writeIfChanged(file, content) {
-  let previous = null;
-  try {
-    previous = await fs.readFile(file, 'utf8');
-  } catch {}
-  if (previous === content) return false;
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.writeFile(file, content);
-  return true;
+function issueApiHeaders() {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': 'netkeep80-roadmap-agent-status',
+  };
+  if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  return headers;
+}
+
+async function patchIssueApi(pathname, options) {
+  const response = await fetch(`https://api.github.com${pathname}`, {
+    method: options.method,
+    headers: issueApiHeaders(),
+    body: JSON.stringify(options.body),
+  });
+  if (!response.ok) {
+    const responseBody = await response.text();
+    throw new Error(`GitHub API ${response.status} ${pathname}: ${responseBody.slice(0, 400)}`);
+  }
+  return response.json();
+}
+
+export async function updateAgentStatusIssue({ owner, repository, issueNumber, body, api = patchIssueApi }) {
+  if (!owner || !repository) throw new Error('agent status issue publication requires owner and repository');
+  if (!Number.isInteger(issueNumber) || issueNumber <= 0) throw new Error('agent status issue number must be a positive integer');
+  if (typeof body !== 'string' || !body.trim()) throw new Error('agent status issue body must be non-empty markdown');
+
+  return api(`/repos/${owner}/${repository}/issues/${issueNumber}`, {
+    method: 'PATCH',
+    body: { body },
+  });
 }
 
 export async function buildLiveAgentSnapshot({
@@ -149,9 +170,14 @@ async function main() {
   console.log(`agent status live ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.stale_candidate_session_count} stale candidates, ${snapshot.claim_count} active claims, ${snapshot.stale_claim_count} stale claims, ${snapshot.unresolved_message_count} unresolved messages`);
   if (validateOnly) return;
 
-  const jsonChanged = await writeIfChanged(AGENTS_JSON_PATH, `${JSON.stringify(snapshot, null, 2)}\n`);
-  const mdChanged = await writeIfChanged(AGENTS_MD_PATH, `${renderAgentStatus(snapshot)}\n`);
-  console.log(`agent status sync complete: agents.json=${jsonChanged ? 'changed' : 'unchanged'}, AGENTS_STATUS.md=${mdChanged ? 'changed' : 'unchanged'}`);
+  const configuredIssueNumber = Number.parseInt(process.env.AGENT_STATUS_ISSUE_NUMBER ?? `${DEFAULT_STATUS_ISSUE_NUMBER}`, 10);
+  const updatedIssue = await updateAgentStatusIssue({
+    owner: registry.owner,
+    repository: registry.control_repository,
+    issueNumber: configuredIssueNumber,
+    body: `${renderAgentStatus(snapshot)}\n`,
+  });
+  console.log(`agent status sync complete: issue #${updatedIssue.number ?? configuredIssueNumber} updated through GitHub Issues API`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
