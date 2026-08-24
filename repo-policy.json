@@ -1,0 +1,36 @@
+{
+  "policy_format_version": "0.1.0",
+  "repository_kind": "tooling",
+  "enforcement": {
+    "mode": "advisory"
+  },
+  "paths": {
+    "forbidden": [
+      "*.bak",
+      "*.tmp",
+      "*.orig"
+    ],
+    "canonical_docs": [
+      "README.md",
+      "AGENT_PROTOCOL.md",
+      "OPERATING_MODEL.md"
+    ],
+    "governance_paths": [
+      "repo-policy.json",
+      ".github/workflows/**"
+    ],
+    "operational_paths": [
+      "STATUS.md",
+      "data/status.json",
+      "AGENTS_STATUS.md",
+      "data/agents.json"
+    ]
+  },
+  "diff_rules": {
+    "max_new_docs": 20,
+    "max_new_files": 50,
+    "max_net_added_lines": 5000
+  },
+  "content_rules": [],
+  "cochange_rules": []
+}
