@@ -2,11 +2,13 @@
 
 > **GENERATED FILE — DO NOT EDIT.** This is a read-only projection of validated public Agent Role / Session / Message / Checkpoint state in GitHub.
 
-- Last successful agent-state check: **2026-08-24T13:35:35.197Z**
+- Last successful agent-state check: **2026-08-24T14:38:41.345Z**
 - Permanent public roles: **26/26**
-- Active sessions: **4**
-- Resumable handoffs: **12**
-- Active claims: **3**
+- Active sessions: **1**
+- Stale candidates: **3**
+- Resumable handoffs: **16**
+- Active claims: **1**
+- Stale claims pending recovery: **2**
 - Claim collisions: **0**
 - Unresolved messages: **2**
 - Blockers: **0**
@@ -46,7 +48,12 @@
 
 | Session | Worker slot | Repository | State | Claims | Current PR | Last activity |
 |---|---|---|---|---|---|---|
-| [#56](https://github.com/netkeep80/roadmap/issues/56) | — | `netkeep80/anum_docs` | `working` | `netkeep80/anum_docs#122` | — | 2026-08-24T09:54:51Z |
+| [#90](https://github.com/netkeep80/roadmap/issues/90) | — | `netkeep80/roadmap` | `working` | `netkeep80/roadmap#87` | `netkeep80/roadmap#89` | 2026-08-24T14:35:38Z |
+
+## STALE_CANDIDATE sessions
+
+| Session | Worker slot | Repository | State | Claims | Current PR | Last activity |
+|---|---|---|---|---|---|---|
 | [#61](https://github.com/netkeep80/roadmap/issues/61) | — | `netkeep80/mts_visual` | `starting` | — | — | 2026-08-24T10:01:02Z |
 | [#74](https://github.com/netkeep80/roadmap/issues/74) | `2` | `netkeep80/anum_docs` | `working` | `netkeep80/anum_docs#925` | — | 2026-08-24T13:32:06Z |
 | [#77](https://github.com/netkeep80/roadmap/issues/77) | `4` | `netkeep80/PersistMemoryManager` | `working` | `netkeep80/PersistMemoryManager#410` | `netkeep80/PersistMemoryManager#427` | 2026-08-24T12:24:41Z |
@@ -67,14 +74,23 @@
 | [#80](https://github.com/netkeep80/roadmap/issues/80) | `4` | `netkeep80/mast-calculator` | `handoff` | — | — | 2026-08-24T13:25:17Z |
 | [#81](https://github.com/netkeep80/roadmap/issues/81) | `1` | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T13:26:40Z |
 | [#83](https://github.com/netkeep80/roadmap/issues/83) | `2` | `netkeep80/isocubic` | `handoff` | — | — | 2026-08-24T13:34:27Z |
+| [#84](https://github.com/netkeep80/roadmap/issues/84) | `4` | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T14:04:49Z |
+| [#85](https://github.com/netkeep80/roadmap/issues/85) | `2` | `netkeep80/isocubic` | `handoff` | — | — | 2026-08-24T14:16:01Z |
+| [#86](https://github.com/netkeep80/roadmap/issues/86) | `5` | `netkeep80/isocubic` | `handoff` | — | — | 2026-08-24T14:22:51Z |
+| [#91](https://github.com/netkeep80/roadmap/issues/91) | `3` | `netkeep80/mast-calculator` | `handoff` | — | — | 2026-08-24T14:36:46Z |
 
 ## Claims
 
 | Claim | Winner | Contenders | State |
 |---|---|---|---|
-| `netkeep80/anum_docs#122` | [#56](https://github.com/netkeep80/roadmap/issues/56) | [#56](https://github.com/netkeep80/roadmap/issues/56) | active |
-| `netkeep80/anum_docs#925` | [#74](https://github.com/netkeep80/roadmap/issues/74) | [#74](https://github.com/netkeep80/roadmap/issues/74) | active |
-| `netkeep80/PersistMemoryManager#410` | [#77](https://github.com/netkeep80/roadmap/issues/77) | [#77](https://github.com/netkeep80/roadmap/issues/77) | active |
+| `netkeep80/roadmap#87` | [#90](https://github.com/netkeep80/roadmap/issues/90) | [#90](https://github.com/netkeep80/roadmap/issues/90) | active |
+
+## Stale claims pending recovery
+
+| Claim | Session | State |
+|---|---|---|
+| `netkeep80/anum_docs#925` | [#74](https://github.com/netkeep80/roadmap/issues/74) | `recovery-required` |
+| `netkeep80/PersistMemoryManager#410` | [#77](https://github.com/netkeep80/roadmap/issues/77) | `recovery-required` |
 
 ## Unresolved messages
 
@@ -91,6 +107,7 @@ _No active protocol blockers._
 
 - This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.
 - `worker_slot` identifies the Scheduled Task slot for observability only; it grants no Role, claim, lease or authority.
+- A `STALE_CANDIDATE` is not LIVE and its retained claims require complete GitHub revalidation before recovery; they are not automatically free.
 - A `handoff` is resumable context, not a live executor and not a claim holder.
 - Checkpoint free text remains only in the original Session comment and is not duplicated here.
 - Agents must re-read GitHub before every write or lifecycle transition.
