@@ -206,6 +206,9 @@ function validateAcceptance(value, publicRepositories, sessionRepository, sessio
   if (!Number.isInteger(acceptance.candidate_checkpoint_comment_id) || acceptance.candidate_checkpoint_comment_id <= 0) {
     fail('acceptance candidate_checkpoint_comment_id must be a positive integer');
   }
+  if (!Number.isInteger(acceptance.candidate_validation_attestation_comment_id) || acceptance.candidate_validation_attestation_comment_id <= 0) {
+    fail('acceptance candidate_validation_attestation_comment_id must be a positive integer');
+  }
   if (acceptance.work_item !== sessionData.work_item) fail('acceptance work_item must match Session work_item');
   validatePublicIssueReference(acceptance.work_item, publicRepositories, 'acceptance work_item', sessionRepository);
   validatePublicIssueReference(acceptance.pr, publicRepositories, 'acceptance pr', sessionRepository);
