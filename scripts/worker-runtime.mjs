@@ -1,3 +1,5 @@
+import { compareClaimPriority } from './agent-protocol.mjs';
+
 const EXPECTED_WORK_ORDER = ['handoff', 'message', 'local-issue'];
 const LEASED_STATES = new Set(['starting', 'working', 'waiting', 'blocked']);
 const TERMINAL_STATES = new Set(['completed', 'abandoned']);
@@ -102,6 +104,42 @@ export function selectBoundedWork({ handoffs = [], messages = [], issues = [] } 
   if (issue) return { action: 'claim_issue', candidate: issue };
 
   return { action: 'exit_no_work', candidate: null };
+}
+
+export function decidePostSessionClaim({ claim, contender, liveClaimers = [] }) {
+  if (typeof claim !== 'string' || !claim.trim()) fail('post-Session claim must be a non-empty string');
+  if (!contender || !Number.isInteger(contender.number) || !Number.isFinite(Date.parse(contender.created_at ?? ''))) {
+    fail('post-Session contender requires GitHub Session issue number and created_at');
+  }
+
+  const claimers = assertArray(liveClaimers, 'live claimers').filter((session) => (
+    session
+    && Number.isInteger(session.number)
+    && Number.isFinite(Date.parse(session.created_at ?? ''))
+    && Array.isArray(session.data?.claims)
+    && session.data.claims.includes(claim)
+  ));
+  if (!claimers.some((session) => session.number === contender.number)) {
+    fail('post-Session contender must be present in refreshed live claimers');
+  }
+
+  const ordered = [...claimers].sort((left, right) => compareClaimPriority(
+    { created_at: left.created_at, number: left.number },
+    { created_at: right.created_at, number: right.number },
+  ));
+  const winner = ordered[0];
+  if (winner.number === contender.number) {
+    return {
+      action: 'proceed',
+      winner_session_issue: winner.number,
+      target_writes_allowed: true,
+    };
+  }
+  return {
+    action: 'release_and_reselect_or_exit',
+    winner_session_issue: winner.number,
+    target_writes_allowed: false,
+  };
 }
 
 export function decideStaleRecovery({ leaseStatus, revalidation }) {
