@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "scope": "public-owner-repositories",
   "lease_seconds": 7200,
   "heartbeat_target_seconds": 3600,
