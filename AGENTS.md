@@ -10,26 +10,24 @@ A compatible AI agent may be given only one URL:
 https://github.com/netkeep80/roadmap/issues/<role-issue>
 ```
 
-That permanent issue identifies exactly one public repository-developer role. No pasted chat checkpoint, separate role name, or hidden repository list is required.
+That permanent issue identifies exactly one public repository-developer Role. No pasted chat checkpoint, separate role name, scheduler identity, or hidden repository list is required.
 
-After receiving the role issue URL, the agent MUST execute this sequence before repository mutation:
+Before repository mutation:
 
-1. Read the complete role issue and parse its `roadmap-agent-role/v1` JSON block.
-2. Confirm `scope == "public-only"`, `role_kind == "repository-developer"`, and the repository identity is a public `netkeep80` repository.
-3. Read current `main` of this repository, `OPERATING_MODEL.md`, `data/portfolio.json`, generated `data/status.json` / `STATUS.md`, and `EXECUTION.md`.
-4. Confirm the role repository is still present in both the live public-owner scope and the central public portfolio registry.
-5. Inspect active Agent Sessions for this role, unresolved Agent Messages addressed to this role, and active claims for the target repository.
-6. Read the target repository's `PORTFOLIO.md`, README, open issues, open PRs, exact current default-branch SHA, exact workflows, repository policy/repo-guard configuration, and actual blocking checks.
-7. Resume a valid handoff if one exists; otherwise select the next executable unclaimed local issue consistent with portfolio lifecycle/priority and local backlog.
-8. Create or continue one Agent Session and record durable checkpoints after meaningful gate transitions.
-9. After creating a new claiming Session, refresh all competing LIVE Sessions/Claims for the selected work and apply deterministic claim ordering before any target-repository write.
-10. Before every repository write or lifecycle/integration transition, refresh the relevant GitHub source-of-truth state. A checkpoint never overrides fresher GitHub facts.
-11. Send a durable Agent Message when a change materially crosses repository boundaries, changes dependency readiness, creates a blocker, or requires another role to act.
-12. Finish with a checkpoint and mark the Session `handoff` or `completed` as appropriate.
+1. Read the complete Role issue and parse its `roadmap-agent-role/v1` block.
+2. Confirm public scope and repository identity.
+3. Read current `roadmap` main, `OPERATING_MODEL.md`, `data/portfolio.json`, generated status, and `EXECUTION.md`.
+4. Confirm the Role repository is still in current public-owner scope and the central registry.
+5. Inspect current Sessions, Checkpoints, claims, Messages, liveness, and resumable handoffs.
+6. Read the target repository's current default-branch SHA, open issues/PRs, workflows, repo-policy/repo-guard, and actual blocking checks.
+7. Resume a valid handoff or select the next explicit executable unclaimed local issue.
+8. Create or continue one Session.
+9. After creating a claiming Session, refresh all competing LIVE claimers before any target-repository write.
+10. Before every repository write or lifecycle transition, refresh relevant GitHub source-of-truth state.
+11. Send a durable Message only for real cross-repository coordination.
+12. Finish with a durable Checkpoint and correct Session lifecycle transition.
 
-The structured protocols for Role, Session, Checkpoint, Claim, and Message are defined in [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md).
-
-Timer-driven pool bootstrap is defined separately in [`SCHEDULED_WORKERS.md`](SCHEDULED_WORKERS.md). Every Scheduled Task starts a fresh anonymous worker; the Session issue created in GitHub is the durable execution identity.
+The structured protocols are defined in [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md). Timer-driven anonymous pool bootstrap is in [`SCHEDULED_WORKERS.md`](SCHEDULED_WORKERS.md).
 
 ## Hard bounded-autonomy rule
 
@@ -41,44 +39,69 @@ NO EXPLICIT EXECUTABLE WORK
 => EXIT
 ```
 
-Repository-developer agents may start work only from a valid handoff, an actionable incoming Message, or an existing open local issue that is currently portfolio-consistent, executable, unblocked, and not occupied by another LIVE winning Session.
+Repository-developer agents may start work only from a valid handoff, an actionable incoming Message, or an existing open local issue that is portfolio-consistent, executable, unblocked, not held by a LIVE winning Session, and not pending stale recovery.
 
-There is no implicit step that creates a new task because the agent is idle. Do not generate speculative backlog, cleanup work, unrelated refactors, dependency upgrades, architecture redesigns, new milestones, or issues merely to remain busy.
+Do not generate speculative backlog, cleanup work, unrelated refactors, dependency upgrades, architecture redesigns, new milestones, or issues merely to remain busy.
 
-A scheduled pool worker reconstructs current GitHub state before selecting a Role. An idle invocation creates no Session. A collision loser releases/terminates its losing Session without target-repository writes, then may return to bounded pool selection or exit.
+A scheduled worker starts anonymous, reconstructs GitHub state, then enters the selected permanent Role. An idle invocation creates no Session. A collision loser performs zero target-repository writes, clears its claim, becomes terminal, closes its Session issue, and may bounded-reselect or exit.
 
-The `roadmap` coordinator Role is bounded too. `portfolio_authority=coordinate` means it may execute declared portfolio transitions in response to real drift, blockers, Messages, or explicit control-plane work. It does not authorize autonomous strategy invention. No declared trigger means exit.
+## Roadmap management is also role-bound
+
+`netkeep80/roadmap` is itself a managed repository. Control-plane and portfolio maintenance is performed only under permanent **roadmap developer Role #49**.
+
+Valid maintenance requires:
+
+```text
+concrete current roadmap/control-plane fact
++
+existing declared invariant / goal / open roadmap issue / actionable Message
++
+executable bounded action
+```
+
+Examples include terminal Sessions still open, resolved Messages still open, consumed handoffs still open, stale Sessions requiring protocol recovery, generated-status/portfolio drift against a declared invariant, or existing roadmap acceptance/governance issues whose already-proven evidence needs reconciliation.
+
+Where the maintenance target is itself an open roadmap issue, claim that issue directly. Do not create a second housekeeping issue just to track the repair.
+
+Roadmap maintenance uses ordinary Session/Claim collision ordering. Different roadmap issues can be maintained concurrently; the same issue has one LIVE winning claimant. `portfolio_authority=coordinate` does not permit speculative strategy invention.
+
+No concrete trigger means no roadmap housekeeping work.
+
+## Issue lifecycle keeps active state small
+
+The open issue set is the current control surface; closed issues are the historical audit trail.
+
+```text
+Role active                            => OPEN
+Session starting/working/waiting/blocked => OPEN
+Session handoff                        => OPEN only while resumable
+Session completed/abandoned            => CLOSED
+Message open/acknowledged              => OPEN while unresolved
+Message resolved                       => CLOSED
+```
+
+When a successor consumes a handoff, complete/close the predecessor. One-shot acceptance observations finish terminal instead of accumulating as handoffs.
+
+Closed historical Sessions and their Checkpoints remain fail-closed auditable, but do not stay in generated active state.
 
 ## Public-only privacy firewall
 
-This public control plane is intentionally blind to non-public repositories.
+This control plane is intentionally blind to non-public repositories. Do not write any non-public repository name, URL, issue/PR, SHA, lifecycle, role, dependency, blocker, or indirect identifier into Role/Session/Message/generated state.
 
-Do not write into roadmap role/session/message/generated state any non-public repository:
-
-- name or URL;
-- issue/PR identifier;
-- commit SHA;
-- lifecycle or status;
-- role;
-- dependency/blocker;
-- indirect placeholder whose only purpose is to describe that repository.
-
-Every repository reference in an agent protocol object must resolve to the current public `data/portfolio.json` registry. Unknown or non-public references fail closed.
-
-If a repository leaves public scope, stop public coordination for that role. Do not add new details from the non-public source. Historical information that was already public cannot be made secret by editing Git history, but it must disappear from current generated/active projections after the explicit portfolio visibility transition.
+Every structured repository reference must resolve to the current public `data/portfolio.json` registry. Unknown or non-public references fail closed.
 
 ## Authority boundaries
 
 ```text
 roadmap
   owns portfolio direction, ownership map, priorities, cross-repo gates,
-  agent role identity and cross-repo coordination
+  Role identity and public coordination
 
 local repository
   owns implementation backlog, code-level design, tests and releases
 
 repo-guard / local CI
-  owns change and integration correctness where configured
+  owns integration correctness where configured
 
 GitHub live state
   owns observed facts
@@ -86,43 +109,23 @@ GitHub live state
 
 An agent may propose a portfolio transition, but must not infer a new priority, canonical owner, lifecycle, or dependency direction merely because an issue closed or a PR merged.
 
-`roadmap` is not a second implementation tracker and is not a second merge queue.
-
 ## Work selection and claims
 
 A claim prevents duplicate effort on one local issue/PR; it never locks an entire repository and never grants merge authority.
 
-Two fresh workers may select the same apparently-unclaimed candidate before either Session exists. After Session creation, each contender must refresh the complete LIVE claimant set before touching the target repository.
+Two fresh workers may select the same apparently-unclaimed candidate before either Session exists. After Session creation, each contender refreshes the complete LIVE claimant set.
 
-If two LIVE Sessions claim the same local work item, the deterministic winner is:
+Winner order:
 
 1. earlier Session issue `created_at`;
-2. if timestamps are equal, lower Session issue number.
+2. if equal, lower Session issue number.
 
-The winner may proceed. The losing Session performs zero target-repository writes, releases the claim, terminates, and selects another explicit executable item or exits.
-
-A `handoff` Session is resumable context, not a running executor. It MUST hold zero claims.
-
-A Session that appears stale does not automatically release a claim. Stale recovery MUST follow the lease/revalidation protocol in `AGENT_PROTOCOL.md` / `SCHEDULED_WORKERS.md`: re-read current GitHub facts first, then abandon/replace only if the work is still valid and not occupied by a LIVE winner.
+A handoff is resumable context, not a running executor, and has zero claims. A stale Session does not automatically release a claim; stale recovery requires full current-GitHub revalidation first.
 
 ## Context discipline
 
-Durable context stores facts and decisions needed for resumption, not hidden reasoning.
-
-Checkpoint content should include only what a fresh agent needs to continue safely:
-
-- completed gates;
-- accepted decisions;
-- public issue/PR/commit references;
-- exact CI/repo-guard evidence when relevant;
-- blockers;
-- next executable action;
-- incoming/outgoing coordination messages.
-
-Never store private chain-of-thought.
+Durable context stores only facts and decisions needed for safe resumption: completed gates, accepted decisions, public refs, exact CI/repo-guard evidence where relevant, blockers, next executable action, and coordination references. Never store private chain-of-thought.
 
 ## Integration discipline
 
-Agent Control Plane coordination does not weaken repository gates.
-
-If a target repository has repo-guard, follow its machine-readable lifecycle / `next_action` rather than inventing another merge/rebase path. If it does not, follow the actual repository workflows and merge rules that exist; never claim a check or protection surface that is absent.
+Agent Control Plane coordination does not weaken repository gates. Follow the target repository's actual CI/repo-guard lifecycle; never claim protection or checks that do not exist.
