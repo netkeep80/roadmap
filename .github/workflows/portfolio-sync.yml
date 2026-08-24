@@ -9,10 +9,15 @@ on:
     paths:
       - "data/portfolio.json"
       - "scripts/sync-roadmap.mjs"
+      - "scripts/agent-protocol.mjs"
+      - "scripts/validate-agents.mjs"
+      - "scripts/agent-status.mjs"
+      - "scripts/sync-agent-status.mjs"
       - ".github/workflows/portfolio-sync.yml"
 
 permissions:
   contents: write
+  issues: read
 
 concurrency:
   group: portfolio-sync
@@ -32,15 +37,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/sync-roadmap.mjs --sync
 
-      - name: Commit changed snapshot
+      - name: Generate factual agent status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/sync-agent-status.mjs
+
+      - name: Commit changed snapshots
         shell: bash
         run: |
-          if git diff --quiet -- STATUS.md data/status.json; then
-            echo "Portfolio factual state is unchanged."
+          if [[ -z "$(git status --porcelain -- STATUS.md data/status.json AGENTS_STATUS.md data/agents.json)" ]]; then
+            echo "Portfolio and agent factual state are unchanged."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add STATUS.md data/status.json
-          git commit -m "chore(status): refresh portfolio snapshot"
+          git add STATUS.md data/status.json AGENTS_STATUS.md data/agents.json
+          git commit -m "chore(status): refresh portfolio and agent snapshots"
           git push
