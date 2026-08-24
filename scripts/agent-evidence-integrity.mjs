@@ -240,7 +240,7 @@ async function resolveExactPullRequest({ registry, repository, ref, headSha, bas
   return pr;
 }
 
-async function assertWinningOpenClaim({ eventIssue, session, resolveOpenControlIssues }) {
+async function assertWinningOpenClaim({ eventIssue, session, resolveOpenControlIssues, label = 'review candidate' }) {
   const issues = await resolveOpenControlIssues();
   if (!Array.isArray(issues)) fail('open control Session resolver must return an array');
   const claimers = [];
@@ -250,9 +250,9 @@ async function assertWinningOpenClaim({ eventIssue, session, resolveOpenControlI
     if (SESSION_PROTOCOLS.has(contender.protocol) && Array.isArray(contender.claims) && contender.claims.includes(session.work_item)) claimers.push(issue);
   }
   const currentNumber = Number(eventIssue?.number);
-  if (!claimers.some((issue) => Number(issue.number) === currentNumber)) fail('review candidate Session is absent from the current Claim set');
+  if (!claimers.some((issue) => Number(issue.number) === currentNumber)) fail(`${label} Session is absent from the current Claim set`);
   const winner = [...claimers].sort(compareClaimPriority)[0];
-  if (Number(winner.number) !== currentNumber) fail('review candidate requires the current winning Claim');
+  if (Number(winner.number) !== currentNumber) fail(`${label} requires the current winning Claim`);
 }
 
 async function validateReviewCandidateEvidence({ checkpoint, session, eventIssue, registry, resolvePullRequest, resolveOpenControlIssues }) {
@@ -332,6 +332,7 @@ async function validateAcceptanceEvidence({
   resolvePullRequest,
   resolveControlIssue,
   resolveControlComment,
+  resolveOpenControlIssues,
 }) {
   const acceptance = checkpoint.acceptance;
   if (!acceptance) return false;
@@ -420,6 +421,18 @@ async function validateAcceptanceEvidence({
   const sealed = exactCandidateTuple(candidateCheckpoint.review_candidate);
   const accepted = exactCandidateTuple(acceptance);
   if (!sameCandidateTuple(sealed, accepted)) fail('acceptance candidate tuple does not match exact implementation seal');
+  if (!Array.isArray(session.claims) || session.claims.length !== 1 || session.claims[0] !== session.work_item) {
+    fail('acceptance certificate requires the acceptance Session to own its exact work_item Claim at decision time');
+  }
+  if (typeof resolveOpenControlIssues !== 'function') {
+    fail('acceptance certificate requires a current claimant resolver');
+  }
+  await assertWinningOpenClaim({
+    eventIssue,
+    session,
+    resolveOpenControlIssues,
+    label: 'acceptance certificate',
+  });
   return true;
 }
 
@@ -505,6 +518,7 @@ export async function validateCheckpointEventEvidence({
     resolvePullRequest,
     resolveControlIssue: effectiveResolveControlIssue,
     resolveControlComment: effectiveResolveControlComment,
+    resolveOpenControlIssues,
   });
   if (acceptanceChecked) {
     return { checked: true, ...commitResult, acceptance_checked: true };
