@@ -323,8 +323,9 @@ test('INVALID status is explicit and never echoes raw failure payload', async ()
 test('Agent Status validates only changed checkpoint evidence and publishes INVALID on failure', async () => {
   const workflow = await readFile(new URL('../.github/workflows/agent-status.yml', import.meta.url), 'utf8');
   assert.match(workflow, /scripts\/agent-evidence-integrity\.mjs/);
-  assert.match(workflow, /Validate changed checkpoint commit evidence/i);
+  assert.match(workflow, /Validate changed checkpoint commit evidence and v2 Session immutability/i);
   assert.match(workflow, /github\.event_name == 'issue_comment'/);
+  assert.match(workflow, /github\.event_name == 'issues' && github\.event\.action == 'edited'/);
   assert.match(workflow, /node scripts\/agent-evidence-integrity\.mjs --validate-event/);
   assert.doesNotMatch(workflow, /node scripts\/agent-evidence-integrity\.mjs --validate-live/);
   assert.match(workflow, /if:\s*failure\(\)/);
