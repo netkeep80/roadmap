@@ -13,12 +13,16 @@ on:
       - "scripts/agent-role-template.test.mjs"
       - "scripts/reconcile-agent-roles.mjs"
       - "scripts/reconcile-agent-roles.test.mjs"
+      - "scripts/agent-status.mjs"
+      - "scripts/agent-status.test.mjs"
+      - "scripts/sync-agent-status.mjs"
       - ".github/workflows/portfolio-validate.yml"
       - ".github/workflows/portfolio-sync.yml"
       - ".github/workflows/agent-roles.yml"
       - "README.md"
       - "AGENTS.md"
       - "AGENT_PROTOCOL.md"
+      - "AGENTS_STATUS.md"
       - "OPERATING_MODEL.md"
       - "DECISIONS.md"
   push:
@@ -34,6 +38,9 @@ on:
       - "scripts/agent-role-template.test.mjs"
       - "scripts/reconcile-agent-roles.mjs"
       - "scripts/reconcile-agent-roles.test.mjs"
+      - "scripts/agent-status.mjs"
+      - "scripts/agent-status.test.mjs"
+      - "scripts/sync-agent-status.mjs"
       - ".github/workflows/portfolio-validate.yml"
       - ".github/workflows/portfolio-sync.yml"
       - ".github/workflows/agent-roles.yml"
@@ -53,7 +60,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Test agent control plane
-        run: node --test scripts/agent-protocol.test.mjs scripts/validate-agents.test.mjs scripts/agent-role-template.test.mjs scripts/reconcile-agent-roles.test.mjs
+        run: node --test scripts/agent-protocol.test.mjs scripts/validate-agents.test.mjs scripts/agent-role-template.test.mjs scripts/reconcile-agent-roles.test.mjs scripts/agent-status.test.mjs
       - name: Validate registry
         run: node scripts/sync-roadmap.mjs --validate
       - name: Validate live GitHub coverage
@@ -64,3 +71,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/validate-agents.mjs --enforce
+      - name: Validate generated agent status inputs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/sync-agent-status.mjs --validate-live
