@@ -122,13 +122,39 @@ Collision order for LIVE Sessions claiming the same item:
 A worker may optimistically create a Session after selecting apparently-unclaimed work. **After Session creation and before any target-repository write**, it must refresh all competing LIVE Sessions/Claims for that item and apply the collision order.
 
 ```text
-winner => target writes allowed
+winner => target writes allowed only after PR reconciliation below
 loser  => zero target writes
           clear claim
           state=abandoned
           close Session issue
           bounded-reselect or exit
 ```
+
+### 4.1 Open-PR reconciliation
+
+A winning Claim does not make existing target-repository PR state disappear. Open PRs are integration/occupancy evidence and must be refreshed after the Session collision gate and before any target code write, branch creation, or new PR creation.
+
+Explicit work-item binding is derived from normal local PR declarations such as `Closes #N`, `Fixes #N`, `Resolves #N`, or `Implements #N` (and same-repository qualified forms).
+
+```text
+0 open PRs explicitly bound to selected work item
+  => a new PR may be created when implementation reaches that point
+
+1 open PR explicitly bound to selected work item
+  => reuse/resume that PR
+  => do not create another PR for the same work item
+
+>1 open PRs explicitly bound to selected work item
+  => fail closed
+  => zero target code writes
+  => reconcile/close until one canonical open PR remains
+```
+
+A semantic replacement must explicitly declare `Supersedes: #N`. If the named PR is still open, the supersession is unreconciled and must be closed/reconciled rather than leaving both replacement and superseded PR open indefinitely.
+
+Changed-file overlap alone is **not** collision authority. Independent or stacked work may legitimately touch the same public API, generated surface, manifest, or integration file. If different work items overlap semantically and current GitHub evidence is insufficient to establish safe parallelism, fail closed or coordinate durably; do not invent a repository-wide lock.
+
+Agent Status may surface duplicate-work and unreconciled-supersession diagnostics, but workers still reconstruct authoritative open PR state directly from the target repository before mutation.
 
 ## 5. Checkpoint
 
@@ -161,6 +187,7 @@ Machine policy is `data/worker-policy.json`.
 ```text
 lease_seconds = 7200
 heartbeat_target_seconds = 3600
+pr_reconciliation_required = true
 ```
 
 Authoritative heartbeat:
@@ -186,6 +213,7 @@ Before changing a stale Session or taking its work, revalidate current GitHub co
 ```text
 target exact default-branch SHA
 open local issues and PRs
+PR reconciliation for the selected work item
 current PR exact head/base if any
 actual CI / repo-guard gates
 LIVE claims + deterministic winners
@@ -303,7 +331,7 @@ Examples of valid triggers:
 
 Where the maintenance target is itself an open roadmap issue, claim that exact issue. Do not create a second housekeeping issue merely to track the repair.
 
-A roadmap-management Session uses the same Session/Claim collision rules, lease rules, CI and repo-guard as every other repository Session. Different roadmap issues may be maintained concurrently; the same issue has only one LIVE winning claimant.
+A roadmap-management Session uses the same Session/Claim collision rules, PR reconciliation rules, lease rules, CI and repo-guard as every other repository Session. Different roadmap issues may be maintained concurrently; the same issue has only one LIVE winning claimant.
 
 No concrete trigger => no roadmap maintenance candidate.
 
@@ -317,6 +345,8 @@ Refresh relevant GitHub facts:
 - before work selection;
 - at Session creation;
 - **after Session creation before any target-repository write**;
+- after winning the Session claim, refresh all open target PRs and reconcile the selected work item;
+- before branch creation or new PR creation;
 - after dependency/blocker changes;
 - before stale recovery;
 - before every repository write;
@@ -359,6 +389,7 @@ The protocol does not:
 - create work because a timer fired or a worker is idle;
 - grant merge authority from a Claim or Session;
 - replace repository issues/PRs, local CI, or repo-guard;
+- infer work-item identity from changed-file overlap alone;
 - introduce a merge queue or global repository lock;
 - create a privileged roadmap-admin execution mode outside Role #49;
 - coordinate private repositories;

@@ -32,6 +32,7 @@ export function validateWorkerPolicy(policy) {
   if (policy.no_work_action !== 'exit') fail('no_work_action must be exit');
   if (policy.allow_speculative_work !== false) fail('allow_speculative_work must be false');
   if (policy.coordinator_requires_declared_trigger !== true) fail('coordinator_requires_declared_trigger must be true');
+  if (policy.pr_reconciliation_required !== true) fail('pr_reconciliation_required must be true');
   return policy;
 }
 

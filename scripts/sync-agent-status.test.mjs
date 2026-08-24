@@ -22,6 +22,7 @@ const workerPolicy = {
   no_work_action: 'exit',
   allow_speculative_work: false,
   coordinator_requires_declared_trigger: true,
+  pr_reconciliation_required: true,
 };
 
 const repositories = [
@@ -67,6 +68,8 @@ const closedHistoricalSessionIssue = {
   html_url: 'https://github.com/netkeep80/roadmap/issues/71',
 };
 
+const noPullRequests = async () => [];
+
 test('terminal Session marked comments are still validated fail-closed', async () => {
   let commentReads = 0;
   await assert.rejects(
@@ -77,6 +80,7 @@ test('terminal Session marked comments are still validated fail-closed', async (
       issues: [roleIssue],
       historicalIssues: [roleIssue, terminalSessionIssue],
       checkedAt: '2026-08-24T12:00:00Z',
+      listPullRequests: noPullRequests,
       listComments: async () => {
         commentReads += 1;
         return [{
@@ -108,6 +112,7 @@ test('valid terminal Checkpoint history is validated but closed Session is not p
     issues: [roleIssue],
     historicalIssues: [roleIssue, terminalSessionIssue],
     checkedAt: '2026-08-24T12:00:00Z',
+    listPullRequests: noPullRequests,
     listComments: async () => [{
       id: 1000,
       created_at: '2026-08-24T09:15:00Z',
@@ -137,6 +142,7 @@ test('closed historical protocol Session comments are audited without resurrecti
       issues: [roleIssue],
       historicalIssues: [roleIssue, closedHistoricalSessionIssue],
       checkedAt: '2026-08-24T12:00:00Z',
+      listPullRequests: noPullRequests,
       listComments: async (_owner, _repository, issueNumber) => {
         if (issueNumber !== 71) return [];
         commentReads += 1;

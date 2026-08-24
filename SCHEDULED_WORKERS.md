@@ -16,7 +16,7 @@ Every invocation starts as a **fresh anonymous worker**. No per-task parameter, 
 
 ## Provisioning
 
-Create any number of Scheduled Tasks with the **same prompt**. Concurrency is bounded only by how many tasks may run at once; coordination happens through GitHub Sessions, Claims, Checkpoints, Messages, leases, and repository-local CI/repo-guard rules.
+Create any number of Scheduled Tasks with the **same prompt**. Concurrency is bounded only by how many tasks may run at once; coordination happens through GitHub Sessions, Claims, Checkpoints, Messages, open-PR reconciliation, leases, and repository-local CI/repo-guard rules.
 
 ## Copyable prompt
 
@@ -41,6 +41,8 @@ If no executable work exists, make zero repository changes, create no idle Sessi
 
 When work exists, create a unique Agent Session issue for this execution. After Session creation, refresh the complete competing LIVE Session/Claim set before any target-repository write. Proceed only if this Session is the deterministic winning claimant. If it loses, perform zero target-repository writes, transition the losing Session to terminal state, close it, then bounded-reselect another explicit candidate or exit.
 
+After winning the claim and before any target-repository code write, branch creation, or new PR creation, refresh all open PRs in the selected target repository. If exactly one open PR explicitly implements/closes the same work item, reuse that PR instead of creating another. If multiple open PRs explicitly implement/close the same work item, perform zero target code writes until the duplicate PR state is reconciled to one canonical open PR. A replacement PR must explicitly declare `Supersedes: #N` and the superseded PR must be closed/reconciled; do not leave both open. Shared changed-file overlap alone does not serialize independent work.
+
 Before every repository write or lifecycle transition, refresh exact GitHub state and obey the target repository's actual CI/repo-guard policy.
 
 Before finishing meaningful work, leave a durable Checkpoint. If work is complete or abandoned, clear claims and close the Session issue. Keep a handoff issue open only while it is genuinely resumable; when a successor consumes it, complete/close the predecessor.
@@ -60,6 +62,7 @@ roadmap main via GitHub API
 → LIVE claims + stale claims pending recovery
 → unresolved Messages
 → candidate local GitHub facts
+→ open target PRs before target mutation/integration work
 ```
 
 Permanent Agent Status Issue #103 may be used as a quick human-oriented dashboard, but workers must not use it as coordination authority or as a substitute for live issue reconstruction.
@@ -115,7 +118,8 @@ Two anonymous invocations may race and both select the same apparently-unclaimed
 create Session + claim
 → refresh all competing LIVE Sessions claiming the same item
 → order by Session GitHub created_at, then issue number
-→ winner may mutate target repository
+→ winner refreshes open target PRs for the work item
+→ winner may mutate target repository only after PR reconciliation
 → loser may not mutate target repository
 → loser clears claim, becomes abandoned, closes issue
 → loser reselects or exits
@@ -132,6 +136,27 @@ resolved Message                      => CLOSED
 
 Closed protocol issues remain the historical audit trail and are still validated; they do not remain in the active control surface.
 
+## PR reconciliation gate
+
+Claims coordinate work selection; open PRs are integration/occupancy evidence. They do not replace Claims, but a winning worker must reconcile them before target mutation.
+
+```text
+0 open PRs explicitly bound to selected work item
+  => new PR may be created when implementation reaches that point
+
+1 open PR explicitly bound to selected work item
+  => reuse/resume that PR; do not create a second one
+
+>1 open PRs explicitly bound to selected work item
+  => fail closed
+  => zero target code writes
+  => reconcile/close until one canonical open PR remains
+```
+
+A semantic replacement uses an explicit `Supersedes: #N` declaration and closes/reconciles the superseded PR. Agent Status reports a replacement that still leaves the named old PR open.
+
+Changed-file overlap by itself is diagnostic only. Independent or stacked work may legitimately touch a shared public API, generated file, manifest, or other common surface. When different work items overlap semantically and current GitHub evidence is insufficient to prove safe parallelism, the worker must fail closed or coordinate durably rather than invent a repository-wide lock.
+
 ## Lease and stale recovery
 
 Machine policy lives in `data/worker-policy.json` and is read through GitHub Contents API during bootstrap.
@@ -139,6 +164,7 @@ Machine policy lives in `data/worker-policy.json` and is read through GitHub Con
 ```text
 lease_seconds = 7200
 heartbeat_target_seconds = 3600
+pr_reconciliation_required = true
 ```
 
 Authoritative heartbeat:
@@ -178,7 +204,7 @@ checkout only that target repository when required
         ↓
 normal repository work + bounded Role #49 roadmap maintenance
         ↓
-Sessions/Claims/Checkpoints coordinate concurrency through Issues API
+Sessions/Claims/Checkpoints + PR reconciliation coordinate concurrency
         ↓
 open roadmap state reflects current work, closed issues retain history
 ```
