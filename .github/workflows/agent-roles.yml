@@ -1,0 +1,35 @@
+name: Agent role reconciliation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/portfolio.json"
+      - "AGENTS.md"
+      - "AGENT_PROTOCOL.md"
+      - "scripts/agent-protocol.mjs"
+      - "scripts/agent-role-template.mjs"
+      - "scripts/reconcile-agent-roles.mjs"
+      - ".github/workflows/agent-roles.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: roadmap-agent-role-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Test agent control plane
+        run: node --test scripts/agent-protocol.test.mjs scripts/validate-agents.test.mjs scripts/agent-role-template.test.mjs scripts/reconcile-agent-roles.test.mjs
+      - name: Reconcile permanent public repository roles
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/reconcile-agent-roles.mjs
