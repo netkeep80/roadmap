@@ -119,6 +119,15 @@ function validateCheckpointEvidenceReference(ref, publicRepositories, sessionRep
   return { kind: 'issue', ...validatePublicIssueReference(ref, publicRepositories, 'checkpoint ref') };
 }
 
+function assertGitHubIssueState(issue, expectedState, label) {
+  if (!issue || !['open', 'closed'].includes(issue.state)) {
+    fail(`${label} GitHub issue state must be open or closed`);
+  }
+  if (issue.state !== expectedState) {
+    fail(`${label} lifecycle requires GitHub issue ${expectedState}, got ${issue.state}`);
+  }
+}
+
 export function parseProtocolBlock(body) {
   if (typeof body !== 'string') fail('issue body must be a string');
   const startCount = countOccurrences(body, START);
@@ -214,6 +223,11 @@ export function validateSession(issue, roleMap) {
     fail(`session repository ${data.repository} does not match role repository ${role.repository}`);
   }
   if (!SESSION_STATES.has(data.state)) fail(`invalid session state ${JSON.stringify(data.state)}`);
+  if (TERMINAL_SESSION_STATES.has(data.state)) {
+    assertGitHubIssueState(issue, 'closed', `terminal session state ${data.state}`);
+  } else {
+    assertGitHubIssueState(issue, 'open', `active/handoff session state ${data.state}`);
+  }
   if (data.worker_slot !== undefined && (!Number.isInteger(data.worker_slot) || data.worker_slot <= 0)) {
     fail('session worker_slot must be a positive integer when present');
   }
@@ -259,6 +273,11 @@ export function validateMessage(issue, roleMap) {
 
   if (!MESSAGE_KINDS.has(data.kind)) fail(`invalid message kind ${JSON.stringify(data.kind)}`);
   if (!MESSAGE_STATES.has(data.state)) fail(`invalid message state ${JSON.stringify(data.state)}`);
+  if (data.state === 'resolved') {
+    assertGitHubIssueState(issue, 'closed', 'resolved message');
+  } else {
+    assertGitHubIssueState(issue, 'open', `unresolved message state ${data.state}`);
+  }
   if (typeof data.requires_ack !== 'boolean') fail('message requires_ack must be boolean');
 
   const publicRepositories = publicRoleRepositories(roleMap);
