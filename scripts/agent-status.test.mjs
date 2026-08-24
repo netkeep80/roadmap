@@ -52,6 +52,20 @@ const sessions = [
       blocked_by: [],
     },
   },
+  {
+    number: 104,
+    html_url: 'https://github.com/netkeep80/roadmap/issues/104',
+    created_at: '2026-08-24T09:02:00Z',
+    updated_at: '2026-08-24T09:16:00Z',
+    data: {
+      role_issue: 45,
+      repository: 'netkeep80/mts_visual',
+      state: 'handoff',
+      claims: [],
+      current_pr: null,
+      blocked_by: [],
+    },
+  },
 ];
 
 const messages = [
@@ -124,9 +138,22 @@ const checkpointsBySession = {
       },
     },
   ],
+  104: [
+    {
+      created_at: '2026-08-24T09:17:00Z',
+      data: {
+        state: 'handoff',
+        completed: ['durable handoff ready'],
+        refs: ['netkeep80/mts_visual#8'],
+        blockers: [],
+        next: ['fresh session resumes after revalidation'],
+        messages: [],
+      },
+    },
+  ],
 };
 
-test('buildAgentSnapshot projects stable roles and only active sessions', () => {
+test('buildAgentSnapshot projects stable roles, leased sessions and resumable handoffs separately', () => {
   const snapshot = buildAgentSnapshot({
     checkedAt: '2026-08-24T09:20:00Z',
     roles,
@@ -143,11 +170,15 @@ test('buildAgentSnapshot projects stable roles and only active sessions', () => 
     'netkeep80/roadmap',
   ]);
   assert.deepEqual(snapshot.active_sessions.map((session) => session.issue_number), [101, 102]);
+  assert.equal(snapshot.active_session_count, 2);
+  assert.deepEqual(snapshot.resumable_handoffs.map((session) => session.issue_number), [104]);
+  assert.equal(snapshot.resumable_handoff_count, 1);
   assert.equal(snapshot.active_sessions[0].latest_checkpoint.created_at, '2026-08-24T09:15:00Z');
   assert.equal(snapshot.active_sessions[0].last_activity_at, '2026-08-24T09:15:00Z');
+  assert.equal(snapshot.resumable_handoffs[0].latest_checkpoint.created_at, '2026-08-24T09:17:00Z');
 });
 
-test('claim projection resolves collisions deterministically', () => {
+test('claim projection resolves collisions deterministically without treating handoff as contender', () => {
   const snapshot = buildAgentSnapshot({
     checkedAt: '2026-08-24T09:20:00Z',
     roles,
@@ -180,7 +211,7 @@ test('unresolved messages and blocker projection exclude resolved messages', () 
   assert.equal(snapshot.unresolved_messages.some((message) => message.issue_number === 203), false);
 });
 
-test('renderAgentStatus exposes copyable role URLs and current coordination state', () => {
+test('renderAgentStatus exposes copyable role URLs and separates resumable handoffs', () => {
   const snapshot = buildAgentSnapshot({
     checkedAt: '2026-08-24T09:20:00Z',
     roles,
@@ -195,4 +226,6 @@ test('renderAgentStatus exposes copyable role URLs and current coordination stat
   assert.match(markdown, /roadmap\/issues\/45/);
   assert.match(markdown, /claim collision/i);
   assert.match(markdown, /#201/);
+  assert.match(markdown, /Resumable handoffs/i);
+  assert.match(markdown, /#104/);
 });
