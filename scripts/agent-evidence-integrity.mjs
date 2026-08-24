@@ -29,6 +29,34 @@ function assertCommitRecord(record) {
   return { repository: record.repository, sha: record.sha.toLowerCase() };
 }
 
+function assertRegisteredSessionRepository(registry, repository) {
+  const match = typeof repository === 'string' ? REPOSITORY.exec(repository) : null;
+  const allowed = new Set((registry?.repositories ?? []).map((entry) => entry.name));
+  if (!match || !allowed.has(match[1])) {
+    throw new Error('control plane evidence: Session repository is outside the registered public scope');
+  }
+  return repository;
+}
+
+function checkpointCommitRecords(checkpoint, repository) {
+  if (!Array.isArray(checkpoint.refs)) {
+    throw new Error('control plane evidence: checkpoint refs must be an array');
+  }
+  const records = [];
+  for (const ref of checkpoint.refs) {
+    if (typeof ref !== 'string' || !ref.startsWith('commit:')) continue;
+    const match = COMMIT_REF.exec(ref);
+    if (!match) throw new Error('control plane evidence: checkpoint commit SHA is malformed');
+    records.push({ repository, sha: match[1] });
+  }
+  return records;
+}
+
+async function defaultResolveCommit(repository, sha) {
+  const [owner, name] = repository.split('/');
+  return githubAgentApi(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/commits/${encodeURIComponent(sha)}`);
+}
+
 export async function validateCommitEvidence(records, resolveCommit) {
   if (!Array.isArray(records)) throw new Error('control plane evidence: records must be an array');
   if (typeof resolveCommit !== 'function') throw new Error('control plane evidence: resolveCommit must be a function');
@@ -56,6 +84,39 @@ export async function validateCommitEvidence(records, resolveCommit) {
   return { unique_commit_evidence: unique.size };
 }
 
+export async function validateCheckpointEventEvidence({ event, registry, resolveCommit = defaultResolveCommit }) {
+  if (!event || typeof event !== 'object') {
+    throw new Error('control plane evidence: GitHub event payload is required');
+  }
+  if (!registry || typeof registry !== 'object') {
+    throw new Error('control plane evidence: registry is required');
+  }
+
+  if (!['created', 'edited'].includes(event.action) || !event.comment || typeof event.comment.body !== 'string') {
+    return { checked: false, unique_commit_evidence: 0 };
+  }
+  if (!event.comment.body.includes(AGENT_MARKER)) {
+    return { checked: false, unique_commit_evidence: 0 };
+  }
+
+  const checkpoint = parseProtocolBlock(event.comment.body);
+  if (checkpoint.protocol !== CHECKPOINT_PROTOCOL) {
+    return { checked: false, unique_commit_evidence: 0 };
+  }
+
+  if (!event.issue || typeof event.issue.body !== 'string' || !event.issue.body.includes(AGENT_MARKER)) {
+    throw new Error('control plane evidence: checkpoint comment is not attached to a protocol Session');
+  }
+  const session = parseProtocolBlock(event.issue.body);
+  if (session.protocol !== SESSION_PROTOCOL) {
+    throw new Error('control plane evidence: checkpoint comment is not attached to a Session');
+  }
+  const repository = assertRegisteredSessionRepository(registry, session.repository);
+  const records = checkpointCommitRecords(checkpoint, repository);
+  const result = await validateCommitEvidence(records, resolveCommit);
+  return { checked: true, ...result };
+}
+
 async function listIssueComments(owner, repository, issueNumber) {
   const comments = [];
   for (let page = 1; ; page += 1) {
@@ -67,33 +128,23 @@ async function listIssueComments(owner, repository, issueNumber) {
   return comments;
 }
 
+// Manual/baseline audit only. Automatic Agent Status must use --validate-event so it
+// does not duplicate the existing historical Session/Checkpoint scan every run.
 export async function collectCheckpointCommitEvidence({ registry, issues, listComments = listIssueComments }) {
   if (!registry || typeof registry !== 'object') throw new Error('control plane evidence: registry is required');
-  const allowedRepositories = new Set(registry.repositories.map((repository) => repository.name));
   const records = [];
 
   for (const issue of agentIssuesOnly(issues)) {
     const session = parseProtocolBlock(issue.body);
     if (session.protocol !== SESSION_PROTOCOL) continue;
-
-    const repositoryMatch = typeof session.repository === 'string' ? REPOSITORY.exec(session.repository) : null;
-    if (!repositoryMatch || !allowedRepositories.has(repositoryMatch[1])) {
-      throw new Error('control plane evidence: Session repository is outside the registered public scope');
-    }
+    const repository = assertRegisteredSessionRepository(registry, session.repository);
 
     const comments = await listComments(registry.owner, registry.control_repository, issue.number);
     for (const comment of comments) {
       if (typeof comment.body !== 'string' || !comment.body.includes(AGENT_MARKER)) continue;
       const checkpoint = parseProtocolBlock(comment.body);
       if (checkpoint.protocol !== CHECKPOINT_PROTOCOL) continue;
-      if (!Array.isArray(checkpoint.refs)) throw new Error('control plane evidence: checkpoint refs must be an array');
-
-      for (const ref of checkpoint.refs) {
-        if (typeof ref !== 'string' || !ref.startsWith('commit:')) continue;
-        const match = COMMIT_REF.exec(ref);
-        if (!match) throw new Error('control plane evidence: checkpoint commit SHA is malformed');
-        records.push({ repository: session.repository, sha: match[1] });
-      }
+      records.push(...checkpointCommitRecords(checkpoint, repository));
     }
   }
 
@@ -108,13 +159,7 @@ export async function validateLiveCheckpointCommitEvidence({ registry, issues, l
     issues: effectiveIssues,
     ...(listComments ? { listComments } : {}),
   });
-
-  const effectiveResolver = resolveCommit ?? (async (repository, sha) => {
-    const [owner, name] = repository.split('/');
-    return githubAgentApi(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/commits/${encodeURIComponent(sha)}`);
-  });
-
-  return validateCommitEvidence(records, effectiveResolver);
+  return validateCommitEvidence(records, resolveCommit ?? defaultResolveCommit);
 }
 
 export function renderInvalidAgentStatus({ checkedAt, runUrl } = {}) {
@@ -146,12 +191,24 @@ async function main() {
     return;
   }
 
-  if (!process.argv.includes('--validate-live')) {
-    throw new Error('control plane evidence: expected --validate-live or --render-invalid');
+  if (process.argv.includes('--validate-event')) {
+    if (!process.env.GITHUB_EVENT_PATH) throw new Error('control plane evidence: GITHUB_EVENT_PATH is required');
+    const [registry, event] = await Promise.all([
+      fs.readFile(REGISTRY_PATH, 'utf8').then(JSON.parse),
+      fs.readFile(process.env.GITHUB_EVENT_PATH, 'utf8').then(JSON.parse),
+    ]);
+    const result = await validateCheckpointEventEvidence({ event, registry });
+    console.log(`control plane checkpoint event evidence ok: checked=${result.checked}, ${result.unique_commit_evidence} unique repository-scoped commits`);
+    return;
   }
 
-  const result = await validateLiveCheckpointCommitEvidence();
-  console.log(`control plane commit evidence live ok: ${result.unique_commit_evidence} unique repository-scoped commits`);
+  if (process.argv.includes('--validate-live')) {
+    const result = await validateLiveCheckpointCommitEvidence();
+    console.log(`control plane commit evidence baseline audit ok: ${result.unique_commit_evidence} unique repository-scoped commits`);
+    return;
+  }
+
+  throw new Error('control plane evidence: expected --validate-event, --validate-live or --render-invalid');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
