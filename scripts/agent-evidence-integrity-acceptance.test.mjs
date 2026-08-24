@@ -229,3 +229,17 @@ test('automatic Agent Status event validator includes issue_comment deletion', a
   assert.match(workflow, /node scripts\/agent-evidence-integrity\.mjs --validate-event/);
   assert.doesNotMatch(workflow, /--validate-live/);
 });
+
+test('workflow routing sees previous body when an edited checkpoint removes the entire protocol marker', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/agent-status.yml', import.meta.url), 'utf8');
+  const previousBodyMarkerChecks = workflow.match(/contains\(github\.event\.changes\.body\.from \|\| '', '<!-- roadmap-agent:start -->'\)/g) ?? [];
+  assert.ok(previousBodyMarkerChecks.length >= 2, 'both Session and Checkpoint edit routing must inspect changes.body.from');
+  assert.match(workflow, /github\.event_name == 'issue_comment'[\s\S]*?github\.event\.action == 'edited'[\s\S]*?changes\.body\.from/);
+});
+
+test('workflow routing sees previous body when an edited v2 Session removes the entire protocol marker', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/agent-status.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /github\.event_name == 'issues'[\s\S]*?github\.event\.action == 'edited'[\s\S]*?changes\.body\.from/);
+  assert.match(workflow, /name: Publish current worker state to permanent Issue[\s\S]*?github\.event_name != 'issue_comment'/);
+  assert.doesNotMatch(workflow, /--validate-live/);
+});
