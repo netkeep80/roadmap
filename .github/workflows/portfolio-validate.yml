@@ -4,9 +4,11 @@ on:
   pull_request:
     paths:
       - "data/portfolio.json"
+      - "data/worker-policy.json"
       - "scripts/sync-roadmap.mjs"
       - "scripts/agent-protocol.mjs"
       - "scripts/agent-protocol.test.mjs"
+      - "scripts/agent-session-liveness.test.mjs"
       - "scripts/validate-agents.mjs"
       - "scripts/validate-agents.test.mjs"
       - "scripts/agent-role-template.mjs"
@@ -17,6 +19,9 @@ on:
       - "scripts/agent-status.test.mjs"
       - "scripts/agent-status-privacy.test.mjs"
       - "scripts/sync-agent-status.mjs"
+      - "scripts/sync-agent-status.test.mjs"
+      - "scripts/worker-runtime.mjs"
+      - "scripts/worker-runtime.test.mjs"
       - ".github/workflows/portfolio-validate.yml"
       - ".github/workflows/portfolio-sync.yml"
       - ".github/workflows/agent-roles.yml"
@@ -24,15 +29,18 @@ on:
       - "AGENTS.md"
       - "AGENT_PROTOCOL.md"
       - "AGENTS_STATUS.md"
+      - "SCHEDULED_WORKERS.md"
       - "OPERATING_MODEL.md"
       - "DECISIONS.md"
   push:
     branches: [main]
     paths:
       - "data/portfolio.json"
+      - "data/worker-policy.json"
       - "scripts/sync-roadmap.mjs"
       - "scripts/agent-protocol.mjs"
       - "scripts/agent-protocol.test.mjs"
+      - "scripts/agent-session-liveness.test.mjs"
       - "scripts/validate-agents.mjs"
       - "scripts/validate-agents.test.mjs"
       - "scripts/agent-role-template.mjs"
@@ -43,12 +51,16 @@ on:
       - "scripts/agent-status.test.mjs"
       - "scripts/agent-status-privacy.test.mjs"
       - "scripts/sync-agent-status.mjs"
+      - "scripts/sync-agent-status.test.mjs"
+      - "scripts/worker-runtime.mjs"
+      - "scripts/worker-runtime.test.mjs"
       - ".github/workflows/portfolio-validate.yml"
       - ".github/workflows/portfolio-sync.yml"
       - ".github/workflows/agent-roles.yml"
       - "README.md"
       - "AGENTS.md"
       - "AGENT_PROTOCOL.md"
+      - "SCHEDULED_WORKERS.md"
       - "OPERATING_MODEL.md"
 
 permissions:
@@ -62,7 +74,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Test agent control plane
-        run: node --test scripts/agent-protocol.test.mjs scripts/validate-agents.test.mjs scripts/agent-role-template.test.mjs scripts/reconcile-agent-roles.test.mjs scripts/agent-status.test.mjs scripts/agent-status-privacy.test.mjs
+        run: node --test scripts/agent-protocol.test.mjs scripts/agent-session-liveness.test.mjs scripts/validate-agents.test.mjs scripts/agent-role-template.test.mjs scripts/reconcile-agent-roles.test.mjs scripts/agent-status.test.mjs scripts/agent-status-privacy.test.mjs scripts/worker-runtime.test.mjs scripts/sync-agent-status.test.mjs
       - name: Validate registry
         run: node scripts/sync-roadmap.mjs --validate
       - name: Validate live GitHub coverage

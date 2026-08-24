@@ -214,6 +214,9 @@ export function validateSession(issue, roleMap) {
     fail(`session repository ${data.repository} does not match role repository ${role.repository}`);
   }
   if (!SESSION_STATES.has(data.state)) fail(`invalid session state ${JSON.stringify(data.state)}`);
+  if (data.worker_slot !== undefined && (!Number.isInteger(data.worker_slot) || data.worker_slot <= 0)) {
+    fail('session worker_slot must be a positive integer when present');
+  }
 
   const repository = parseRepository(data.repository);
   const publicRepositories = publicRoleRepositories(roleMap);
@@ -224,6 +227,9 @@ export function validateSession(issue, roleMap) {
 
   if (TERMINAL_SESSION_STATES.has(data.state) && claims.length) {
     fail(`terminal session state ${data.state} cannot retain claims`);
+  }
+  if (data.state === 'handoff' && claims.length) {
+    fail('handoff session cannot retain claims');
   }
 
   if (data.current_pr !== null) {

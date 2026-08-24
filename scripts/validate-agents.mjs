@@ -51,14 +51,23 @@ export async function listPublicOwnerRepositories(owner) {
   return publicRepositories;
 }
 
-export async function listOpenControlIssues(owner, repository) {
+export async function listControlIssues(owner, repository, state = 'open') {
+  if (!['open', 'closed', 'all'].includes(state)) throw new Error(`unsupported control issue state ${JSON.stringify(state)}`);
   const issues = [];
   for (let page = 1; ; page += 1) {
-    const batch = await githubAgentApi(`/repos/${owner}/${repository}/issues?state=open&per_page=100&page=${page}`);
+    const batch = await githubAgentApi(`/repos/${owner}/${repository}/issues?state=${state}&per_page=100&page=${page}`);
     issues.push(...batch.filter((issue) => !issue.pull_request));
     if (batch.length < 100) break;
   }
   return issues;
+}
+
+export async function listOpenControlIssues(owner, repository) {
+  return listControlIssues(owner, repository, 'open');
+}
+
+export async function listAllControlIssues(owner, repository) {
+  return listControlIssues(owner, repository, 'all');
 }
 
 export function agentIssuesOnly(issues) {

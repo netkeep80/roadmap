@@ -17,6 +17,7 @@ import {
   agentIssuesOnly,
   collectLiveAgentInputs,
   githubAgentApi,
+  listAllControlIssues,
   publicRepositoryNames,
   validateLiveAgentState,
 } from './validate-agents.mjs';
@@ -26,7 +27,6 @@ const REGISTRY_PATH = path.join(ROOT, 'data', 'portfolio.json');
 const AGENTS_JSON_PATH = path.join(ROOT, 'data', 'agents.json');
 const AGENTS_MD_PATH = path.join(ROOT, 'AGENTS_STATUS.md');
 const validateOnly = process.argv.includes('--validate-live');
-const ACTIVE_SESSION_STATES = new Set(['starting', 'working', 'waiting', 'blocked', 'handoff']);
 
 async function readRegistry() {
   return JSON.parse(await fs.readFile(REGISTRY_PATH, 'utf8'));
@@ -57,7 +57,14 @@ async function writeIfChanged(file, content) {
   return true;
 }
 
-export async function buildLiveAgentSnapshot({ registry, repositories, issues, checkedAt = new Date().toISOString() }) {
+export async function buildLiveAgentSnapshot({
+  registry,
+  repositories,
+  issues,
+  historicalIssues = issues,
+  checkedAt = new Date().toISOString(),
+  listComments = listIssueComments,
+}) {
   await validateLiveAgentState({ registry, repositories, issues, enforce: true });
 
   const publicNames = publicRepositoryNames(repositories);
@@ -90,9 +97,20 @@ export async function buildLiveAgentSnapshot({ registry, repositories, issues, c
       data: validateMessage(issue, coverage.roleMap),
     }));
 
+  const historicalClassified = agentIssuesOnly(historicalIssues).map((issue) => classifyAgentIssue(issue));
+  const auditSessions = historicalClassified
+    .filter(({ kind }) => kind === 'session')
+    .map(({ issue }) => ({
+      number: issue.number,
+      html_url: issue.html_url,
+      created_at: issue.created_at,
+      updated_at: issue.updated_at,
+      data: validateSession(issue, coverage.roleMap),
+    }));
+
   const checkpointsBySession = {};
-  for (const session of sessions.filter((item) => ACTIVE_SESSION_STATES.has(item.data.state))) {
-    const comments = await listIssueComments(registry.owner, registry.control_repository, session.number);
+  for (const session of auditSessions) {
+    const comments = await listComments(registry.owner, registry.control_repository, session.number);
     const checkpoints = [];
     for (const comment of checkpointCommentsOnly(comments)) {
       const parsed = parseProtocolBlock(comment.body);
@@ -116,8 +134,11 @@ async function main() {
   if (!process.env.GITHUB_TOKEN) {
     console.warn('WARN: GITHUB_TOKEN is not set; public API rate limits may apply.');
   }
-  const { repositories, issues } = await collectLiveAgentInputs(registry);
-  const snapshot = await buildLiveAgentSnapshot({ registry, repositories, issues });
+  const [{ repositories, issues }, historicalIssues] = await Promise.all([
+    collectLiveAgentInputs(registry),
+    listAllControlIssues(registry.owner, registry.control_repository),
+  ]);
+  const snapshot = await buildLiveAgentSnapshot({ registry, repositories, issues, historicalIssues });
 
   console.log(`agent status live ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.claim_count} claims, ${snapshot.unresolved_message_count} unresolved messages`);
   if (validateOnly) return;
