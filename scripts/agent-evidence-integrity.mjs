@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import process from 'node:process';
 
@@ -16,6 +17,9 @@ const CHECKPOINT_PROTOCOL_V1 = 'roadmap-agent-checkpoint/v1';
 const CHECKPOINT_PROTOCOL_V2 = 'roadmap-agent-checkpoint/v2';
 const SESSION_PROTOCOL_V1 = 'roadmap-agent-session/v1';
 const SESSION_PROTOCOL_V2 = 'roadmap-agent-session/v2';
+const VALIDATION_ATTESTATION_PROTOCOL = 'roadmap-agent-validation-attestation/v1';
+const VALIDATION_ATTESTATION_START = '<!-- roadmap-agent-validation-attestation:start -->';
+const VALIDATION_ATTESTATION_END = '<!-- roadmap-agent-validation-attestation:end -->';
 const CHECKPOINT_PROTOCOLS = new Set([CHECKPOINT_PROTOCOL_V1, CHECKPOINT_PROTOCOL_V2]);
 const SESSION_PROTOCOLS = new Set([SESSION_PROTOCOL_V1, SESSION_PROTOCOL_V2]);
 const COMMIT_REF = /^commit:([0-9a-f]{40,64})$/i;
@@ -24,6 +28,17 @@ const ISSUE_REF = /^netkeep80\/([^/#]+)#([1-9][0-9]*)$/;
 
 function fail(message) {
   throw new Error(`control plane evidence: ${message}`);
+}
+
+function countOccurrences(text, needle) {
+  let count = 0;
+  let offset = 0;
+  while (true) {
+    const index = text.indexOf(needle, offset);
+    if (index < 0) return count;
+    count += 1;
+    offset = index + needle.length;
+  }
 }
 
 function assertCommitRecord(record) {
@@ -143,6 +158,58 @@ async function defaultResolveControlComment(registry, issueNumber, commentId) {
   return { ...comment, issue_number: issueNumberFromUrl(comment?.issue_url) };
 }
 
+export function candidateCheckpointBodySha256(body) {
+  if (typeof body !== 'string') fail('candidate checkpoint body must be a string');
+  return createHash('sha256').update(body, 'utf8').digest('hex');
+}
+
+export function renderValidationAttestation({ candidateSession, candidateComment, candidate } = {}) {
+  const candidateSessionNumber = Number(candidateSession?.number);
+  const candidateCommentId = Number(candidateComment?.id);
+  if (!Number.isInteger(candidateSessionNumber) || candidateSessionNumber <= 0) fail('validation attestation candidate Session is invalid');
+  if (!Number.isInteger(candidateCommentId) || candidateCommentId <= 0) fail('validation attestation candidate checkpoint comment is invalid');
+  if (typeof candidateComment.body !== 'string') fail('validation attestation candidate checkpoint body is invalid');
+  const tuple = exactCandidateTuple(candidate);
+  const data = {
+    protocol: VALIDATION_ATTESTATION_PROTOCOL,
+    candidate_session: candidateSessionNumber,
+    candidate_checkpoint_comment_id: candidateCommentId,
+    candidate_checkpoint_body_sha256: candidateCheckpointBodySha256(candidateComment.body),
+    ...tuple,
+  };
+  return `${VALIDATION_ATTESTATION_START}\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n${VALIDATION_ATTESTATION_END}`;
+}
+
+export function parseValidationAttestation(body) {
+  if (typeof body !== 'string') fail('validation attestation body must be a string');
+  const startCount = countOccurrences(body, VALIDATION_ATTESTATION_START);
+  const endCount = countOccurrences(body, VALIDATION_ATTESTATION_END);
+  if (startCount !== 1 || endCount !== 1) fail('validation attestation must contain exactly one canonical block');
+  const start = body.indexOf(VALIDATION_ATTESTATION_START) + VALIDATION_ATTESTATION_START.length;
+  const end = body.indexOf(VALIDATION_ATTESTATION_END, start);
+  if (end < start) fail('validation attestation markers are malformed');
+  const between = body.slice(start, end).trim();
+  const fenced = /^```json\s*\n([\s\S]*?)\n```$/.exec(between);
+  if (!fenced) fail('validation attestation must contain exactly one fenced json object');
+  let data;
+  try {
+    data = JSON.parse(fenced[1]);
+  } catch (error) {
+    fail(`validation attestation JSON is malformed: ${error.message}`);
+  }
+  if (!data || Array.isArray(data) || typeof data !== 'object') fail('validation attestation JSON must be an object');
+  if (data.protocol !== VALIDATION_ATTESTATION_PROTOCOL) fail('validation attestation protocol is invalid');
+  if (!Number.isInteger(data.candidate_session) || data.candidate_session <= 0) fail('validation attestation candidate_session must be a positive integer');
+  if (!Number.isInteger(data.candidate_checkpoint_comment_id) || data.candidate_checkpoint_comment_id <= 0) fail('validation attestation candidate_checkpoint_comment_id must be a positive integer');
+  if (typeof data.candidate_checkpoint_body_sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(data.candidate_checkpoint_body_sha256)) {
+    fail('validation attestation candidate checkpoint SHA-256 is invalid');
+  }
+  if (typeof data.work_item !== 'string' || typeof data.pr !== 'string') fail('validation attestation candidate tuple references are invalid');
+  data.head_sha = assertSha(data.head_sha, 'validation attestation head_sha');
+  data.base_sha = assertSha(data.base_sha, 'validation attestation base_sha');
+  return data;
+}
+
 export async function validateCommitEvidence(records, resolveCommit) {
   if (!Array.isArray(records)) fail('records must be an array');
   if (typeof resolveCommit !== 'function') fail('resolveCommit must be a function');
@@ -198,10 +265,17 @@ function authorityBearingV2Checkpoint(body) {
     && (Object.hasOwn(data, 'review_candidate') || Object.hasOwn(data, 'acceptance'));
 }
 
+function authorityBearingValidationAttestation(body) {
+  return typeof body === 'string' && body.includes(VALIDATION_ATTESTATION_START);
+}
+
 function validateAuthorityCommentMutation(event) {
   if (!event.comment) return false;
 
   if (event.action === 'deleted') {
+    if (authorityBearingValidationAttestation(event.comment.body)) {
+      fail('validation attestation is append-only authority evidence and cannot be deleted');
+    }
     if (authorityBearingV2Checkpoint(event.comment.body)) {
       fail('authority-bearing v2 Checkpoint is immutable and cannot be deleted');
     }
@@ -210,6 +284,9 @@ function validateAuthorityCommentMutation(event) {
 
   if (event.action !== 'edited') return false;
   const previousBody = event.changes?.body?.from;
+  if (authorityBearingValidationAttestation(event.comment.body) || authorityBearingValidationAttestation(previousBody)) {
+    fail('validation attestation is append-only authority evidence and cannot be edited in place');
+  }
   const currentAuthority = authorityBearingV2Checkpoint(event.comment.body);
   const previousAuthority = authorityBearingV2Checkpoint(previousBody);
   if (currentAuthority || previousAuthority) {
@@ -300,7 +377,7 @@ function sameCandidateTuple(left, right) {
 }
 
 function timestamp(record, label) {
-  if (record?.created_at === undefined || record?.created_at === null) return null;
+  if (typeof record?.created_at !== 'string') fail(`${label} created_at is required`);
   const value = Date.parse(record.created_at);
   if (!Number.isFinite(value)) fail(`${label} created_at is invalid`);
   return value;
@@ -328,15 +405,9 @@ function validateAcceptanceChronology({ candidateIssue, candidateComment, accept
   const acceptanceSessionAt = timestamp(acceptanceIssue, 'acceptance Session');
   const acceptanceCheckpointAt = timestamp(acceptanceComment, 'acceptance checkpoint');
 
-  if (candidateSessionAt !== null && candidateSealAt !== null && candidateSessionAt > candidateSealAt) {
-    fail('candidate checkpoint chronology is invalid');
-  }
-  if (candidateSealAt !== null && acceptanceSessionAt !== null && candidateSealAt >= acceptanceSessionAt) {
-    fail('candidate seal must predate the fresh acceptance Session');
-  }
-  if (acceptanceSessionAt !== null && acceptanceCheckpointAt !== null && acceptanceSessionAt > acceptanceCheckpointAt) {
-    fail('acceptance checkpoint chronology is invalid');
-  }
+  if (candidateSessionAt > candidateSealAt) fail('candidate checkpoint chronology is invalid');
+  if (candidateSealAt >= acceptanceSessionAt) fail('candidate seal must predate the fresh acceptance Session');
+  if (acceptanceSessionAt > acceptanceCheckpointAt) fail('acceptance checkpoint chronology is invalid');
 }
 
 async function validateAcceptanceEvidence({
@@ -364,6 +435,9 @@ async function validateAcceptanceEvidence({
   }
   if (!Number.isInteger(acceptance.candidate_checkpoint_comment_id) || acceptance.candidate_checkpoint_comment_id <= 0) {
     fail('acceptance candidate_checkpoint_comment_id must be a positive comment id');
+  }
+  if (!Number.isInteger(acceptance.candidate_validation_attestation_comment_id) || acceptance.candidate_validation_attestation_comment_id <= 0) {
+    fail('acceptance candidate_validation_attestation_comment_id must be a positive comment id');
   }
 
   await resolveExactPullRequest({
@@ -428,6 +502,44 @@ async function validateAcceptanceEvidence({
     fail('candidate checkpoint work_item does not match candidate Session');
   }
 
+  const sealed = exactCandidateTuple(candidateCheckpoint.review_candidate);
+  const accepted = exactCandidateTuple(acceptance);
+  if (!sameCandidateTuple(sealed, accepted)) fail('acceptance candidate tuple does not match exact implementation seal');
+
+  let attestationComment;
+  try {
+    attestationComment = await resolveControlComment(
+      acceptance.candidate_session,
+      acceptance.candidate_validation_attestation_comment_id,
+    );
+  } catch (cause) {
+    const error = new Error(`control plane evidence: validation attestation comment #${acceptance.candidate_validation_attestation_comment_id} does not resolve`);
+    error.cause = cause;
+    throw error;
+  }
+  const attestationIssueNumber = Number(attestationComment?.issue_number ?? issueNumberFromUrl(attestationComment?.issue_url));
+  if (!attestationComment
+      || Number(attestationComment.id) !== acceptance.candidate_validation_attestation_comment_id
+      || attestationIssueNumber !== acceptance.candidate_session) {
+    fail('validation attestation ownership does not match the referenced candidate Session');
+  }
+  if (attestationComment.user?.login !== 'github-actions[bot]' || attestationComment.user?.type !== 'Bot') {
+    fail('validation attestation must be authored by the platform github-actions[bot] identity');
+  }
+  const attestation = parseValidationAttestation(attestationComment.body);
+  if (attestation.candidate_session !== acceptance.candidate_session) fail('validation attestation candidate Session does not match acceptance');
+  if (attestation.candidate_checkpoint_comment_id !== acceptance.candidate_checkpoint_comment_id) {
+    fail('validation attestation candidate checkpoint comment does not match acceptance');
+  }
+  const expectedDigest = candidateCheckpointBodySha256(candidateComment.body);
+  if (attestation.candidate_checkpoint_body_sha256 !== expectedDigest) {
+    fail('validation attestation candidate checkpoint body SHA-256 digest mismatch');
+  }
+  const attested = exactCandidateTuple(attestation);
+  if (!sameCandidateTuple(attested, sealed) || !sameCandidateTuple(attested, accepted)) {
+    fail('validation attestation candidate tuple does not match exact implementation seal');
+  }
+
   validateAcceptanceChronology({
     candidateIssue,
     candidateComment,
@@ -435,9 +547,6 @@ async function validateAcceptanceEvidence({
     acceptanceComment: eventComment,
   });
 
-  const sealed = exactCandidateTuple(candidateCheckpoint.review_candidate);
-  const accepted = exactCandidateTuple(acceptance);
-  if (!sameCandidateTuple(sealed, accepted)) fail('acceptance candidate tuple does not match exact implementation seal');
   if (!Array.isArray(session.claims) || session.claims.length !== 1 || session.claims[0] !== session.work_item) {
     fail('acceptance certificate requires the acceptance Session to own its exact work_item Claim at decision time');
   }
@@ -521,7 +630,15 @@ export async function validateCheckpointEventEvidence({
     resolveOpenControlIssues,
   });
   if (reviewCandidateChecked) {
-    return { checked: true, ...commitResult, review_candidate_checked: true };
+    const result = { checked: true, ...commitResult, review_candidate_checked: true };
+    if (event.action === 'created') {
+      result.validation_attestation_body = renderValidationAttestation({
+        candidateSession: event.issue,
+        candidateComment: event.comment,
+        candidate: checkpoint.review_candidate,
+      });
+    }
+    return result;
   }
 
   const effectiveResolveControlComment = resolveControlComment
@@ -629,6 +746,11 @@ async function main() {
       registry,
       resolveOpenControlIssues: () => listOpenControlIssues(registry.owner, registry.control_repository ?? 'roadmap'),
     });
+    if (result.validation_attestation_body) {
+      if (!process.env.GITHUB_OUTPUT) fail('GITHUB_OUTPUT is required to publish validation attestation output');
+      const encoded = Buffer.from(result.validation_attestation_body, 'utf8').toString('base64');
+      await fs.appendFile(process.env.GITHUB_OUTPUT, `validation_attestation_body_b64=${encoded}\n`, 'utf8');
+    }
     console.log(`control plane protocol event evidence ok: checked=${result.checked}, ${result.unique_commit_evidence} unique repository-scoped commits`);
     return;
   }
