@@ -60,7 +60,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/sync-roadmap.mjs --validate-live
-      - name: Validate Agent Control Plane (advisory rollout)
+      - name: Enforce Agent Control Plane role coverage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/validate-agents.mjs
+        run: node scripts/validate-agents.mjs --enforce
