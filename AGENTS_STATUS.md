@@ -2,15 +2,15 @@
 
 > **GENERATED FILE — DO NOT EDIT.** This is a read-only projection of validated public Agent Role / Session / Message / Checkpoint state in GitHub.
 
-- Last successful agent-state check: **2026-08-24T14:38:41.345Z**
+- Last successful agent-state check: **2026-08-24T15:12:41.435Z**
 - Permanent public roles: **26/26**
-- Active sessions: **1**
-- Stale candidates: **3**
-- Resumable handoffs: **16**
-- Active claims: **1**
+- Active sessions: **2**
+- Stale candidates: **2**
+- Resumable handoffs: **4**
+- Active claims: **2**
 - Stale claims pending recovery: **2**
 - Claim collisions: **0**
-- Unresolved messages: **2**
+- Unresolved messages: **1**
 - Blockers: **0**
 
 ## Role directory
@@ -46,44 +46,33 @@
 
 ## Active sessions
 
-| Session | Worker slot | Repository | State | Claims | Current PR | Last activity |
-|---|---|---|---|---|---|---|
-| [#90](https://github.com/netkeep80/roadmap/issues/90) | — | `netkeep80/roadmap` | `working` | `netkeep80/roadmap#87` | `netkeep80/roadmap#89` | 2026-08-24T14:35:38Z |
+| Session | Repository | State | Claims | Current PR | Last activity |
+|---|---|---|---|---|---|
+| [#92](https://github.com/netkeep80/roadmap/issues/92) | `netkeep80/roadmap` | `working` | `netkeep80/roadmap#88` | `netkeep80/roadmap#93` | 2026-08-24T15:12:29Z |
+| [#94](https://github.com/netkeep80/roadmap/issues/94) | `netkeep80/mast-calculator` | `working` | `netkeep80/mast-calculator#113` | `netkeep80/mast-calculator#115` | 2026-08-24T15:11:48Z |
 
 ## STALE_CANDIDATE sessions
 
-| Session | Worker slot | Repository | State | Claims | Current PR | Last activity |
-|---|---|---|---|---|---|---|
-| [#61](https://github.com/netkeep80/roadmap/issues/61) | — | `netkeep80/mts_visual` | `starting` | — | — | 2026-08-24T10:01:02Z |
-| [#74](https://github.com/netkeep80/roadmap/issues/74) | `2` | `netkeep80/anum_docs` | `working` | `netkeep80/anum_docs#925` | — | 2026-08-24T13:32:06Z |
-| [#77](https://github.com/netkeep80/roadmap/issues/77) | `4` | `netkeep80/PersistMemoryManager` | `working` | `netkeep80/PersistMemoryManager#410` | `netkeep80/PersistMemoryManager#427` | 2026-08-24T12:24:41Z |
+| Session | Repository | State | Claims | Current PR | Last activity |
+|---|---|---|---|---|---|
+| [#74](https://github.com/netkeep80/roadmap/issues/74) | `netkeep80/anum_docs` | `working` | `netkeep80/anum_docs#925` | — | 2026-08-24T13:32:06Z |
+| [#77](https://github.com/netkeep80/roadmap/issues/77) | `netkeep80/PersistMemoryManager` | `working` | `netkeep80/PersistMemoryManager#410` | `netkeep80/PersistMemoryManager#427` | 2026-08-24T12:24:41Z |
 
 ## Resumable handoffs
 
-| Session | Worker slot | Repository | State | Claims | Current PR | Last activity |
-|---|---|---|---|---|---|---|
-| [#57](https://github.com/netkeep80/roadmap/issues/57) | — | `netkeep80/mts_visual` | `handoff` | — | — | 2026-08-24T09:59:39Z |
-| [#64](https://github.com/netkeep80/roadmap/issues/64) | — | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T11:09:21Z |
-| [#66](https://github.com/netkeep80/roadmap/issues/66) | — | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T11:55:29Z |
-| [#70](https://github.com/netkeep80/roadmap/issues/70) | — | `netkeep80/anum_parser` | `handoff` | — | — | 2026-08-24T13:28:14Z |
-| [#71](https://github.com/netkeep80/roadmap/issues/71) | — | `netkeep80/anum_docs` | `handoff` | — | — | 2026-08-24T13:32:48Z |
-| [#73](https://github.com/netkeep80/roadmap/issues/73) | `1` | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T12:17:23Z |
-| [#75](https://github.com/netkeep80/roadmap/issues/75) | `3` | `netkeep80/PersistMemoryManager` | `handoff` | — | `netkeep80/PersistMemoryManager#427` | 2026-08-24T13:28:48Z |
-| [#78](https://github.com/netkeep80/roadmap/issues/78) | `5` | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T12:26:37Z |
-| [#79](https://github.com/netkeep80/roadmap/issues/79) | `3` | `netkeep80/mast-calculator` | `handoff` | — | — | 2026-08-24T13:14:03Z |
-| [#80](https://github.com/netkeep80/roadmap/issues/80) | `4` | `netkeep80/mast-calculator` | `handoff` | — | — | 2026-08-24T13:25:17Z |
-| [#81](https://github.com/netkeep80/roadmap/issues/81) | `1` | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T13:26:40Z |
-| [#83](https://github.com/netkeep80/roadmap/issues/83) | `2` | `netkeep80/isocubic` | `handoff` | — | — | 2026-08-24T13:34:27Z |
-| [#84](https://github.com/netkeep80/roadmap/issues/84) | `4` | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T14:04:49Z |
-| [#85](https://github.com/netkeep80/roadmap/issues/85) | `2` | `netkeep80/isocubic` | `handoff` | — | — | 2026-08-24T14:16:01Z |
-| [#86](https://github.com/netkeep80/roadmap/issues/86) | `5` | `netkeep80/isocubic` | `handoff` | — | — | 2026-08-24T14:22:51Z |
-| [#91](https://github.com/netkeep80/roadmap/issues/91) | `3` | `netkeep80/mast-calculator` | `handoff` | — | — | 2026-08-24T14:36:46Z |
+| Session | Repository | State | Claims | Current PR | Last activity |
+|---|---|---|---|---|---|
+| [#66](https://github.com/netkeep80/roadmap/issues/66) | `netkeep80/roadmap` | `handoff` | — | — | 2026-08-24T11:55:29Z |
+| [#71](https://github.com/netkeep80/roadmap/issues/71) | `netkeep80/anum_docs` | `handoff` | — | — | 2026-08-24T13:32:48Z |
+| [#80](https://github.com/netkeep80/roadmap/issues/80) | `netkeep80/mast-calculator` | `handoff` | — | — | 2026-08-24T13:25:17Z |
+| [#86](https://github.com/netkeep80/roadmap/issues/86) | `netkeep80/isocubic` | `handoff` | — | — | 2026-08-24T14:22:51Z |
 
 ## Claims
 
 | Claim | Winner | Contenders | State |
 |---|---|---|---|
-| `netkeep80/roadmap#87` | [#90](https://github.com/netkeep80/roadmap/issues/90) | [#90](https://github.com/netkeep80/roadmap/issues/90) | active |
+| `netkeep80/mast-calculator#113` | [#94](https://github.com/netkeep80/roadmap/issues/94) | [#94](https://github.com/netkeep80/roadmap/issues/94) | active |
+| `netkeep80/roadmap#88` | [#92](https://github.com/netkeep80/roadmap/issues/92) | [#92](https://github.com/netkeep80/roadmap/issues/92) | active |
 
 ## Stale claims pending recovery
 
@@ -96,7 +85,6 @@
 
 | Message | Kind | From | To | State | ACK |
 |---|---|---|---|---|---|
-| [#60](https://github.com/netkeep80/roadmap/issues/60) | `dependency-ready` | [#32](https://github.com/netkeep80/roadmap/issues/32) | [#45](https://github.com/netkeep80/roadmap/issues/45) | `acknowledged` | required |
 | [#72](https://github.com/netkeep80/roadmap/issues/72) | `coordination` | [#32](https://github.com/netkeep80/roadmap/issues/32) | [#34](https://github.com/netkeep80/roadmap/issues/34) | `open` | no |
 
 ## Blockers
@@ -106,7 +94,6 @@ _No active protocol blockers._
 ## Reading rule
 
 - This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.
-- `worker_slot` identifies the Scheduled Task slot for observability only; it grants no Role, claim, lease or authority.
 - A `STALE_CANDIDATE` is not LIVE and its retained claims require complete GitHub revalidation before recovery; they are not automatically free.
 - A `handoff` is resumable context, not a live executor and not a claim holder.
 - Checkpoint free text remains only in the original Session comment and is not duplicated here.

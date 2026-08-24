@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "checked_at": "2026-08-24T14:38:41.345Z",
+  "checked_at": "2026-08-24T15:12:41.435Z",
   "repository_count": 26,
   "role_count": 26,
-  "active_session_count": 1,
-  "stale_candidate_session_count": 3,
-  "resumable_handoff_count": 16,
-  "unresolved_message_count": 2,
-  "claim_count": 1,
+  "active_session_count": 2,
+  "stale_candidate_session_count": 2,
+  "resumable_handoff_count": 4,
+  "unresolved_message_count": 1,
+  "claim_count": 2,
   "stale_claim_count": 2,
   "claim_collision_count": 0,
   "roles": [
@@ -170,74 +170,70 @@
   ],
   "active_sessions": [
     {
-      "issue_number": 90,
-      "url": "https://github.com/netkeep80/roadmap/issues/90",
+      "issue_number": 92,
+      "url": "https://github.com/netkeep80/roadmap/issues/92",
       "role_issue": 49,
-      "worker_slot": null,
       "repository": "netkeep80/roadmap",
       "state": "working",
       "claims": [
-        "netkeep80/roadmap#87"
+        "netkeep80/roadmap#88"
       ],
-      "current_pr": "netkeep80/roadmap#89",
+      "current_pr": "netkeep80/roadmap#93",
       "blocked_by": [],
-      "created_at": "2026-08-24T14:23:29Z",
-      "updated_at": "2026-08-24T14:35:38Z",
-      "last_activity_at": "2026-08-24T14:35:38Z",
+      "created_at": "2026-08-24T14:41:47Z",
+      "updated_at": "2026-08-24T15:12:29Z",
+      "last_activity_at": "2026-08-24T15:12:29Z",
       "latest_checkpoint": {
-        "created_at": "2026-08-24T14:35:38Z",
-        "state": "working",
+        "created_at": "2026-08-24T15:12:29Z",
+        "state": "completed",
         "refs": [
-          "netkeep80/roadmap#87",
           "netkeep80/roadmap#88",
-          "netkeep80/roadmap#89",
-          "commit:fad256ba7987d3db476b2b02ca2dc79bc1d58326"
+          "netkeep80/roadmap#93",
+          "netkeep80/roadmap#62",
+          "commit:cb100ea3ae236a601bc74c1ec001d6e1ac9a6a21"
         ],
         "blockers": [],
         "messages": []
       },
       "lease_status": "live",
-      "heartbeat_at": "2026-08-24T14:35:38Z",
-      "lease_age_seconds": 183.345
+      "heartbeat_at": "2026-08-24T15:12:29Z",
+      "lease_age_seconds": 12.435
+    },
+    {
+      "issue_number": 94,
+      "url": "https://github.com/netkeep80/roadmap/issues/94",
+      "role_issue": 42,
+      "repository": "netkeep80/mast-calculator",
+      "state": "working",
+      "claims": [
+        "netkeep80/mast-calculator#113"
+      ],
+      "current_pr": "netkeep80/mast-calculator#115",
+      "blocked_by": [],
+      "created_at": "2026-08-24T15:07:45Z",
+      "updated_at": "2026-08-24T15:11:48Z",
+      "last_activity_at": "2026-08-24T15:11:48Z",
+      "latest_checkpoint": {
+        "created_at": "2026-08-24T15:07:57Z",
+        "state": "working",
+        "refs": [
+          "netkeep80/mast-calculator#113",
+          "netkeep80/roadmap#91",
+          "commit:8546d70c6503f5342c282fe319dac5750ccb0d85"
+        ],
+        "blockers": [],
+        "messages": []
+      },
+      "lease_status": "live",
+      "heartbeat_at": "2026-08-24T15:07:57Z",
+      "lease_age_seconds": 284.435
     }
   ],
   "stale_candidate_sessions": [
     {
-      "issue_number": 61,
-      "url": "https://github.com/netkeep80/roadmap/issues/61",
-      "role_issue": 45,
-      "worker_slot": null,
-      "repository": "netkeep80/mts_visual",
-      "state": "starting",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T10:00:15Z",
-      "updated_at": "2026-08-24T10:01:02Z",
-      "last_activity_at": "2026-08-24T10:01:02Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T10:01:02Z",
-        "state": "working",
-        "refs": [
-          "netkeep80/roadmap#57",
-          "netkeep80/roadmap#60",
-          "netkeep80/mts_visual#1",
-          "commit:b94b4a2a851cb6ca7292af6bc2dc248489927617"
-        ],
-        "blockers": [],
-        "messages": [
-          "netkeep80/roadmap#60"
-        ]
-      },
-      "lease_status": "stale_candidate",
-      "heartbeat_at": "2026-08-24T10:01:02Z",
-      "lease_age_seconds": 16659.345
-    },
-    {
       "issue_number": 74,
       "url": "https://github.com/netkeep80/roadmap/issues/74",
       "role_issue": 32,
-      "worker_slot": 2,
       "repository": "netkeep80/anum_docs",
       "state": "working",
       "claims": [
@@ -262,13 +258,12 @@
       },
       "lease_status": "stale_candidate",
       "heartbeat_at": "2026-08-24T12:19:39Z",
-      "lease_age_seconds": 8342.345
+      "lease_age_seconds": 10382.435
     },
     {
       "issue_number": 77,
       "url": "https://github.com/netkeep80/roadmap/issues/77",
       "role_issue": 29,
-      "worker_slot": 4,
       "repository": "netkeep80/PersistMemoryManager",
       "state": "working",
       "claims": [
@@ -282,75 +277,14 @@
       "latest_checkpoint": null,
       "lease_status": "stale_candidate",
       "heartbeat_at": "2026-08-24T12:24:41Z",
-      "lease_age_seconds": 8040.345
+      "lease_age_seconds": 10080.435
     }
   ],
   "resumable_handoffs": [
     {
-      "issue_number": 57,
-      "url": "https://github.com/netkeep80/roadmap/issues/57",
-      "role_issue": 45,
-      "worker_slot": null,
-      "repository": "netkeep80/mts_visual",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T09:55:12Z",
-      "updated_at": "2026-08-24T09:59:39Z",
-      "last_activity_at": "2026-08-24T09:59:39Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T09:59:22Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/roadmap#60",
-          "netkeep80/anum_docs#122",
-          "netkeep80/mts_visual#1"
-        ],
-        "blockers": [],
-        "messages": [
-          "netkeep80/roadmap#60"
-        ]
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
-      "issue_number": 64,
-      "url": "https://github.com/netkeep80/roadmap/issues/64",
-      "role_issue": 49,
-      "worker_slot": null,
-      "repository": "netkeep80/roadmap",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T10:15:33Z",
-      "updated_at": "2026-08-24T11:09:21Z",
-      "last_activity_at": "2026-08-24T11:09:21Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T11:09:21Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/roadmap#62",
-          "netkeep80/roadmap#63",
-          "commit:f7695d51ac5b7ebe74ff53a9c3487f75d67e0294",
-          "commit:b6f55c3e85645237fc2126ab9a1799f5d5a1a7a3",
-          "commit:10a37adb78579b5e4adf6c8e8a5dfd848525299b"
-        ],
-        "blockers": [],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
       "issue_number": 66,
       "url": "https://github.com/netkeep80/roadmap/issues/66",
       "role_issue": 49,
-      "worker_slot": null,
       "repository": "netkeep80/roadmap",
       "state": "handoff",
       "claims": [],
@@ -365,42 +299,9 @@
       "lease_age_seconds": null
     },
     {
-      "issue_number": 70,
-      "url": "https://github.com/netkeep80/roadmap/issues/70",
-      "role_issue": 33,
-      "worker_slot": null,
-      "repository": "netkeep80/anum_parser",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T11:51:34Z",
-      "updated_at": "2026-08-24T13:28:14Z",
-      "last_activity_at": "2026-08-24T13:28:14Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T12:19:56Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/anum_parser#118",
-          "netkeep80/anum_parser#119",
-          "commit:2e6265314d6cd651808e746c83be8d7dc2b90bb1",
-          "commit:7b5dddfacdd8055f2a3845a93af5646c66d32a11",
-          "netkeep80/mts_visual#8"
-        ],
-        "blockers": [
-          "netkeep80/anum_parser#119"
-        ],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
       "issue_number": 71,
       "url": "https://github.com/netkeep80/roadmap/issues/71",
       "role_issue": 32,
-      "worker_slot": null,
       "repository": "netkeep80/anum_docs",
       "state": "handoff",
       "claims": [],
@@ -436,131 +337,9 @@
       "lease_age_seconds": null
     },
     {
-      "issue_number": 73,
-      "url": "https://github.com/netkeep80/roadmap/issues/73",
-      "role_issue": 49,
-      "worker_slot": 1,
-      "repository": "netkeep80/roadmap",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T12:16:11Z",
-      "updated_at": "2026-08-24T12:17:23Z",
-      "last_activity_at": "2026-08-24T12:17:23Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T12:17:13Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/roadmap#62",
-          "netkeep80/roadmap#64",
-          "netkeep80/roadmap#73",
-          "commit:b58fecd005572e9596124791412be9d2df4aedac"
-        ],
-        "blockers": [],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
-      "issue_number": 75,
-      "url": "https://github.com/netkeep80/roadmap/issues/75",
-      "role_issue": 29,
-      "worker_slot": 3,
-      "repository": "netkeep80/PersistMemoryManager",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": "netkeep80/PersistMemoryManager#427",
-      "blocked_by": [],
-      "created_at": "2026-08-24T12:19:43Z",
-      "updated_at": "2026-08-24T13:28:48Z",
-      "last_activity_at": "2026-08-24T13:28:48Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T12:21:35Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/PersistMemoryManager#410",
-          "netkeep80/PersistMemoryManager#427",
-          "commit:4bcf299896dd089fbbeea42f1ebb9ebd0526ce89",
-          "commit:e9e4dfccc7c236356445d105d6064626e923eb92"
-        ],
-        "blockers": [
-          "netkeep80/PersistMemoryManager#427"
-        ],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
-      "issue_number": 78,
-      "url": "https://github.com/netkeep80/roadmap/issues/78",
-      "role_issue": 49,
-      "worker_slot": 5,
-      "repository": "netkeep80/roadmap",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T12:25:49Z",
-      "updated_at": "2026-08-24T12:26:37Z",
-      "last_activity_at": "2026-08-24T12:26:37Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T12:26:29Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/roadmap#62",
-          "netkeep80/roadmap#73",
-          "netkeep80/roadmap#77",
-          "netkeep80/roadmap#78",
-          "netkeep80/PersistMemoryManager#410",
-          "commit:b58fecd005572e9596124791412be9d2df4aedac"
-        ],
-        "blockers": [],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
-      "issue_number": 79,
-      "url": "https://github.com/netkeep80/roadmap/issues/79",
-      "role_issue": 42,
-      "worker_slot": 3,
-      "repository": "netkeep80/mast-calculator",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T13:13:35Z",
-      "updated_at": "2026-08-24T13:14:03Z",
-      "last_activity_at": "2026-08-24T13:14:03Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T13:13:58Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/mast-calculator#97",
-          "netkeep80/mast-calculator#100",
-          "netkeep80/mast-calculator#102",
-          "netkeep80/mast-calculator#114",
-          "commit:8546d70c6503f5342c282fe319dac5750ccb0d85"
-        ],
-        "blockers": [],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
       "issue_number": 80,
       "url": "https://github.com/netkeep80/roadmap/issues/80",
       "role_issue": 42,
-      "worker_slot": 4,
       "repository": "netkeep80/mast-calculator",
       "state": "handoff",
       "claims": [],
@@ -585,127 +364,9 @@
       "lease_age_seconds": null
     },
     {
-      "issue_number": 81,
-      "url": "https://github.com/netkeep80/roadmap/issues/81",
-      "role_issue": 49,
-      "worker_slot": 1,
-      "repository": "netkeep80/roadmap",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T13:22:04Z",
-      "updated_at": "2026-08-24T13:26:40Z",
-      "last_activity_at": "2026-08-24T13:26:40Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T13:24:56Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/roadmap#50",
-          "netkeep80/roadmap#59",
-          "netkeep80/roadmap#62",
-          "netkeep80/roadmap#81",
-          "commit:b58fecd005572e9596124791412be9d2df4aedac"
-        ],
-        "blockers": [],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
-      "issue_number": 83,
-      "url": "https://github.com/netkeep80/roadmap/issues/83",
-      "role_issue": 38,
-      "worker_slot": 2,
-      "repository": "netkeep80/isocubic",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T13:27:44Z",
-      "updated_at": "2026-08-24T13:34:27Z",
-      "last_activity_at": "2026-08-24T13:34:27Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T13:32:29Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/isocubic#312",
-          "commit:35742851423de301db2395d89c5d1422d59241cc",
-          "netkeep80/isocubic#315"
-        ],
-        "blockers": [],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
-      "issue_number": 84,
-      "url": "https://github.com/netkeep80/roadmap/issues/84",
-      "role_issue": 49,
-      "worker_slot": 4,
-      "repository": "netkeep80/roadmap",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T14:04:22Z",
-      "updated_at": "2026-08-24T14:04:49Z",
-      "last_activity_at": "2026-08-24T14:04:49Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T14:04:32Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/roadmap#62",
-          "netkeep80/roadmap#77",
-          "netkeep80/roadmap#84",
-          "netkeep80/PersistMemoryManager#410"
-        ],
-        "blockers": [],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
-      "issue_number": 85,
-      "url": "https://github.com/netkeep80/roadmap/issues/85",
-      "role_issue": 38,
-      "worker_slot": 2,
-      "repository": "netkeep80/isocubic",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T14:12:01Z",
-      "updated_at": "2026-08-24T14:16:01Z",
-      "last_activity_at": "2026-08-24T14:16:01Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T14:15:45Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/isocubic#312",
-          "netkeep80/isocubic#315",
-          "commit:35742851423de301db2395d89c5d1422d59241cc",
-          "netkeep80/isocubic#311",
-          "commit:badd9dcd9748aac0817457879b6b947d1a6e0287"
-        ],
-        "blockers": [],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
-    },
-    {
       "issue_number": 86,
       "url": "https://github.com/netkeep80/roadmap/issues/86",
       "role_issue": 38,
-      "worker_slot": 5,
       "repository": "netkeep80/isocubic",
       "state": "handoff",
       "claims": [],
@@ -728,41 +389,22 @@
       "lease_status": null,
       "heartbeat_at": null,
       "lease_age_seconds": null
-    },
-    {
-      "issue_number": 91,
-      "url": "https://github.com/netkeep80/roadmap/issues/91",
-      "role_issue": 42,
-      "worker_slot": 3,
-      "repository": "netkeep80/mast-calculator",
-      "state": "handoff",
-      "claims": [],
-      "current_pr": null,
-      "blocked_by": [],
-      "created_at": "2026-08-24T14:36:04Z",
-      "updated_at": "2026-08-24T14:36:46Z",
-      "last_activity_at": "2026-08-24T14:36:46Z",
-      "latest_checkpoint": {
-        "created_at": "2026-08-24T14:36:40Z",
-        "state": "handoff",
-        "refs": [
-          "netkeep80/mast-calculator#113",
-          "commit:8546d70c6503f5342c282fe319dac5750ccb0d85"
-        ],
-        "blockers": [],
-        "messages": []
-      },
-      "lease_status": null,
-      "heartbeat_at": null,
-      "lease_age_seconds": null
     }
   ],
   "claims": [
     {
-      "ref": "netkeep80/roadmap#87",
-      "winner_session_issue": 90,
+      "ref": "netkeep80/mast-calculator#113",
+      "winner_session_issue": 94,
       "contenders": [
-        90
+        94
+      ],
+      "conflict": false
+    },
+    {
+      "ref": "netkeep80/roadmap#88",
+      "winner_session_issue": 92,
+      "contenders": [
+        92
       ],
       "conflict": false
     }
@@ -780,27 +422,6 @@
     }
   ],
   "unresolved_messages": [
-    {
-      "issue_number": 60,
-      "url": "https://github.com/netkeep80/roadmap/issues/60",
-      "from_role_issue": 32,
-      "from_repository": "netkeep80/anum_docs",
-      "to_role_issues": [
-        45
-      ],
-      "to_repositories": [
-        "netkeep80/mts_visual"
-      ],
-      "kind": "dependency-ready",
-      "requires_ack": true,
-      "state": "acknowledged",
-      "refs": [
-        "netkeep80/anum_docs#122",
-        "netkeep80/roadmap#55"
-      ],
-      "created_at": "2026-08-24T09:56:17Z",
-      "updated_at": "2026-08-24T09:58:52Z"
-    },
     {
       "issue_number": 72,
       "url": "https://github.com/netkeep80/roadmap/issues/72",
