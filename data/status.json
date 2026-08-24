@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-24T15:12:10Z",
+  "latest_observed_github_change": "2026-08-24T16:24:25Z",
   "repository_count": 26,
   "child_repository_count": 25,
   "verified_child_backlinks": 25,
@@ -114,9 +114,9 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T15:12:10Z",
-      "updated_at": "2026-08-24T14:56:05Z",
-      "open_issues": 47,
+      "pushed_at": "2026-08-24T16:24:25Z",
+      "updated_at": "2026-08-24T15:27:27Z",
+      "open_issues": 50,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
@@ -324,10 +324,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T12:01:18Z",
+      "pushed_at": "2026-08-24T16:04:47Z",
       "updated_at": "2026-08-24T12:03:13Z",
       "open_issues": 7,
-      "open_pull_requests": 0,
+      "open_pull_requests": 2,
       "tracked_issues": [
         {
           "number": 122,
@@ -438,10 +438,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T11:21:18Z",
+      "pushed_at": "2026-08-24T15:58:25Z",
       "updated_at": "2026-08-24T11:25:29Z",
       "open_issues": 5,
-      "open_pull_requests": 0,
+      "open_pull_requests": 1,
       "tracked_issues": [
         {
           "number": 139,
@@ -478,10 +478,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T15:11:17Z",
+      "pushed_at": "2026-08-24T15:29:15Z",
       "updated_at": "2026-08-09T09:58:06Z",
       "open_issues": 11,
-      "open_pull_requests": 2,
+      "open_pull_requests": 1,
       "tracked_issues": [
         {
           "number": 71,
@@ -935,6 +935,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-24T15:12:40.585Z",
-  "state_hash": "b029683fb972e7227b4f4d977fd15aaa6b15c6b608a307b89d80dcb7e5c8a3d6"
+  "checked_at": "2026-08-24T16:25:01.188Z",
+  "state_hash": "4e396e161b1d34a753fe6ded1b59b3a7929920b7f20380e5ddc5c9db9c817cdd"
 }
