@@ -7,6 +7,7 @@ import {
   validateRoleCoverage,
   validateSession,
   validateMessage,
+  validateCheckpoint,
   compareClaimPriority,
 } from './agent-protocol.mjs';
 
@@ -38,6 +39,21 @@ const session = ({ roleIssue = 10, repository = 'alpha', claims = [], state = 'w
     claims,
     current_pr: null,
     blocked_by: [],
+  }),
+});
+
+const checkpoint = (overrides = {}) => ({
+  id: 300,
+  created_at: '2026-08-24T10:30:00Z',
+  body: block({
+    protocol: 'roadmap-agent-checkpoint/v1',
+    state: 'working',
+    completed: ['validated current state'],
+    refs: ['netkeep80/alpha#7', 'commit:0123456789abcdef0123456789abcdef01234567'],
+    blockers: [],
+    next: ['continue exact local gate'],
+    messages: ['netkeep80/roadmap#20'],
+    ...overrides,
   }),
 });
 
@@ -150,6 +166,41 @@ test('validateMessage requires valid role endpoints and public refs', () => {
   const invalidRef = structuredClone(valid);
   invalidRef.body = block({ ...parseProtocolBlock(valid.body), refs: ['other/private#1'] });
   assert.throws(() => validateMessage(invalidRef, coverage.roleMap), /public|reference|registered/i);
+});
+
+test('validateCheckpoint accepts public refs and repository-scoped commit evidence', () => {
+  const coverage = validateRoleCoverage(['roadmap', 'alpha'], ['roadmap', 'alpha'], [role('roadmap', 20), role('alpha', 10)]);
+  const sessionData = validateSession(session(), coverage.roleMap);
+  const parsed = validateCheckpoint(checkpoint(), coverage.roleMap, sessionData);
+  assert.equal(parsed.protocol, 'roadmap-agent-checkpoint/v1');
+  assert.equal(parsed.state, 'working');
+});
+
+test('validateCheckpoint rejects private/unknown refs and malformed commit evidence', () => {
+  const coverage = validateRoleCoverage(['roadmap', 'alpha'], ['roadmap', 'alpha'], [role('roadmap', 20), role('alpha', 10)]);
+  const sessionData = validateSession(session(), coverage.roleMap);
+
+  assert.throws(
+    () => validateCheckpoint(checkpoint({ refs: ['netkeep80/beta#7'] }), coverage.roleMap, sessionData),
+    /registered|public|reference/i,
+  );
+  assert.throws(
+    () => validateCheckpoint(checkpoint({ refs: ['commit:not-a-sha'] }), coverage.roleMap, sessionData),
+    /commit|sha/i,
+  );
+  assert.throws(
+    () => validateCheckpoint(checkpoint({ messages: ['netkeep80/beta#9'] }), coverage.roleMap, sessionData),
+    /registered|public|reference/i,
+  );
+});
+
+test('validateCheckpoint requires finite state and string arrays', () => {
+  const coverage = validateRoleCoverage(['roadmap', 'alpha'], ['roadmap', 'alpha'], [role('roadmap', 20), role('alpha', 10)]);
+  const sessionData = validateSession(session(), coverage.roleMap);
+
+  assert.throws(() => validateCheckpoint(checkpoint({ state: 'unknown' }), coverage.roleMap, sessionData), /state/i);
+  assert.throws(() => validateCheckpoint(checkpoint({ next: [42] }), coverage.roleMap, sessionData), /next|string/i);
+  assert.throws(() => validateCheckpoint(checkpoint({ completed: 'done' }), coverage.roleMap, sessionData), /completed|array/i);
 });
 
 test('compareClaimPriority deterministically prefers earlier session then lower issue number', () => {
