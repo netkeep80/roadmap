@@ -1,37 +1,27 @@
 # Agent Control Plane protocol v1
 
-This document defines the durable public protocol used by AI agents coordinated through `netkeep80/roadmap`.
+This document defines the durable public coordination protocol used by agents in `netkeep80/roadmap`.
 
-The permanent Role bootstrap entrypoint is [`AGENTS.md`](AGENTS.md). Timer-driven worker-pool bootstrap is [`SCHEDULED_WORKERS.md`](SCHEDULED_WORKERS.md). All repository references below are public-only and must resolve to `data/portfolio.json`.
+Entrypoints:
 
-A timer never changes protocol authority:
+- [`AGENTS.md`](AGENTS.md) — permanent Role URL bootstrap;
+- [`SCHEDULED_WORKERS.md`](SCHEDULED_WORKERS.md) — anonymous timer-driven pool bootstrap.
+
+All structured repository references are public-only and must resolve through `data/portfolio.json`.
+
+## 1. Canonical block
+
+Agent Issues and Checkpoints contain exactly one block delimited by:
 
 ```text
-Timer != Role
-Timer != Session
-Timer != context storage
-Timer != scheduler authority
-```
-
-## Machine block format
-
-Agent Issues contain one canonical machine block delimited by these markers:
-
-```markdown
 <!-- roadmap-agent:start -->
-```json
-{
-  "protocol": "roadmap-agent-role/v1"
-}
-```
+... one fenced JSON object ...
 <!-- roadmap-agent:end -->
 ```
 
-The JSON between the markers is authoritative for protocol parsing. Prose outside the block explains the contract but must not redefine machine fields.
+Malformed JSON, duplicate blocks, unknown protocol versions, or out-of-scope repository references fail closed.
 
-Malformed JSON, multiple canonical blocks, an unknown protocol version, or a repository reference outside the public portfolio fails closed.
-
-## 1. Permanent Role
+## 2. Permanent Role
 
 Title:
 
@@ -52,16 +42,15 @@ Canonical object:
 }
 ```
 
-For `netkeep80/roadmap` only, `portfolio_authority` is `coordinate`.
+For `netkeep80/roadmap`, `portfolio_authority` is `coordinate`.
 
-Role invariants:
+Invariants:
 
-- exactly one open active Role per live public repository;
-- Role issue number is the stable role identity;
-- the body links to `AGENTS.md`, `AGENT_PROTOCOL.md`, the target repository, and stable portfolio entrypoints;
-- Role body does not embed current PR status, current SHA or other fast-changing snapshots.
+- exactly one open active Role per registered public repository;
+- Role issue number is stable authority identity;
+- Role metadata is durable and does not embed current PR/SHA snapshots.
 
-## 2. Agent Session
+## 3. Agent Session
 
 Title:
 
@@ -75,7 +64,6 @@ Canonical object:
 {
   "protocol": "roadmap-agent-session/v1",
   "role_issue": 123,
-  "worker_slot": 3,
   "repository": "netkeep80/<repository>",
   "state": "working",
   "claims": ["netkeep80/<repository>#456"],
@@ -84,24 +72,11 @@ Canonical object:
 }
 ```
 
-`worker_slot` is optional. Manual/non-scheduled Sessions omit it. When a Scheduled Task creates a Session, it records the task's positive integer `WORKER_SLOT` as `worker_slot`.
+A Session references exactly one Role and the same repository as that Role. The Session issue number is the durable identity of one execution.
 
-`worker_slot` is observability metadata only:
+Historical public v1 Sessions may contain previously accepted scheduler metadata. It is read-tolerated only and has no authority, liveness, collision, selection, or generated-status meaning.
 
-```text
-worker_slot != Role
-worker_slot != Session identity
-worker_slot != repository assignment
-worker_slot != authority
-worker_slot != durable context
-worker_slot != lease authority
-worker_slot != lock
-worker_slot != claim priority
-```
-
-The same slot may select a different Role on a later invocation. Two invocations of the same slot may overlap. Slot equality gives no permission to replace a LIVE Session and is deliberately absent from claim-collision ordering.
-
-Finite `state`:
+Finite states:
 
 ```text
 starting
@@ -113,52 +88,51 @@ completed
 abandoned
 ```
 
-A Session references exactly one Role and exactly the same repository as that Role.
-
-Execution/lifecycle meaning:
+Protocol state and GitHub issue state must agree:
 
 ```text
-starting / working / waiting / blocked
-  = leased execution states
-
-handoff
-  = resumable durable context
-    NOT a running executor
-    MUST hold zero claims
-
-completed / abandoned
-  = terminal
-    MUST hold zero claims
+starting / working / waiting / blocked => GitHub issue OPEN
+handoff                               => GitHub issue OPEN only while genuinely resumable
+completed / abandoned                 => GitHub issue CLOSED
 ```
 
-`handoff` remains visible to resumption logic, but it is not a live worker merely because the issue remains open.
+A terminal Session has zero claims. A handoff has zero claims. No-work invocations create no Session.
 
-A scheduled invocation with no explicit executable work MUST NOT create a Session simply to record idleness.
+When a successor successfully consumes a handoff, the predecessor becomes `completed` with zero claims and is closed. An invalidated handoff becomes `abandoned` and is closed.
 
-## 3. Claim
+Closed Sessions remain historical audit evidence and are still fail-closed validated; they are not active control state.
 
-A claim is a local public issue or PR reference stored in the Session `claims` array.
+## 4. Claim
+
+A Claim is a local public issue or PR reference stored in a Session `claims` array.
 
 Rules:
 
-- claim repository must equal Session repository;
-- claims coordinate work selection only; they do not grant merge authority;
-- no global repository lock exists;
-- before taking work, inspect all relevant Sessions for the Role;
-- `handoff`, `completed`, and `abandoned` Sessions cannot retain claims;
-- a stale candidate does not automatically release a claim;
-- `worker_slot` never changes claim ownership or collision priority.
+- Claim repository must equal Session repository;
+- Claims coordinate work selection only; they do not grant merge authority;
+- `handoff`, `completed`, and `abandoned` Sessions retain zero claims;
+- a stale retained claim is not automatically free;
+- there is no global repository lock.
 
-Collision order for two competing Sessions claiming the same item:
+Collision order for LIVE Sessions claiming the same item:
 
-1. smaller GitHub Session issue `created_at` wins;
-2. if equal, smaller Session issue number wins.
+1. earlier GitHub Session issue `created_at`;
+2. if equal, lower Session issue number.
 
-The loser releases the claim and chooses another **explicit executable** item or exits. It does not invent replacement work.
+A worker may optimistically create a Session after selecting apparently-unclaimed work. **After Session creation and before any target-repository write**, it must refresh all competing LIVE Sessions/Claims for that item and apply the collision order.
 
-## 4. Checkpoint
+```text
+winner => target writes allowed
+loser  => zero target writes
+          clear claim
+          state=abandoned
+          close Session issue
+          bounded-reselect or exit
+```
 
-A Checkpoint is a structured Session comment. It uses the same marker format and this object:
+## 5. Checkpoint
+
+A Checkpoint is a structured Session comment:
 
 ```json
 {
@@ -172,68 +146,49 @@ A Checkpoint is a structured Session comment. It uses the same marker format and
 }
 ```
 
-Checkpoint rules:
+Rules:
 
-- record public observable facts and accepted decisions, not private reasoning;
-- include exact public SHA/PR/check evidence where it matters to resumption;
-- a handoff Session requires a final checkpoint sufficient for a fresh agent starting from Role URL only;
-- every fresh agent revalidates the checkpoint against current GitHub state before mutation;
-- **every structured marked Checkpoint comment on every protocol Session validates fail-closed, including terminal/historical Sessions**;
-- generated status may omit terminal history, but validation cannot skip malformed history.
+- store public observable facts and accepted decisions, not private reasoning;
+- include exact public SHA/PR/check evidence when needed for safe resumption;
+- every fresh worker revalidates Checkpoint facts against current GitHub before mutation;
+- every marked Checkpoint on every protocol Session validates fail-closed, including closed historical Sessions;
+- `handoff` requires durable context sufficient for a fresh worker to resume from GitHub only.
 
-For liveness, the authoritative Checkpoint timestamp is GitHub server `created_at`. A timestamp written by an agent inside prose or the structured JSON is not a heartbeat authority.
-
-## 5. Session lease / liveness
+## 6. Session lease / liveness
 
 Machine policy is `data/worker-policy.json`.
-
-Initial policy:
 
 ```text
 lease_seconds = 7200
 heartbeat_target_seconds = 3600
 ```
 
-Authoritative `heartbeat_at` for a leased Session is:
+Authoritative heartbeat:
 
-1. GitHub server `created_at` of the latest valid structured Checkpoint comment;
-2. if no valid Checkpoint exists yet, GitHub server `created_at` of the Session issue.
+1. GitHub server `created_at` of the latest valid structured Checkpoint;
+2. otherwise Session issue `created_at`.
 
-Do not use Session `updated_at` as heartbeat because unrelated issue-body edits can refresh it. `worker_slot` also has no liveness authority.
+Session `updated_at` is not heartbeat authority.
 
 Classification:
 
 ```text
-completed / abandoned
-  => TERMINAL
-
-handoff
-  => RESUMABLE_HANDOFF
-
-starting / working / waiting / blocked
-  + heartbeat age <= lease_seconds
-  => LIVE
-
-starting / working / waiting / blocked
-  + heartbeat age > lease_seconds
-  => STALE_CANDIDATE
+starting / working / waiting / blocked + age <= lease => LIVE
+starting / working / waiting / blocked + age >  lease => STALE_CANDIDATE
+handoff                                           => RESUMABLE_HANDOFF
+completed / abandoned                             => TERMINAL
 ```
 
-A worker holding active execution/claims should leave an initial valid Checkpoint immediately after Session creation and refresh durable Checkpoint evidence at meaningful lifecycle gates. Long-running work targets at least one valid Checkpoint per `heartbeat_target_seconds`.
+`STALE_CANDIDATE` is only a recovery signal. It never means a claim is free.
 
-`STALE_CANDIDATE` is only a recovery signal. It never means “claim is free” and never authorizes immediate resume.
-
-### Two-phase stale recovery
-
-Before changing a stale Session or taking its work, a replacement worker MUST re-read current GitHub:
+Before changing a stale Session or taking its work, revalidate current GitHub completely:
 
 ```text
-target default-branch exact SHA
-open local issues
-open PRs
+target exact default-branch SHA
+open local issues and PRs
 current PR exact head/base if any
 actual CI / repo-guard gates
-claims + deterministic live winners
+LIVE claims + deterministic winners
 Messages
 portfolio/dependency/lifecycle state
 ```
@@ -241,19 +196,17 @@ portfolio/dependency/lifecycle state
 Then:
 
 ```text
-if work is completed / superseded / blocked / invalidated / held by LIVE winner:
-    old stale Session -> abandoned with zero claims
-    do not resume
+completed / superseded / blocked / invalidated / held by LIVE winner
+  => old stale Session -> abandoned, zero claims, CLOSED
 
-if work remains executable and has no LIVE winner:
-    old stale Session -> abandoned with zero claims
-    only then create replacement Session / claim
-    resume from current GitHub facts
+still executable and no LIVE winner
+  => old stale Session -> abandoned, zero claims, CLOSED
+  => create new Session from current GitHub facts
 ```
 
-A stale Checkpoint's `next` field never overrides current GitHub facts. A matching `worker_slot` never bypasses this revalidation.
+A stale Checkpoint never overrides fresher GitHub state.
 
-## 6. Agent Message
+## 7. Agent Message
 
 Title:
 
@@ -275,7 +228,7 @@ Canonical object:
 }
 ```
 
-Finite `kind`:
+Kinds:
 
 ```text
 info
@@ -288,113 +241,125 @@ decision-required
 coordination
 ```
 
-Finite `state`:
+Lifecycle:
 
 ```text
-open
-acknowledged
-resolved
+open / acknowledged => GitHub issue OPEN while unresolved/actionable
+resolved             => GitHub issue CLOSED
 ```
 
-Message rules:
+Use Messages only for durable cross-repository coordination, dependency readiness, blockers, or required actions. Repository-local discussion remains local.
 
-- every source and target Role must exist and be active;
-- every repository reference must be public and registered;
-- `requires_ack: true` remains observable until target acknowledgement;
-- local code/design discussion stays in the local repository; use a roadmap Message only for durable cross-repository coordination or portfolio-level action.
+## 8. Bounded work selection
 
-## 7. Bounded work selection
+The control plane has no implicit `invent work` transition.
 
-The Agent Control Plane has no implicit `invent work` transition.
-
-For a repository-developer Role, the only admissible work sources are:
+Admissible sources:
 
 ```text
-valid handoff
+valid executable handoff
 OR actionable incoming Message
 OR existing open local issue
    AND portfolio-consistent
    AND executable now
    AND not blocked
-   AND not occupied by another LIVE winning Session
+   AND not occupied by a LIVE winning Session
    AND not pending stale-session recovery
 ```
 
 Selection order:
 
 ```text
-1. valid handoff
-2. actionable incoming Message
-3. existing executable local issue
+1. handoff
+2. Message
+3. local issue
 4. EXIT_NO_WORK
 ```
 
-Canonical invariant:
+No speculative backlog generation, unsolicited cleanup/refactoring, idle dependency upgrades, architecture redesign, implicit next milestone, blocker bypass, or keep-busy issue creation is permitted.
+
+### Roadmap management under Role #49
+
+`netkeep80/roadmap` is a normal managed repository. Control-plane/portfolio maintenance is performed only under permanent roadmap Role #49.
+
+A roadmap maintenance action requires:
 
 ```text
-absence of work != permission to invent work
-NO EXPLICIT EXECUTABLE WORK => EXIT
+concrete current roadmap/control-plane fact
++
+existing declared invariant / goal / open roadmap issue / actionable Message
++
+executable bounded action
 ```
 
-No speculative backlog generation, unsolicited cleanup, idle dependency upgrade, architecture redesign, implicit next milestone, blocker bypass, or keep-busy issue creation is permitted.
+Examples of valid triggers:
 
-Pool workers dynamically choose a Role before Session creation. A `worker_slot` does not reserve or prefer any repository. Once an invocation enters a Role/Session, it does not switch repositories merely to stay busy; a claim-collision loser may release/terminate the losing Session and return to pool selection or exit.
+- terminal Session issue still open;
+- resolved Message issue still open;
+- consumed handoff predecessor still open;
+- stale Session requiring protocol recovery;
+- generated status / validator / portfolio drift against a declared invariant;
+- existing roadmap umbrella/acceptance/governance issue whose already-proven evidence needs reconciliation.
 
-`roadmap` coordinator authority is bounded the same way. `portfolio_authority=coordinate` permits action only when an observed fact combines with an existing declared portfolio goal/invariant/dependency and a real drift, pending transition, blocker, actionable Message, or explicit control-plane work item. Otherwise coordinator exits without strategy mutation.
+Where the maintenance target is itself an open roadmap issue, claim that exact issue. Do not create a second housekeeping issue merely to track the repair.
 
-## 8. Refresh points
+A roadmap-management Session uses the same Session/Claim collision rules, lease rules, CI and repo-guard as every other repository Session. Different roadmap issues may be maintained concurrently; the same issue has only one LIVE winning claimant.
 
-An agent must refresh its relevant GitHub facts:
+No concrete trigger => no roadmap maintenance candidate.
+
+`portfolio_authority=coordinate` permits declared transitions; it does not permit autonomous strategy invention.
+
+## 9. Refresh points
+
+Refresh relevant GitHub facts:
 
 - at invocation/bootstrap;
-- at Session start;
-- before selecting/claiming next work;
-- after receiving a dependency/blocker message;
+- before work selection;
+- at Session creation;
+- **after Session creation before any target-repository write**;
+- after dependency/blocker changes;
 - before stale recovery;
-- before repository write;
-- before PR draft/ready/integration lifecycle transition;
-- after merging or closing a dependency gate;
-- before handoff/completion checkpoint.
+- before every repository write;
+- before PR draft/ready/integration transitions;
+- before Session/Message close transitions;
+- after merge/close transitions;
+- before handoff/completion.
 
-For PR integration, exact repository rules and repo-guard `next_action` (where configured) dominate stale Session state.
+Target repository CI/repo-guard rules remain integration authority.
 
-## 9. Public-only reference grammar
+## 10. Public-only reference grammar
 
-Structured protocol fields may reference:
+Structured fields may reference only:
 
 ```text
 netkeep80/<registered-public-repository>
 netkeep80/<registered-public-repository>#<issue-or-pr-number>
-commit:<sha> only when the surrounding object unambiguously identifies a registered public repository
-roadmap role issue numbers
+commit:<sha> when the surrounding object identifies a registered public repository
+roadmap Role issue numbers
 ```
 
-They must not contain or encode a repository outside the public registry.
+Unknown or non-public references fail closed.
 
-## 10. Visibility transition
+## 11. Visibility transition
 
-When a repository leaves public scope:
+If a repository leaves public scope:
 
-1. current public sync/validation reports scope drift;
+1. current sync/validation reports scope drift;
 2. an explicit portfolio transition removes it from active public coordination;
 3. its Role is closed/inactivated;
-4. active Sessions are stopped as `abandoned` or otherwise terminated without importing new non-public facts;
-5. generated active state no longer includes the repository;
-6. no future Agent Message may reference the non-public source.
+4. active Sessions terminate without importing new non-public facts;
+5. generated active state stops exposing it;
+6. future Messages must not reference it.
 
-Previously public Git/GitHub history is historical public information; the control plane cannot retroactively erase it, but must not continue updating it from a non-public source.
-
-## 11. Authority / non-goals
+## 12. Authority / non-goals
 
 The protocol does not:
 
 - choose portfolio priority or canonical ownership automatically;
-- bind a Scheduled Task slot to a repository;
-- grant authority from `worker_slot` identity;
-- create work merely because a timer fired or a worker is idle;
-- replace local repository issues/PRs;
-- replace repo-guard or local CI;
-- introduce a second merge queue;
-- introduce a global or per-slot repository lock;
+- create work because a timer fired or a worker is idle;
+- grant merge authority from a Claim or Session;
+- replace repository issues/PRs, local CI, or repo-guard;
+- introduce a merge queue or global repository lock;
+- create a privileged roadmap-admin execution mode outside Role #49;
 - coordinate private repositories;
 - store hidden chain-of-thought.

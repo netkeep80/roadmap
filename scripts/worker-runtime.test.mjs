@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
+import * as workerRuntime from './worker-runtime.mjs';
 import {
   classifySessionLease,
   decideStaleRecovery,
@@ -21,9 +23,9 @@ const rawPolicy = {
 
 const policy = () => validateWorkerPolicy(structuredClone(rawPolicy));
 
-function workerSession({ state = 'working', createdAt = '2026-08-24T09:00:00Z', updatedAt = '2026-08-24T09:00:00Z', claims = ['netkeep80/alpha#1'] } = {}) {
+function workerSession({ state = 'working', createdAt = '2026-08-24T09:00:00Z', updatedAt = '2026-08-24T09:00:00Z', claims = ['netkeep80/alpha#1'], number = 10 } = {}) {
   return {
-    number: 10,
+    number,
     created_at: createdAt,
     updated_at: updatedAt,
     data: { state, claims },
@@ -108,6 +110,21 @@ test('bounded selection honors handoff then message then local issue', () => {
   assert.equal(selectBoundedWork({ handoffs: [], messages: [], issues: [issue] }).action, 'claim_issue');
 });
 
+test('roadmap maintenance uses the ordinary explicit-issue selector', () => {
+  const maintenance = executableIssue('netkeep80/roadmap#62');
+  const selected = selectBoundedWork({ handoffs: [], messages: [], issues: [maintenance] });
+  assert.equal(selected.action, 'claim_issue');
+  assert.equal(selected.candidate.ref, 'netkeep80/roadmap#62');
+
+  const noDeclaredWork = selectBoundedWork({
+    handoffs: [],
+    messages: [],
+    issues: [],
+    observations: [{ kind: 'roadmap-housekeeping-opportunity', obvious: true }],
+  });
+  assert.deepEqual(noDeclaredWork, { action: 'exit_no_work', candidate: null });
+});
+
 test('bounded selection never chooses blocked, live-occupied or stale-recovery local issues', () => {
   const result = selectBoundedWork({
     handoffs: [],
@@ -128,6 +145,44 @@ test('live overlap skips occupied work and selects another explicit issue', () =
   const result = selectBoundedWork({ handoffs: [], messages: [], issues: [occupied, free] });
   assert.equal(result.action, 'claim_issue');
   assert.equal(result.candidate.ref, 'netkeep80/alpha#2');
+});
+
+test('post-Session claim refresh allows only the deterministic winner to write target state', () => {
+  assert.equal(typeof workerRuntime.decidePostSessionClaim, 'function');
+  const claim = 'netkeep80/alpha#1';
+  const earlier = workerSession({ number: 101, createdAt: '2026-08-24T10:00:00Z', claims: [claim] });
+  const later = workerSession({ number: 102, createdAt: '2026-08-24T10:00:01Z', claims: [claim] });
+  const liveClaimers = [later, earlier];
+
+  assert.deepEqual(workerRuntime.decidePostSessionClaim({ claim, contender: earlier, liveClaimers }), {
+    action: 'proceed',
+    winner_session_issue: 101,
+    target_writes_allowed: true,
+  });
+  assert.deepEqual(workerRuntime.decidePostSessionClaim({ claim, contender: later, liveClaimers }), {
+    action: 'release_and_reselect_or_exit',
+    winner_session_issue: 101,
+    target_writes_allowed: false,
+  });
+
+  const reselection = selectBoundedWork({
+    handoffs: [],
+    messages: [],
+    issues: [
+      executableIssue(claim, { occupied_by_live_winner: true }),
+      executableIssue('netkeep80/alpha#2'),
+    ],
+  });
+  assert.equal(reselection.candidate.ref, 'netkeep80/alpha#2');
+});
+
+test('anonymous scheduled-worker bootstrap is one parameter-free prompt', async () => {
+  const text = await readFile(new URL('../SCHEDULED_WORKERS.md', import.meta.url), 'utf8');
+  assert.doesNotMatch(text, /WORKER_SLOT|worker_slot/);
+  assert.match(text, /fresh anonymous worker/i);
+  assert.match(text, /after Session creation[\s\S]*refresh[\s\S]*claim/i);
+  assert.match(text, /no executable work[\s\S]*zero repository changes[\s\S]*no idle Session/i);
+  assert.match(text, /roadmap Role #49/i);
 });
 
 test('obvious cleanup observation without an explicit work item cannot create work', () => {

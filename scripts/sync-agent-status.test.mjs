@@ -46,7 +46,7 @@ const roleIssue = {
 
 const terminalSessionIssue = {
   number: 70,
-  state: 'open',
+  state: 'closed',
   html_url: 'https://github.com/netkeep80/roadmap/issues/70',
   created_at: '2026-08-24T09:10:00Z',
   updated_at: '2026-08-24T09:20:00Z',
@@ -64,7 +64,6 @@ const terminalSessionIssue = {
 const closedHistoricalSessionIssue = {
   ...terminalSessionIssue,
   number: 71,
-  state: 'closed',
   html_url: 'https://github.com/netkeep80/roadmap/issues/71',
 };
 
@@ -75,7 +74,8 @@ test('terminal Session marked comments are still validated fail-closed', async (
       registry,
       workerPolicy,
       repositories,
-      issues: [roleIssue, terminalSessionIssue],
+      issues: [roleIssue],
+      historicalIssues: [roleIssue, terminalSessionIssue],
       checkedAt: '2026-08-24T12:00:00Z',
       listComments: async () => {
         commentReads += 1;
@@ -100,12 +100,13 @@ test('terminal Session marked comments are still validated fail-closed', async (
   assert.equal(commentReads, 1);
 });
 
-test('valid terminal Checkpoint history is validated but terminal Session is not projected active', async () => {
+test('valid terminal Checkpoint history is validated but closed Session is not projected active', async () => {
   const snapshot = await buildLiveAgentSnapshot({
     registry,
     workerPolicy,
     repositories,
-    issues: [roleIssue, terminalSessionIssue],
+    issues: [roleIssue],
+    historicalIssues: [roleIssue, terminalSessionIssue],
     checkedAt: '2026-08-24T12:00:00Z',
     listComments: async () => [{
       id: 1000,

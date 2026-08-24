@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { validateRoleCoverage, validateSession } from './agent-protocol.mjs';
-import { buildAgentSnapshot } from './agent-status.mjs';
+import { validateMessage, validateRoleCoverage, validateSession } from './agent-protocol.mjs';
+import { buildAgentSnapshot, renderAgentStatus } from './agent-status.mjs';
 
 const block = (value) => `before\n<!-- roadmap-agent:start -->\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\`\n<!-- roadmap-agent:end -->\nafter`;
 
@@ -44,13 +44,29 @@ function sessionData(overrides = {}) {
   };
 }
 
-function sessionIssue(data, number = 100) {
+function sessionIssue(data, number = 100, issueState = 'open') {
   return {
     number,
-    state: 'open',
+    state: issueState,
     created_at: '2026-08-24T10:00:00Z',
     updated_at: '2026-08-24T10:01:00Z',
     body: block(data),
+  };
+}
+
+function messageIssue(protocolState, issueState) {
+  return {
+    number: 200,
+    state: issueState,
+    body: block({
+      protocol: 'roadmap-agent-message/v1',
+      from_role_issue: 10,
+      to_role_issues: [10],
+      kind: 'coordination',
+      requires_ack: false,
+      state: protocolState,
+      refs: ['netkeep80/alpha#7'],
+    }),
   };
 }
 
@@ -67,29 +83,17 @@ test('validateSession rejects claims on handoff sessions', () => {
   );
 });
 
-test('scheduled Session accepts a positive integer worker_slot as observability metadata', () => {
+test('historical worker_slot remains parseable but has no generated operational surface', () => {
   const coverage = validateRoleCoverage(['alpha'], ['alpha'], [role]);
-  const data = validateSession(sessionIssue(sessionData({ worker_slot: 7 })), coverage.roleMap);
-  assert.equal(data.worker_slot, 7);
-});
+  const parsed = validateSession(sessionIssue(sessionData({ worker_slot: 7 })), coverage.roleMap);
+  assert.equal(parsed.worker_slot, 7);
 
-test('worker_slot rejects values that are not positive integers', () => {
-  const coverage = validateRoleCoverage(['alpha'], ['alpha'], [role]);
-  for (const workerSlot of [0, -1, 1.5, '1']) {
-    assert.throws(
-      () => validateSession(sessionIssue(sessionData({ worker_slot: workerSlot })), coverage.roleMap),
-      /worker_slot|positive integer/i,
-    );
-  }
-});
-
-test('generated Session status exposes worker_slot without changing Role or claim authority', () => {
   const session = {
     number: 101,
     html_url: 'https://github.com/netkeep80/roadmap/issues/101',
     created_at: '2026-08-24T10:00:00Z',
     updated_at: '2026-08-24T10:01:00Z',
-    data: sessionData({ worker_slot: 7 }),
+    data: parsed,
   };
   const snapshot = buildAgentSnapshot({
     checkedAt: '2026-08-24T10:02:00Z',
@@ -98,6 +102,44 @@ test('generated Session status exposes worker_slot without changing Role or clai
     messages: [],
     workerPolicy,
   });
-  assert.equal(snapshot.active_sessions[0].worker_slot, 7);
-  assert.equal(snapshot.active_sessions[0].role_issue, 10);
+
+  assert.equal('worker_slot' in snapshot.active_sessions[0], false);
+  const markdown = renderAgentStatus(snapshot);
+  assert.doesNotMatch(markdown, /worker[_ ]slot/i);
+});
+
+test('Session protocol state must match GitHub issue lifecycle', () => {
+  const coverage = validateRoleCoverage(['alpha'], ['alpha'], [role]);
+
+  assert.doesNotThrow(() => validateSession(sessionIssue(sessionData({ state: 'completed' }), 101, 'closed'), coverage.roleMap));
+  assert.doesNotThrow(() => validateSession(sessionIssue(sessionData({ state: 'handoff' }), 102, 'open'), coverage.roleMap));
+
+  assert.throws(
+    () => validateSession(sessionIssue(sessionData({ state: 'completed' }), 103, 'open'), coverage.roleMap),
+    /terminal|closed|lifecycle/i,
+  );
+  assert.throws(
+    () => validateSession(sessionIssue(sessionData({ state: 'working' }), 104, 'closed'), coverage.roleMap),
+    /active|open|lifecycle/i,
+  );
+  assert.throws(
+    () => validateSession(sessionIssue(sessionData({ state: 'handoff' }), 105, 'closed'), coverage.roleMap),
+    /handoff|open|lifecycle/i,
+  );
+});
+
+test('resolved Messages close while unresolved Messages stay open', () => {
+  const coverage = validateRoleCoverage(['alpha'], ['alpha'], [role]);
+
+  assert.doesNotThrow(() => validateMessage(messageIssue('resolved', 'closed'), coverage.roleMap));
+  assert.doesNotThrow(() => validateMessage(messageIssue('acknowledged', 'open'), coverage.roleMap));
+
+  assert.throws(
+    () => validateMessage(messageIssue('resolved', 'open'), coverage.roleMap),
+    /resolved|closed|lifecycle/i,
+  );
+  assert.throws(
+    () => validateMessage(messageIssue('open', 'closed'), coverage.roleMap),
+    /unresolved|open|lifecycle/i,
+  );
 });
