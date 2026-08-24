@@ -109,6 +109,41 @@ function validatePublicIssueReference(ref, publicRepositories, field, requiredRe
   return parsed;
 }
 
+function validateBranchName(name, field) {
+  if (typeof name !== 'string' || !name.trim()) fail(`${field} branch name must be a non-empty string`);
+  if (name !== name.trim() || name.startsWith('refs/heads/') || name.startsWith('/') || name.endsWith('/')) {
+    fail(`${field} branch name must be a canonical branch name, not a ref`);
+  }
+  if (name.includes('//') || name.includes('..') || name.includes('@{') || /[\x00-\x20\x7f~^:?*\[\\]/.test(name)) {
+    fail(`${field} branch name is not a valid GitHub branch name`);
+  }
+  for (const component of name.split('/')) {
+    if (!component || component.startsWith('.') || component.endsWith('.') || component.endsWith('.lock')) {
+      fail(`${field} branch name is not a valid GitHub branch name`);
+    }
+  }
+  return name;
+}
+
+function validateCurrentBranch(value, publicRepositories, sessionRepository, field) {
+  if (value === null) return null;
+  if (!value || Array.isArray(value) || typeof value !== 'object') fail(`${field} must be null or a branch object`);
+  const repository = parseRepository(value.repository);
+  if (!publicRepositories.has(repository)) {
+    fail(`${field} repository ${value.repository} does not resolve to a registered public repository`);
+  }
+  if (repository !== sessionRepository) {
+    fail(`${field} repository ${value.repository} must match Session repository ${OWNER}/${sessionRepository}`);
+  }
+  const name = validateBranchName(value.name, field);
+  return { repository: value.repository, name };
+}
+
+function sameCurrentBranch(left, right) {
+  if (left === null || right === null) return left === right;
+  return left.repository === right.repository && left.name === right.name;
+}
+
 function validateCheckpointEvidenceReference(ref, publicRepositories, sessionRepository) {
   if (typeof ref !== 'string') fail('checkpoint refs entries must be strings');
   if (ref.startsWith('commit:')) {
@@ -246,6 +281,13 @@ export function validateSession(issue, roleMap) {
     fail('handoff session cannot retain claims');
   }
 
+  if (Object.hasOwn(data, 'current_branch')) {
+    data.current_branch = validateCurrentBranch(data.current_branch, publicRepositories, repository, 'session current_branch');
+    if (TERMINAL_SESSION_STATES.has(data.state) && data.current_branch !== null) {
+      fail(`terminal session state ${data.state} cannot retain current_branch ownership`);
+    }
+  }
+
   if (data.current_pr !== null) {
     validatePublicIssueReference(data.current_pr, publicRepositories, 'current_pr', repository);
   }
@@ -306,6 +348,25 @@ export function validateCheckpoint(comment, roleMap, sessionData) {
   for (const ref of refs) validateCheckpointEvidenceReference(ref, publicRepositories, sessionRepository);
   for (const blocker of blockers) validatePublicIssueReference(blocker, publicRepositories, 'checkpoint blocker');
   for (const message of messages) validatePublicIssueReference(message, publicRepositories, 'checkpoint message');
+
+  const sessionHasCurrentBranchField = Object.hasOwn(sessionData, 'current_branch');
+  const sessionCurrentBranch = sessionHasCurrentBranchField ? sessionData.current_branch : undefined;
+  if (sessionCurrentBranch !== undefined && sessionCurrentBranch !== null) {
+    if (!Object.hasOwn(data, 'current_branch')) {
+      fail('checkpoint current_branch is required while Session owns a branch');
+    }
+    const checkpointBranch = validateCurrentBranch(data.current_branch, publicRepositories, sessionRepository, 'checkpoint current_branch');
+    if (!sameCurrentBranch(checkpointBranch, sessionCurrentBranch)) {
+      fail('checkpoint current_branch must match current Session branch ownership');
+    }
+    data.current_branch = checkpointBranch;
+  } else if (Object.hasOwn(data, 'current_branch')) {
+    const checkpointBranch = validateCurrentBranch(data.current_branch, publicRepositories, sessionRepository, 'checkpoint current_branch');
+    if (checkpointBranch !== null && !TERMINAL_SESSION_STATES.has(sessionData.state)) {
+      fail('checkpoint current_branch cannot introduce branch ownership absent from an active Session');
+    }
+    data.current_branch = checkpointBranch;
+  }
 
   return { ...data, completed, refs, blockers, next, messages };
 }

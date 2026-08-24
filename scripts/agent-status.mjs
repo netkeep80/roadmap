@@ -2,6 +2,7 @@ import { compareClaimPriority } from './agent-protocol.mjs';
 import { classifySessionLease, validateWorkerPolicy } from './worker-runtime.mjs';
 
 const LEASED_SESSION_STATES = new Set(['starting', 'working', 'waiting', 'blocked']);
+const TERMINAL_SESSION_STATES = new Set(['completed', 'abandoned']);
 const BLOCKING_MESSAGE_KINDS = new Set(['blocker', 'dependency-broken']);
 
 function issueUrl(number) {
@@ -27,13 +28,17 @@ function latestCheckpoint(entries = []) {
 
 function safeCheckpointProjection(checkpoint) {
   if (!checkpoint) return null;
-  return {
+  const projected = {
     created_at: checkpoint.created_at,
     state: checkpoint.data.state,
     refs: [...checkpoint.data.refs],
     blockers: [...checkpoint.data.blockers],
     messages: [...checkpoint.data.messages],
   };
+  if (Object.hasOwn(checkpoint.data, 'current_branch')) {
+    projected.current_branch = checkpoint.data.current_branch;
+  }
+  return projected;
 }
 
 function roleLookup(roles) {
@@ -49,6 +54,7 @@ function projectSession(session, checkpointsBySession, lease = null) {
     repository: session.data.repository,
     state: session.data.state,
     claims: [...session.data.claims],
+    current_branch: session.data.current_branch ?? null,
     current_pr: session.data.current_pr,
     blocked_by: [...session.data.blocked_by],
     created_at: session.created_at ?? null,
@@ -82,9 +88,83 @@ function normalizePrDiagnostics(prDiagnostics = {}) {
   };
 }
 
-export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, checkpointsBySession = {}, workerPolicy, prDiagnostics = {} }) {
-  if (!Array.isArray(roles) || !Array.isArray(sessions) || !Array.isArray(messages)) {
-    throw new Error('agent status projection requires role/session/message arrays');
+function branchKey(branch) {
+  if (!branch || typeof branch.repository !== 'string' || typeof branch.name !== 'string') return null;
+  return `${branch.repository}\u0000${branch.name}`;
+}
+
+function normalizeBranchFacts(branchFactsByRepository = {}) {
+  const normalized = new Map();
+  for (const [repository, facts] of Object.entries(branchFactsByRepository ?? {})) {
+    if (!Array.isArray(facts)) continue;
+    const byName = new Map();
+    for (const fact of facts) {
+      if (!fact || typeof fact.name !== 'string' || !fact.name) continue;
+      byName.set(fact.name, {
+        name: fact.name,
+        sha: typeof fact.sha === 'string' ? fact.sha : null,
+      });
+    }
+    normalized.set(repository, byName);
+  }
+  return normalized;
+}
+
+function computeBranchDrift({ sessions, historicalSessions, checkpointsBySession, branchFactsByRepository }) {
+  const liveOwnership = new Set();
+  for (const session of sessions) {
+    if (TERMINAL_SESSION_STATES.has(session?.data?.state)) continue;
+    const key = branchKey(session?.data?.current_branch);
+    if (key) liveOwnership.add(key);
+  }
+
+  const facts = normalizeBranchFacts(branchFactsByRepository);
+  const driftByKey = new Map();
+  for (const session of historicalSessions) {
+    if (!TERMINAL_SESSION_STATES.has(session?.data?.state)) continue;
+    const candidates = new Map();
+    for (const checkpoint of checkpointsBySession[session.number] ?? []) {
+      const branch = checkpoint?.data?.current_branch;
+      const key = branchKey(branch);
+      if (key) candidates.set(key, branch);
+    }
+
+    for (const [key, branch] of candidates) {
+      if (liveOwnership.has(key)) continue;
+      const fact = facts.get(branch.repository)?.get(branch.name);
+      if (!fact) continue;
+      const existing = driftByKey.get(key);
+      if (existing && existing.terminal_session_issue > session.number) continue;
+      driftByKey.set(key, {
+        repository: branch.repository,
+        branch: branch.name,
+        sha: fact.sha,
+        terminal_session_issue: session.number,
+        state: 'terminal-branch-residue',
+      });
+    }
+  }
+
+  return [...driftByKey.values()].sort((left, right) => (
+    left.repository.localeCompare(right.repository)
+    || left.branch.localeCompare(right.branch)
+    || left.terminal_session_issue - right.terminal_session_issue
+  ));
+}
+
+export function buildAgentSnapshot({
+  checkedAt,
+  roles,
+  sessions,
+  historicalSessions = sessions,
+  messages,
+  checkpointsBySession = {},
+  workerPolicy,
+  prDiagnostics = {},
+  branchFactsByRepository = {},
+}) {
+  if (!Array.isArray(roles) || !Array.isArray(sessions) || !Array.isArray(historicalSessions) || !Array.isArray(messages)) {
+    throw new Error('agent status projection requires role/session/historicalSession/message arrays');
   }
   const checkedPolicy = validateWorkerPolicy(workerPolicy);
   const checkedPrDiagnostics = normalizePrDiagnostics(prDiagnostics);
@@ -184,6 +264,13 @@ export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, check
     });
   }
 
+  const branchDrift = computeBranchDrift({
+    sessions,
+    historicalSessions,
+    checkpointsBySession,
+    branchFactsByRepository,
+  });
+
   return {
     schema_version: 1,
     checked_at: checkedAt,
@@ -198,6 +285,7 @@ export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, check
     claim_collision_count: claims.filter((claim) => claim.conflict).length,
     duplicate_work_item_pr_count: checkedPrDiagnostics.duplicate_work_items.length,
     unreconciled_supersession_count: checkedPrDiagnostics.unreconciled_supersessions.length,
+    branch_drift_count: branchDrift.length,
     roles: sortedRoles,
     active_sessions: activeSessions,
     stale_candidate_sessions: staleCandidateSessions,
@@ -207,6 +295,7 @@ export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, check
     unresolved_messages: unresolvedMessages,
     blockers,
     pr_diagnostics: checkedPrDiagnostics,
+    branch_drift: branchDrift,
   };
 }
 
@@ -227,9 +316,9 @@ function renderSessionTable(lines, sessions, emptyText) {
     lines.push(emptyText);
     return;
   }
-  lines.push('| Session | Repository | State | Claims | Current PR | Last activity |', '|---|---|---|---|---|---|');
+  lines.push('| Session | Repository | State | Claims | Current branch | Current PR | Last activity |', '|---|---|---|---|---|---|---|');
   for (const session of sessions) {
-    lines.push(`| [#${session.issue_number}](${session.url}) | \`${esc(session.repository)}\` | \`${session.state}\` | ${session.claims.map((claim) => `\`${esc(claim)}\``).join(', ') || '—'} | ${session.current_pr ? `\`${esc(session.current_pr)}\`` : '—'} | ${session.last_activity_at ?? '—'} |`);
+    lines.push(`| [#${session.issue_number}](${session.url}) | \`${esc(session.repository)}\` | \`${session.state}\` | ${session.claims.map((claim) => `\`${esc(claim)}\``).join(', ') || '—'} | ${session.current_branch ? `\`${esc(session.current_branch.name)}\`` : '—'} | ${session.current_pr ? `\`${esc(session.current_pr)}\`` : '—'} | ${session.last_activity_at ?? '—'} |`);
   }
 }
 
@@ -249,6 +338,7 @@ export function renderAgentStatus(snapshot) {
     `- Claim collisions: **${snapshot.claim_collision_count}**`,
     `- Duplicate work-item PRs: **${snapshot.duplicate_work_item_pr_count ?? 0}**`,
     `- Unreconciled supersessions: **${snapshot.unreconciled_supersession_count ?? 0}**`,
+    `- Branch drift: **${snapshot.branch_drift_count ?? 0}**`,
     `- Unresolved messages: **${snapshot.unresolved_message_count}**`,
     `- Blockers: **${snapshot.blockers.length}**`,
     '',
@@ -312,6 +402,16 @@ export function renderAgentStatus(snapshot) {
     }
   }
 
+  lines.push('', '## Branch drift', '');
+  if (!(snapshot.branch_drift ?? []).length) {
+    lines.push('_No terminal branch ownership residue detected._');
+  } else {
+    lines.push('| Repository | Branch | SHA | Terminal Session | State |', '|---|---|---|---|---|');
+    for (const entry of snapshot.branch_drift) {
+      lines.push(`| \`${esc(entry.repository)}\` | \`${esc(entry.branch)}\` | \`${esc(entry.sha ?? 'unknown')}\` | ${roadmapIssueRef(entry.terminal_session_issue)} | \`${entry.state}\` |`);
+    }
+  }
+
   lines.push('', '## Unresolved messages', '');
   if (!snapshot.unresolved_messages.length) {
     lines.push('_No unresolved protocol messages._');
@@ -335,6 +435,6 @@ export function renderAgentStatus(snapshot) {
     }
   }
 
-  lines.push('', '## Reading rule', '', '- This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.', '- A `STALE_CANDIDATE` is not LIVE and its retained claims require complete GitHub revalidation before recovery; they are not automatically free.', '- A `handoff` is resumable context, not a live executor and not a claim holder.', '- Duplicate work-item PR diagnostics use explicit PR work-item declarations; shared changed files alone are not treated as a collision.', '- An unreconciled supersession means a replacement PR explicitly names another PR as superseded while both remain open.', '- Checkpoint free text remains only in the original Session comment and is not duplicated here.', '- Agents must re-read GitHub before every write or lifecycle transition.', '');
+  lines.push('', '## Reading rule', '', '- This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.', '- A `STALE_CANDIDATE` is not LIVE and its retained claims require complete GitHub revalidation before recovery; they are not automatically free.', '- A `handoff` is resumable context, not a live executor and not a claim holder.', '- `current_branch` is recovery/ownership metadata only; Role + winning Claim remain authority.', '- Branch drift is a reconciliation diagnostic, never deletion authority by itself.', '- Duplicate work-item PR diagnostics use explicit PR work-item declarations; shared changed files alone are not treated as a collision.', '- An unreconciled supersession means a replacement PR explicitly names another PR as superseded while both remain open.', '- Checkpoint free text remains only in the original Session comment and is not duplicated here.', '- Agents must re-read GitHub before every write or lifecycle transition.', '');
   return lines.join('\n');
 }
