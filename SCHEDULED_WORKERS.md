@@ -16,7 +16,7 @@ Every invocation starts as a **fresh anonymous worker**. No per-task parameter, 
 
 ## Provisioning
 
-Create any number of Scheduled Tasks with the **same prompt**. Concurrency is bounded only by how many tasks may run at once; coordination happens through GitHub Sessions, Claims, Checkpoints, Messages, open-PR reconciliation, leases, and repository-local CI/repo-guard rules.
+Create any number of Scheduled Tasks with the **same prompt**. Concurrency is bounded only by how many tasks may run at once; coordination happens through GitHub Sessions, Claims, Checkpoints, Messages, open-PR reconciliation, branch reconciliation, leases, and repository-local CI/repo-guard rules.
 
 ## Copyable prompt
 
@@ -39,13 +39,21 @@ Recover STALE_CANDIDATE work only through the documented complete GitHub revalid
 
 If no executable work exists, make zero repository changes, create no idle Session, and terminate this run.
 
-When work exists, create a unique Agent Session issue for this execution. After Session creation, refresh the complete competing LIVE Session/Claim set before any target-repository write. Proceed only if this Session is the deterministic winning claimant. If it loses, perform zero target-repository writes, transition the losing Session to terminal state, close it, then bounded-reselect another explicit candidate or exit.
+When work exists, create a unique Agent Session issue for this execution. New Sessions carry explicit `current_branch: null` until branch ownership is selected. After Session creation, refresh the complete competing LIVE Session/Claim set before any target-repository write. Proceed only if this Session is the deterministic winning claimant. If it loses, perform zero target-repository writes, create no target branch, transition the losing Session to terminal state, close it, then bounded-reselect another explicit candidate or exit.
 
 After winning the claim and before any target-repository code write, branch creation, or new PR creation, refresh all open PRs in the selected target repository. If exactly one open PR explicitly implements/closes the same work item, reuse that PR instead of creating another. If multiple open PRs explicitly implement/close the same work item, perform zero target code writes until the duplicate PR state is reconciled to one canonical open PR. A replacement PR must explicitly declare `Supersedes: #N` and the superseded PR must be closed/reconciled; do not leave both open. Shared changed-file overlap alone does not serialize independent work.
 
+After PR reconciliation, perform branch reconciliation before any target code write. Refresh the complete target branch inventory, open PR heads/bases and stacked topology, exact default-branch SHA, and durable Session/Checkpoint `current_branch` ownership. No open PR != dead branch: a branch without a PR may contain the only useful unfinished work.
+
+If this winning Session already has a non-null `current_branch`, revalidate that exact same-repository branch and reuse it when safe, including an owned pre-PR branch. Do not invent `branch-v2`, `branch-v3`, `tmp-new`, or another branch merely because the owned branch has no PR.
+
+If no branch is yet owned, choose the exact intended branch, persist `current_branch` in the Session (and mirror it in subsequent Checkpoints) BEFORE create or push, then refresh GitHub and confirm the durable ownership write. Only after that refresh may the winning worker create or reuse the exact branch. `current_branch` is recovery metadata, not authority; Role + winning Claim remain authority.
+
+Never delete or abandon a branch merely because it is old, behind, oddly named, has no PR, overlaps another change, or is an ancestor of another commit. Preserve default/persistent configured branches, open PR heads, and LIVE/resumable owned branches. A terminal Session with an unexplained surviving ordinary working branch is reconciliation drift, not automatic deletion authority.
+
 Before every repository write or lifecycle transition, refresh exact GitHub state and obey the target repository's actual CI/repo-guard policy.
 
-Before finishing meaningful work, leave a durable Checkpoint. If work is complete or abandoned, clear claims and close the Session issue. Keep a handoff issue open only while it is genuinely resumable; when a successor consumes it, complete/close the predecessor.
+Before finishing meaningful work, leave a durable Checkpoint. While the Session owns a branch, the Checkpoint must carry the same `current_branch`. If work is complete or abandoned, clear claims and clear `current_branch` only once the Session no longer owns/resumes that branch, then close the Session issue. Keep a handoff issue open only while it is genuinely resumable; a handoff may retain `current_branch` when the exact useful branch is part of the handoff. When a successor consumes it, complete/close the predecessor.
 ```
 
 ## Bootstrap and work selection
@@ -58,11 +66,12 @@ roadmap main via GitHub API
 → data/worker-policy.json via Contents API
 → portfolio/status/execution via Contents + Issues API
 → permanent Roles via Issues API
-→ Sessions + validated Checkpoints via Issues API
+→ Sessions + validated Checkpoints, including current_branch, via Issues API
 → LIVE claims + stale claims pending recovery
 → unresolved Messages
 → candidate local GitHub facts
 → open target PRs before target mutation/integration work
+→ complete target branch inventory before target mutation
 ```
 
 Permanent Agent Status Issue #103 may be used as a quick human-oriented dashboard, but workers must not use it as coordination authority or as a substitute for live issue reconstruction.
@@ -101,7 +110,9 @@ roadmap maintenance trigger
 → Session
 → claim exact roadmap issue
 → refresh competing LIVE claimers
-→ one winner may checkout/mutate roadmap as the selected target repository
+→ one winner performs PR reconciliation
+→ branch reconciliation + durable current_branch
+→ only then may the winner mutate roadmap as target repository
 ```
 
 Different roadmap issues may be maintained in parallel. Two workers targeting the same roadmap issue are resolved by the ordinary post-Session collision gate.
@@ -118,9 +129,11 @@ Two anonymous invocations may race and both select the same apparently-unclaimed
 create Session + claim
 → refresh all competing LIVE Sessions claiming the same item
 → order by Session GitHub created_at, then issue number
-→ winner refreshes open target PRs for the work item
-→ winner may mutate target repository only after PR reconciliation
-→ loser may not mutate target repository
+→ winner refreshes/reconciles open target PRs for the work item
+→ winner refreshes/reconciles branches
+→ winner persists current_branch before create/push
+→ winner may mutate target repository only after durable branch ownership
+→ loser may not mutate target repository or create a branch
 → loser clears claim, becomes abandoned, closes issue
 → loser reselects or exits
 ```
@@ -142,7 +155,7 @@ Claims coordinate work selection; open PRs are integration/occupancy evidence. T
 
 ```text
 0 open PRs explicitly bound to selected work item
-  => new PR may be created when implementation reaches that point
+  => continue to branch reconciliation
 
 1 open PR explicitly bound to selected work item
   => reuse/resume that PR; do not create a second one
@@ -157,6 +170,32 @@ A semantic replacement uses an explicit `Supersedes: #N` declaration and closes/
 
 Changed-file overlap by itself is diagnostic only. Independent or stacked work may legitimately touch a shared public API, generated file, manifest, or other common surface. When different work items overlap semantically and current GitHub evidence is insufficient to prove safe parallelism, the worker must fail closed or coordinate durably rather than invent a repository-wide lock.
 
+## Branch reconciliation gate
+
+Branch reconciliation runs after Claim and PR reconciliation and before target mutation.
+
+```text
+LIVE/resumable Session + current_branch + exact branch exists
+  => preserve/revalidate/reuse exact branch
+
+winning Session + current_branch + exact branch absent
+  => refresh facts, then create only that exact branch
+
+winning Session + no current_branch
+  => choose intended name
+  => persist current_branch BEFORE create or push
+  => refresh GitHub
+  => only then create/reuse
+
+terminal Session + unexplained ordinary branch still present
+  => branch drift requiring reconciliation
+  => never automatic deletion authority
+```
+
+No open PR != dead branch. A useful pre-PR branch may be the only unfinished implementation. Never create a replacement suffix branch just to avoid inspecting an existing owned branch.
+
+Default branch, active open-PR heads, LIVE/resumable owned branches, and branches proven persistent by actual release/Pages configuration are preserved. Fork PR heads do not grant authority to mutate local base-repository refs. Age, name, behind count, changed-file overlap, ancestry, and absence of a PR are diagnostic facts only, never deletion authority.
+
 ## Lease and stale recovery
 
 Machine policy lives in `data/worker-policy.json` and is read through GitHub Contents API during bootstrap.
@@ -165,6 +204,7 @@ Machine policy lives in `data/worker-policy.json` and is read through GitHub Con
 lease_seconds = 7200
 heartbeat_target_seconds = 3600
 pr_reconciliation_required = true
+branch_reconciliation_required = true
 ```
 
 Authoritative heartbeat:
@@ -183,7 +223,7 @@ handoff                                           => RESUMABLE_HANDOFF
 completed / abandoned                             => TERMINAL
 ```
 
-A stale retained claim is **not free**. Recovery requires complete current-GitHub revalidation of target main, open issues/PRs, current PR head/base, actual CI/repo-guard gates, LIVE winners, Messages, and portfolio/dependency state. Only then may the stale Session be abandoned and, if still executable and unoccupied, replaced by a new Session.
+A stale retained claim or branch is **not free**. Recovery requires complete current-GitHub revalidation of target main, complete branch inventory, open issues/PRs, current `current_branch` and exact SHA if present, current PR head/base, stacked topology, actual CI/repo-guard gates, LIVE winners, Messages, and portfolio/dependency state. Only then may the stale Session be abandoned and, if still executable and unoccupied, replaced by a new Session.
 
 ## Integration and privacy boundaries
 
@@ -200,11 +240,15 @@ anonymous invocations read roadmap control plane via GitHub API only
         ↓
 select explicit executable target
         ↓
+Session + deterministic Claim winner
+        ↓
+PR reconciliation → branch reconciliation → durable current_branch
+        ↓
 checkout only that target repository when required
         ↓
 normal repository work + bounded Role #49 roadmap maintenance
         ↓
-Sessions/Claims/Checkpoints + PR reconciliation coordinate concurrency
+Sessions/Claims/Checkpoints + PR/branch reconciliation coordinate concurrency
         ↓
 open roadmap state reflects current work, closed issues retain history
 ```
