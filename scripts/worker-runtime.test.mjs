@@ -19,6 +19,7 @@ const rawPolicy = {
   no_work_action: 'exit',
   allow_speculative_work: false,
   coordinator_requires_declared_trigger: true,
+  pr_reconciliation_required: true,
 };
 
 const policy = () => validateWorkerPolicy(structuredClone(rawPolicy));
@@ -52,6 +53,7 @@ test('validateWorkerPolicy accepts exact bounded public scheduled-worker policy'
 test('validateWorkerPolicy rejects speculative work and non-exit idle policy', () => {
   assert.throws(() => validateWorkerPolicy({ ...rawPolicy, allow_speculative_work: true }), /speculative|false/i);
   assert.throws(() => validateWorkerPolicy({ ...rawPolicy, no_work_action: 'invent' }), /no_work|exit/i);
+  assert.throws(() => validateWorkerPolicy({ ...rawPolicy, pr_reconciliation_required: false }), /pr_reconciliation/i);
 });
 
 test('latest valid checkpoint server timestamp controls LIVE versus STALE_CANDIDATE', () => {
@@ -185,6 +187,8 @@ test('anonymous scheduled-worker bootstrap is one parameter-free API-only contro
   assert.match(text, /clone\/checkout only the selected target repository/i);
   assert.match(text, /Only if Role #49[\s\S]*roadmap[\s\S]*target repository[\s\S]*cloned\/checked out/i);
   assert.match(text, /after Session creation[\s\S]*refresh[\s\S]*claim/i);
+  assert.match(text, /open PR[\s\S]*same work item[\s\S]*reuse/i);
+  assert.match(text, /multiple open PR[\s\S]*same work item[\s\S]*zero target/i);
   assert.match(text, /no executable work[\s\S]*zero repository changes[\s\S]*no idle Session/i);
   assert.match(text, /roadmap Role #49/i);
 });
