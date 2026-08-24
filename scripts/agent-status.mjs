@@ -20,6 +20,17 @@ function latestCheckpoint(entries = []) {
   return valid.at(-1) ?? null;
 }
 
+function safeCheckpointProjection(checkpoint) {
+  if (!checkpoint) return null;
+  return {
+    created_at: checkpoint.created_at,
+    state: checkpoint.data.state,
+    refs: [...checkpoint.data.refs],
+    blockers: [...checkpoint.data.blockers],
+    messages: [...checkpoint.data.messages],
+  };
+}
+
 function roleLookup(roles) {
   return new Map(roles.map((role) => [role.issue_number, role]));
 }
@@ -55,9 +66,7 @@ export function buildAgentSnapshot({ checkedAt, roles, sessions, messages, check
         created_at: session.created_at ?? null,
         updated_at: session.updated_at ?? null,
         last_activity_at: maxTimestamp(session.updated_at, checkpoint?.created_at),
-        latest_checkpoint: checkpoint
-          ? { created_at: checkpoint.created_at, ...checkpoint.data }
-          : null,
+        latest_checkpoint: safeCheckpointProjection(checkpoint),
       };
     })
     .sort((a, b) => a.issue_number - b.issue_number);
@@ -142,7 +151,7 @@ function esc(value) {
   return String(value ?? '').replaceAll('|', '\\|').replace(/\s+/g, ' ').trim();
 }
 
-function roleRef(issue) {
+function roadmapIssueRef(issue) {
   return `[#${issue}](${issueUrl(issue)})`;
 }
 
@@ -187,7 +196,7 @@ export function renderAgentStatus(snapshot) {
     lines.push('| Claim | Winner | Contenders | State |', '|---|---|---|---|');
     for (const claim of snapshot.claims) {
       const state = claim.conflict ? '⚠️ claim collision' : 'active';
-      lines.push(`| \`${esc(claim.ref)}\` | ${roleRef(claim.winner_session_issue)} | ${claim.contenders.map((issue) => roleRef(issue)).join(', ')} | ${state} |`);
+      lines.push(`| \`${esc(claim.ref)}\` | ${roadmapIssueRef(claim.winner_session_issue)} | ${claim.contenders.map((issue) => roadmapIssueRef(issue)).join(', ')} | ${state} |`);
     }
   }
 
@@ -197,7 +206,7 @@ export function renderAgentStatus(snapshot) {
   } else {
     lines.push('| Message | Kind | From | To | State | ACK |', '|---|---|---|---|---|---|');
     for (const message of snapshot.unresolved_messages) {
-      lines.push(`| [#${message.issue_number}](${message.url}) | \`${message.kind}\` | ${roleRef(message.from_role_issue)} | ${message.to_role_issues.map((issue) => roleRef(issue)).join(', ')} | \`${message.state}\` | ${message.requires_ack ? 'required' : 'no'} |`);
+      lines.push(`| [#${message.issue_number}](${message.url}) | \`${message.kind}\` | ${roadmapIssueRef(message.from_role_issue)} | ${message.to_role_issues.map((issue) => roadmapIssueRef(issue)).join(', ')} | \`${message.state}\` | ${message.requires_ack ? 'required' : 'no'} |`);
     }
   }
 
@@ -207,13 +216,13 @@ export function renderAgentStatus(snapshot) {
   } else {
     for (const blocker of snapshot.blockers) {
       if (blocker.source === 'session') {
-        lines.push(`- Session ${roleRef(blocker.session_issue)} blocked by \`${esc(blocker.ref)}\`.`);
+        lines.push(`- Session ${roadmapIssueRef(blocker.session_issue)} blocked by \`${esc(blocker.ref)}\`.`);
       } else {
-        lines.push(`- Message ${roleRef(blocker.message_issue)} is unresolved \`${blocker.kind}\`${blocker.refs.length ? `: ${blocker.refs.map((ref) => `\`${esc(ref)}\``).join(', ')}` : '.'}`);
+        lines.push(`- Message ${roadmapIssueRef(blocker.message_issue)} is unresolved \`${blocker.kind}\`${blocker.refs.length ? `: ${blocker.refs.map((ref) => `\`${esc(ref)}\``).join(', ')}` : '.'}`);
       }
     }
   }
 
-  lines.push('', '## Reading rule', '', '- This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.', '- Agents must re-read GitHub before every write or lifecycle transition.', '');
+  lines.push('', '## Reading rule', '', '- This snapshot is factual and disposable. It never replaces role/session/message Issues, local repository state, portfolio intent, CI, or repo-guard.', '- Checkpoint free text remains only in the original Session comment and is not duplicated here.', '- Agents must re-read GitHub before every write or lifecycle transition.', '');
   return lines.join('\n');
 }
