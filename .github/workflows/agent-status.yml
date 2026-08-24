@@ -15,6 +15,7 @@ on:
       - "scripts/agent-status.mjs"
       - "scripts/validate-agents.mjs"
       - "scripts/sync-agent-status.mjs"
+      - "scripts/agent-evidence-integrity.mjs"
       - ".github/workflows/agent-status.yml"
   issues:
     types: [opened, edited, closed, reopened]
@@ -60,6 +61,7 @@ jobs:
             scripts/agent-status.mjs
             scripts/validate-agents.mjs
             scripts/sync-agent-status.mjs
+            scripts/agent-evidence-integrity.mjs
             data/portfolio.json
             data/worker-policy.json
           )
@@ -71,6 +73,14 @@ jobs:
 
           echo "AGENT_STATUS_RUNTIME=${runtime}" >> "${GITHUB_ENV}"
 
+      - name: Validate live checkpoint commit evidence
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          cd "${AGENT_STATUS_RUNTIME}"
+          node scripts/agent-evidence-integrity.mjs --validate-live
+
       - name: Publish current worker state to permanent Issue
         shell: bash
         env:
@@ -79,3 +89,26 @@ jobs:
         run: |
           cd "${AGENT_STATUS_RUNTIME}"
           node scripts/sync-agent-status.mjs
+
+      - name: Publish fail-closed invalid status
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          checked_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          body="$(cat <<EOF
+          # Agent Control Plane Status
+
+          > **CONTROL PLANE INVALID — DO NOT USE THE PREVIOUS SNAPSHOT FOR WORK SELECTION.**
+
+          - Detected at: ${checked_at}
+          - Live protocol/evidence validation failed closed.
+          - Scheduled workers must not infer authority or executable work from the previous generated snapshot.
+          - Re-read GitHub after the control-plane defect is repaired and a fresh successful Agent Status run is observed.
+          - Diagnostic workflow: ${run_url}
+          EOF
+          )"
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/103" -f body="${body}"
