@@ -50,6 +50,13 @@ const terminalSessionIssue = {
   }),
 };
 
+const closedHistoricalSessionIssue = {
+  ...terminalSessionIssue,
+  number: 71,
+  state: 'closed',
+  html_url: 'https://github.com/netkeep80/roadmap/issues/71',
+};
+
 test('terminal Session marked comments are still validated fail-closed', async () => {
   let commentReads = 0;
   await assert.rejects(
@@ -104,4 +111,37 @@ test('valid terminal Checkpoint history is validated but terminal Session is not
   });
 
   assert.equal(snapshot.active_session_count, 0);
+});
+
+test('closed historical protocol Session comments are audited without resurrecting it into current projection', async () => {
+  let commentReads = 0;
+  await assert.rejects(
+    () => buildLiveAgentSnapshot({
+      registry,
+      repositories,
+      issues: [roleIssue],
+      historicalIssues: [roleIssue, closedHistoricalSessionIssue],
+      checkedAt: '2026-08-24T12:00:00Z',
+      listComments: async (_owner, _repository, issueNumber) => {
+        if (issueNumber !== 71) return [];
+        commentReads += 1;
+        return [{
+          id: 1001,
+          created_at: '2026-08-24T09:16:00Z',
+          updated_at: '2026-08-24T09:16:00Z',
+          body: block({
+            protocol: 'roadmap-agent-message/v1',
+            from_role_issue: 49,
+            to_role_issues: [49],
+            kind: 'info',
+            requires_ack: false,
+            state: 'open',
+            refs: ['netkeep80/roadmap#55'],
+          }),
+        }];
+      },
+    }),
+    /not a checkpoint|checkpoint/i,
+  );
+  assert.equal(commentReads, 1);
 });
