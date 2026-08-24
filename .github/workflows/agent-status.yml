@@ -73,13 +73,18 @@ jobs:
 
           echo "AGENT_STATUS_RUNTIME=${runtime}" >> "${GITHUB_ENV}"
 
-      - name: Validate live checkpoint commit evidence
+      - name: Validate changed checkpoint commit evidence
+        if: >-
+          ${{
+            github.event_name == 'issue_comment' &&
+            (github.event.action == 'created' || github.event.action == 'edited')
+          }}
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           cd "${AGENT_STATUS_RUNTIME}"
-          node scripts/agent-evidence-integrity.mjs --validate-live
+          node scripts/agent-evidence-integrity.mjs --validate-event
 
       - name: Publish current worker state to permanent Issue
         shell: bash
