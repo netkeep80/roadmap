@@ -346,3 +346,38 @@ test('review candidate fails closed when no current claimant resolver is supplie
     },
   }), /claim.*resolver|required.*claim|current claimant/i);
 });
+
+test('final acceptance rejects a claim-free handoff acceptance Session', async () => {
+  const event = acceptanceEvent();
+  event.issue.body = sessionBody({ phase: 'acceptance', state: 'handoff', claims: [] });
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event,
+    registry: REGISTRY,
+    ...acceptanceResolvers(),
+    resolveOpenControlIssues: async () => [event.issue],
+  }), /acceptance.*Claim|work_item Claim|winning Claim/i);
+});
+
+test('final acceptance rejects a later acceptance claimant when an earlier open claimant exists', async () => {
+  const event = acceptanceEvent();
+  const earlier = {
+    number: 899,
+    state: 'open',
+    created_at: '2026-08-24T20:19:00Z',
+    body: sessionBody({ phase: 'acceptance' }),
+  };
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event,
+    registry: REGISTRY,
+    ...acceptanceResolvers(),
+    resolveOpenControlIssues: async () => [earlier, event.issue],
+  }), /winning Claim|claim winner|earlier claimant/i);
+});
+
+test('final acceptance fails closed when no current claimant resolver is supplied', async () => {
+  await assert.rejects(() => validateCheckpointEventEvidence({
+    event: acceptanceEvent(),
+    registry: REGISTRY,
+    ...acceptanceResolvers(),
+  }), /claim.*resolver|required.*claim|current claimant/i);
+});
