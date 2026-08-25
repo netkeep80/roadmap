@@ -367,6 +367,7 @@ test('v2 final acceptance validates exact candidate tuple and target PR', async 
     resolveControlCommentProvenance: async () => ({
       databaseId: 7003,
       issueNumber: 900,
+      repository: 'netkeep80/roadmap',
       authorLogin: 'github-actions[bot]',
       editorLogin: null,
       lastEditedAt: null,
