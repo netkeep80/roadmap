@@ -201,6 +201,13 @@ function acceptanceResolvers({
       if (commentId === 7003) return attestationComment;
       throw new Error(`control comment #${commentId} not found`);
     },
+    resolveControlCommentProvenance: async () => ({
+      databaseId: 7003,
+      issueNumber: 900,
+      authorLogin: 'github-actions[bot]',
+      editorLogin: null,
+      lastEditedAt: null,
+    }),
   };
 }
 
