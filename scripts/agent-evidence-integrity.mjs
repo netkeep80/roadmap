@@ -158,6 +158,79 @@ async function defaultResolveControlComment(registry, issueNumber, commentId) {
   return { ...comment, issue_number: issueNumberFromUrl(comment?.issue_url) };
 }
 
+async function defaultResolveControlCommentProvenance(registry, comment) {
+  if (typeof comment?.node_id !== 'string' || !comment.node_id) {
+    fail('validation attestation GitHub node_id is required for edit provenance');
+  }
+  if (!process.env.GITHUB_TOKEN) fail('GITHUB_TOKEN is required for validation attestation edit provenance');
+
+  const query = `query ValidationAttestationProvenance($id: ID!) {
+    node(id: $id) {
+      __typename
+      ... on IssueComment {
+        id
+        databaseId
+        issue { number }
+        repository { nameWithOwner }
+        author { login }
+        editor { login }
+        lastEditedAt
+      }
+    }
+  }`;
+  const response = await fetch('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'netkeep80-roadmap-agent-control-plane',
+    },
+    body: JSON.stringify({ query, variables: { id: comment.node_id } }),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    fail(`validation attestation edit provenance GraphQL failed with HTTP ${response.status}: ${body.slice(0, 200)}`);
+  }
+  const payload = await response.json();
+  if (Array.isArray(payload?.errors) && payload.errors.length) {
+    fail(`validation attestation edit provenance GraphQL failed: ${payload.errors[0]?.message ?? 'unknown error'}`);
+  }
+  const node = payload?.data?.node;
+  if (!node || node.__typename !== 'IssueComment') fail('validation attestation edit provenance did not resolve an IssueComment');
+  return {
+    nodeId: node.id ?? null,
+    databaseId: Number(node.databaseId),
+    issueNumber: Number(node.issue?.number),
+    repository: node.repository?.nameWithOwner ?? null,
+    authorLogin: node.author?.login ?? null,
+    editorLogin: node.editor?.login ?? null,
+    lastEditedAt: node.lastEditedAt ?? null,
+  };
+}
+
+function assertUneditedValidationAttestationProvenance({ provenance, comment, candidateSession, registry }) {
+  if (!provenance || Array.isArray(provenance) || typeof provenance !== 'object') {
+    fail('validation attestation edit provenance is required');
+  }
+  const controlRepository = `${registry.owner}/${registry.control_repository ?? 'roadmap'}`;
+  if (!Number.isInteger(Number(provenance.databaseId)) || Number(provenance.databaseId) !== Number(comment.id)) {
+    fail('validation attestation edit provenance does not match exact comment id');
+  }
+  if (!Number.isInteger(Number(provenance.issueNumber)) || Number(provenance.issueNumber) !== Number(candidateSession)) {
+    fail('validation attestation edit provenance does not match candidate Session');
+  }
+  if (provenance.repository !== undefined && provenance.repository !== null && provenance.repository !== controlRepository) {
+    fail('validation attestation edit provenance does not match control repository');
+  }
+  if (provenance.authorLogin !== 'github-actions[bot]') {
+    fail('validation attestation edit provenance does not preserve github-actions[bot] author identity');
+  }
+  if (provenance.editorLogin !== null || provenance.lastEditedAt !== null) {
+    fail('validation attestation edit provenance shows the bot-authored attestation was edited after publication');
+  }
+}
+
 export function candidateCheckpointBodySha256(body) {
   if (typeof body !== 'string') fail('candidate checkpoint body must be a string');
   return createHash('sha256').update(body, 'utf8').digest('hex');
@@ -419,6 +492,7 @@ async function validateAcceptanceEvidence({
   resolvePullRequest,
   resolveControlIssue,
   resolveControlComment,
+  resolveControlCommentProvenance,
   resolveOpenControlIssues,
 }) {
   const acceptance = checkpoint.acceptance;
@@ -526,6 +600,25 @@ async function validateAcceptanceEvidence({
   if (attestationComment.user?.login !== 'github-actions[bot]' || attestationComment.user?.type !== 'Bot') {
     fail('validation attestation must be authored by the platform github-actions[bot] identity');
   }
+
+  if (typeof resolveControlCommentProvenance !== 'function') {
+    fail('validation attestation requires bounded edit provenance resolver');
+  }
+  let attestationProvenance;
+  try {
+    attestationProvenance = await resolveControlCommentProvenance(attestationComment);
+  } catch (cause) {
+    const error = new Error('control plane evidence: validation attestation edit provenance does not resolve');
+    error.cause = cause;
+    throw error;
+  }
+  assertUneditedValidationAttestationProvenance({
+    provenance: attestationProvenance,
+    comment: attestationComment,
+    candidateSession: acceptance.candidate_session,
+    registry,
+  });
+
   const attestation = parseValidationAttestation(attestationComment.body);
   if (attestation.candidate_session !== acceptance.candidate_session) fail('validation attestation candidate Session does not match acceptance');
   if (attestation.candidate_checkpoint_comment_id !== acceptance.candidate_checkpoint_comment_id) {
@@ -569,6 +662,7 @@ export async function validateCheckpointEventEvidence({
   resolvePullRequest = defaultResolvePullRequest,
   resolveControlIssue,
   resolveControlComment,
+  resolveControlCommentProvenance,
   resolveOpenControlIssues,
 }) {
   if (!event || typeof event !== 'object') fail('GitHub event payload is required');
@@ -643,6 +737,8 @@ export async function validateCheckpointEventEvidence({
 
   const effectiveResolveControlComment = resolveControlComment
     ?? ((issueNumber, commentId) => defaultResolveControlComment(registry, issueNumber, commentId));
+  const effectiveResolveControlCommentProvenance = resolveControlCommentProvenance
+    ?? ((comment) => defaultResolveControlCommentProvenance(registry, comment));
   const acceptanceChecked = await validateAcceptanceEvidence({
     checkpoint,
     session,
@@ -652,6 +748,7 @@ export async function validateCheckpointEventEvidence({
     resolvePullRequest,
     resolveControlIssue: effectiveResolveControlIssue,
     resolveControlComment: effectiveResolveControlComment,
+    resolveControlCommentProvenance: effectiveResolveControlCommentProvenance,
     resolveOpenControlIssues,
   });
   if (acceptanceChecked) {
