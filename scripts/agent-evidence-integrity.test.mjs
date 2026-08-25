@@ -364,6 +364,13 @@ test('v2 final acceptance validates exact candidate tuple and target PR', async 
       if (commentId === 7003) return validationAttestationComment(candidateBody);
       throw new Error(`comment #${commentId} not found`);
     },
+    resolveControlCommentProvenance: async () => ({
+      databaseId: 7003,
+      issueNumber: 900,
+      authorLogin: 'github-actions[bot]',
+      editorLogin: null,
+      lastEditedAt: null,
+    }),
     resolveOpenControlIssues: async () => [
       openSessionIssue(901, v2Session({ phase: 'acceptance' }), '2026-08-24T20:20:00Z'),
     ],
