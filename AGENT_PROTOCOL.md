@@ -505,3 +505,56 @@ The protocol does not:
 - create a privileged roadmap-admin execution mode outside Role #49;
 - coordinate private repositories;
 - store hidden chain-of-thought.
+
+## 13. Target PR acceptance pointer
+
+A target pull request may carry exactly one bounded acceptance index block:
+
+```text
+<!-- roadmap-agent-pr:start -->
+```json
+{
+  "protocol": "roadmap-agent-pr/v1",
+  "work_item": "netkeep80/<repository>#123",
+  "pr": "netkeep80/<repository>#456",
+  "candidate_session": 789,
+  "candidate_checkpoint_comment_id": 1001,
+  "candidate_validation_attestation_comment_id": 1002,
+  "acceptance_session": 790,
+  "acceptance_checkpoint_comment_id": 1003,
+  "head_sha": "0123456789abcdef0123456789abcdef01234567",
+  "base_sha": "89abcdef0123456789abcdef0123456789abcdef"
+}
+```
+<!-- roadmap-agent-pr:end -->
+```
+
+The pointer is an **index only**. It never replaces roadmap Session/Checkpoint evidence and never grants merge authority by itself.
+
+A bounded verifier resolves only the exact objects named by the pointer:
+
+```text
+target PR
+candidate implementation Session
+candidate implementation Checkpoint
+platform validation attestation comment
+fresh acceptance Session
+acceptance Checkpoint
+```
+
+It must fail closed unless all of the following are true:
+
+- the PR body contains exactly one well-formed `roadmap-agent-pr/v1` block with exactly the declared fields;
+- `work_item` and `pr` are public issue/PR references and all comment/Session IDs are positive integers;
+- `head_sha` and `base_sha` are exact commit SHAs and still equal the target PR's current head/base;
+- candidate Session is `roadmap-agent-session/v2`, is for the exact `work_item`, and has `work_phase=implementation`;
+- acceptance Session is `roadmap-agent-session/v2`, is for the same exact `work_item`, has `work_phase=acceptance`, and is a different Session from the candidate;
+- candidate Checkpoint id and `review_candidate` match the exact `work_item / pr / head_sha / base_sha` tuple;
+- validation attestation id, candidate Session, candidate Checkpoint id, and exact tuple all match the pointer;
+- acceptance Checkpoint id and `acceptance` object match the exact tuple and exact candidate/attestation pointers, with `decision=accepted`.
+
+Missing, duplicate, malformed, forged, mismatched, or stale pointer/evidence is invalid. Head or base movement invalidates prior pointer authority and requires fresh evidence for the new exact tuple.
+
+The foundation verifier is deliberately non-authorizing: successful pointer/evidence coherence returns only the verified tuple and bounded Session identities. It does **not** return or imply `integration_allowed`, does not perform a merge, and does not weaken target CI, repo-guard, branch protection, or repository policy.
+
+For material automated merge, target-native enforcement remains a later rollout gate. If enforcement is absent, unknown, or advisory, implementation/review may proceed but automated material merge remains forbidden. A target must additionally prove the configured enforcement path and actual worker credential cannot bypass it before automated material merge can be enabled.
