@@ -1,8 +1,10 @@
 import { compareClaimPriority } from './agent-protocol.mjs';
 
 const EXPECTED_WORK_ORDER = ['handoff', 'message', 'local-issue'];
+const NORMALIZED_SELECTION_POLICY = 'normalized-finish-first-v1';
 const LEASED_STATES = new Set(['starting', 'working', 'waiting', 'blocked']);
 const TERMINAL_STATES = new Set(['completed', 'abandoned']);
+const WORK_PHASES = new Set(['implementation', 'acceptance']);
 
 function fail(message) {
   throw new Error(`worker runtime: ${message}`);
@@ -32,14 +34,25 @@ function sameBranch(left, right) {
 
 export function validateWorkerPolicy(policy) {
   if (!policy || Array.isArray(policy) || typeof policy !== 'object') fail('policy object is required');
-  if (![1, 2].includes(policy.schema_version)) fail('schema_version must be 1 or 2');
+  if (![1, 2, 3].includes(policy.schema_version)) fail('schema_version must be 1, 2, or 3');
   if (policy.scope !== 'public-owner-repositories') fail('scope must be public-owner-repositories');
   if (!Number.isInteger(policy.lease_seconds) || policy.lease_seconds <= 0) fail('lease_seconds must be a positive integer');
   if (!Number.isInteger(policy.heartbeat_target_seconds) || policy.heartbeat_target_seconds <= 0) fail('heartbeat_target_seconds must be a positive integer');
   if (policy.heartbeat_target_seconds >= policy.lease_seconds) fail('heartbeat_target_seconds must be smaller than lease_seconds');
-  if (!Array.isArray(policy.work_source_order) || policy.work_source_order.length !== EXPECTED_WORK_ORDER.length || policy.work_source_order.some((value, index) => value !== EXPECTED_WORK_ORDER[index])) {
-    fail(`work_source_order must be ${EXPECTED_WORK_ORDER.join(' -> ')}`);
+
+  if (policy.schema_version === 3) {
+    if (Object.prototype.hasOwnProperty.call(policy, 'work_source_order')) {
+      fail('schema_version 3 forbids work_source_order source authority');
+    }
+    if (policy.selection_policy !== NORMALIZED_SELECTION_POLICY) {
+      fail(`schema_version 3 selection_policy must be ${NORMALIZED_SELECTION_POLICY}`);
+    }
+  } else {
+    if (!Array.isArray(policy.work_source_order) || policy.work_source_order.length !== EXPECTED_WORK_ORDER.length || policy.work_source_order.some((value, index) => value !== EXPECTED_WORK_ORDER[index])) {
+      fail(`work_source_order must be ${EXPECTED_WORK_ORDER.join(' -> ')}`);
+    }
   }
+
   if (policy.no_work_action !== 'exit') fail('no_work_action must be exit');
   if (policy.allow_speculative_work !== false) fail('allow_speculative_work must be false');
   if (policy.coordinator_requires_declared_trigger !== true) fail('coordinator_requires_declared_trigger must be true');
@@ -48,7 +61,7 @@ export function validateWorkerPolicy(policy) {
     fail('branch_reconciliation_required must be true when present');
   }
   if (policy.schema_version >= 2 && policy.branch_reconciliation_required !== true) {
-    fail('schema_version 2 requires branch_reconciliation_required=true');
+    fail(`schema_version ${policy.schema_version} requires branch_reconciliation_required=true`);
   }
   return policy;
 }
@@ -100,7 +113,107 @@ function firstMatching(values, predicate) {
   return null;
 }
 
+function hasNormalizedCandidateMetadata(candidate) {
+  return Boolean(candidate && typeof candidate === 'object' && (
+    Object.prototype.hasOwnProperty.call(candidate, 'effective_priority')
+    || Object.prototype.hasOwnProperty.call(candidate, 'work_item')
+    || Object.prototype.hasOwnProperty.call(candidate, 'continuation')
+    || Object.prototype.hasOwnProperty.call(candidate, 'local_order')
+  ));
+}
+
+function normalizeEffectivePriority(value) {
+  const match = typeof value === 'string' ? /^P(\d+)$/.exec(value) : null;
+  if (!match) return null;
+  return Number(match[1]);
+}
+
+function normalizeWorkCandidate(candidate, source) {
+  if (!candidate || typeof candidate !== 'object') return null;
+  if (typeof candidate.repository !== 'string' || !candidate.repository.trim()) return null;
+  if (typeof candidate.work_item !== 'string') return null;
+  const match = /^([^#]+)#([1-9]\d*)$/.exec(candidate.work_item);
+  if (!match || match[1] !== candidate.repository) return null;
+  if (!WORK_PHASES.has(candidate.work_phase)) return null;
+
+  const priority = normalizeEffectivePriority(candidate.effective_priority);
+  if (priority === null) return null;
+
+  const localOrder = candidate.local_order ?? null;
+  if (localOrder !== null && (!Number.isInteger(localOrder) || localOrder < 0)) return null;
+
+  const continuation = candidate.continuation === true;
+  const executable = source === 'handoff'
+    ? candidate.valid === true
+      && candidate.executable_now === true
+      && candidate.occupied_by_live_winner !== true
+      && candidate.stale_recovery_required !== true
+    : candidate.open === true
+      && candidate.portfolio_consistent === true
+      && candidate.executable_now === true
+      && candidate.blocked !== true
+      && candidate.occupied_by_live_winner !== true
+      && candidate.stale_recovery_required !== true;
+  if (!executable) return null;
+
+  return {
+    original: candidate,
+    source,
+    priority,
+    local_order: localOrder,
+    continuation,
+    repository: candidate.repository,
+    issue_number: Number(match[2]),
+  };
+}
+
+function compareNormalizedCandidates(left, right) {
+  if (left.priority !== right.priority) return left.priority - right.priority;
+
+  const leftOrder = left.local_order ?? Number.POSITIVE_INFINITY;
+  const rightOrder = right.local_order ?? Number.POSITIVE_INFINITY;
+  if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+
+  if (left.continuation !== right.continuation) return left.continuation ? -1 : 1;
+
+  const repositoryOrder = left.repository.localeCompare(right.repository, 'en');
+  if (repositoryOrder !== 0) return repositoryOrder;
+  return left.issue_number - right.issue_number;
+}
+
+function selectNormalizedWork({ handoffs, issues }) {
+  const ranked = [];
+  for (const candidate of assertArray(handoffs, 'handoffs')) {
+    const normalized = normalizeWorkCandidate(candidate, 'handoff');
+    if (normalized) ranked.push(normalized);
+  }
+  for (const candidate of assertArray(issues, 'issues')) {
+    const normalized = normalizeWorkCandidate(candidate, 'issue');
+    if (normalized) ranked.push(normalized);
+  }
+
+  ranked.sort(compareNormalizedCandidates);
+  const winner = ranked[0];
+  if (!winner) return { action: 'exit_no_work', candidate: null };
+  return {
+    action: winner.continuation ? 'resume_handoff' : 'claim_issue',
+    candidate: winner.original,
+  };
+}
+
 export function selectBoundedWork({ handoffs = [], messages = [], issues = [] } = {}) {
+  assertArray(handoffs, 'handoffs');
+  assertArray(messages, 'messages');
+  assertArray(issues, 'issues');
+
+  const normalizedMode = [...handoffs, ...issues].some(hasNormalizedCandidateMetadata);
+  if (normalizedMode) {
+    // Messages are state/evidence inputs in v3 and never form a competing queue.
+    return selectNormalizedWork({ handoffs, issues });
+  }
+
+  // Historical v1/v2 runtime fixtures remain migration-readable only. New v3
+  // autonomous selection always supplies normalized WorkCandidate metadata.
   const handoff = firstMatching(handoffs, (candidate) => (
     candidate.valid === true
     && candidate.executable_now === true
@@ -162,11 +275,22 @@ export function decidePostSessionClaim({ claim, contender, liveClaimers = [] }) 
 
 export function decideBranchPreparation({
   claimWon,
+  workPhase = 'implementation',
   currentBranch = null,
   intendedBranch,
   branchExists,
   matchingOpenPr = null,
 }) {
+  if (!WORK_PHASES.has(workPhase)) fail('workPhase must be implementation or acceptance');
+  if (workPhase === 'acceptance') {
+    return {
+      action: 'acceptance_branch_forbidden',
+      current_branch: null,
+      branch_creation_allowed: false,
+      target_writes_allowed: false,
+    };
+  }
+
   const intended = normalizeBranch(intendedBranch, 'intendedBranch');
   const current = currentBranch === null ? null : normalizeBranch(currentBranch, 'currentBranch');
   if (typeof branchExists !== 'boolean') fail('branchExists must be boolean');
@@ -217,6 +341,84 @@ export function decideBranchPreparation({
     current_branch: current,
     branch_creation_allowed: false,
     target_writes_allowed: true,
+  };
+}
+
+export function decideImplementationBranchTakeover({
+  predecessor,
+  successor,
+  revalidatedAfterAdoption = false,
+}) {
+  if (!predecessor || predecessor.work_phase !== 'implementation' || predecessor.state !== 'handoff') {
+    fail('implementation takeover requires an implementation handoff predecessor');
+  }
+  if (!Array.isArray(predecessor.claims) || predecessor.claims.length !== 0) {
+    fail('implementation handoff predecessor must be claim-free');
+  }
+  const predecessorBranch = normalizeBranch(predecessor.current_branch, 'predecessor.current_branch');
+
+  if (!successor || successor.work_phase !== 'implementation' || successor.claim_won !== true) {
+    fail('implementation takeover requires a winning implementation successor');
+  }
+
+  if (successor.current_branch === null || successor.current_branch === undefined) {
+    return {
+      action: 'persist_successor_branch',
+      current_branch: predecessorBranch,
+      predecessor_clear_allowed: false,
+      target_writes_allowed: false,
+    };
+  }
+
+  const successorBranch = normalizeBranch(successor.current_branch, 'successor.current_branch');
+  if (!sameBranch(predecessorBranch, successorBranch)) {
+    fail('implementation successor must adopt the exact predecessor branch');
+  }
+
+  if (revalidatedAfterAdoption !== true) {
+    return {
+      action: 'refresh_before_predecessor_clear',
+      current_branch: successorBranch,
+      predecessor_clear_allowed: false,
+      target_writes_allowed: false,
+    };
+  }
+
+  return {
+    action: 'clear_predecessor_branch',
+    current_branch: successorBranch,
+    predecessor_clear_allowed: true,
+    target_writes_allowed: false,
+  };
+}
+
+export function decideAcceptanceOutcome({ decision, integration_gates_green }) {
+  if (decision === 'changes_requested') {
+    return {
+      action: 'release_to_implementation',
+      acceptance_claim_released: true,
+      implementation_branch_adoption_allowed: false,
+      integration_allowed: false,
+    };
+  }
+  if (decision !== 'accepted') fail('acceptance decision must be accepted or changes_requested');
+
+  if (integration_gates_green !== true) {
+    return {
+      action: 'release_for_integration_revalidation',
+      acceptance_claim_released: true,
+      implementation_branch_adoption_allowed: false,
+      integration_allowed: false,
+    };
+  }
+
+  // Acceptance alone never grants merge authority. Target enforcement and exact
+  // integration gates remain a later, separately validated authority boundary.
+  return {
+    action: 'accepted_requires_target_integration_authority',
+    acceptance_claim_released: true,
+    implementation_branch_adoption_allowed: false,
+    integration_allowed: false,
   };
 }
 
