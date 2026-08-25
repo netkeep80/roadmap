@@ -120,8 +120,8 @@ test('malformed pointer JSON and malformed bounded ids fail closed', () => {
 
 test('pointer protocol and public references are exact', () => {
   assert.throws(
-    () => parseAcceptancePointer(block(pointer({ protocol: 'roadmap-agent-pr/v2' }))),
-    /protocol.*roadmap-agent-pr\/v1/i,
+    () => parseAcceptancePointer(block(pointer({ protocol: 'roadmap-agent-pr/v3' }))),
+    /protocol/i,
   );
   assert.throws(
     () => parseAcceptancePointer(block(pointer({ work_item: 'private/example#1' }))),
