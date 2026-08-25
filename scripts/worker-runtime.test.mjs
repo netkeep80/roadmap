@@ -268,3 +268,154 @@ test('stale revalidation follows current GitHub instead of stale checkpoint inte
     revalidation: { complete: true, work_still_executable: true, occupied_by_live_winner: false },
   }).action, 'abandon_then_replace');
 });
+
+const normalizedPolicyV3 = {
+  schema_version: 3,
+  scope: 'public-owner-repositories',
+  lease_seconds: 7200,
+  heartbeat_target_seconds: 3600,
+  selection_policy: 'normalized-finish-first-v1',
+  no_work_action: 'exit',
+  allow_speculative_work: false,
+  coordinator_requires_declared_trigger: true,
+  pr_reconciliation_required: true,
+  branch_reconciliation_required: true,
+};
+
+function normalizedIssue(ref, effectivePriority, overrides = {}) {
+  return {
+    ...executableIssue(ref),
+    repository: ref.split('#')[0],
+    work_item: ref,
+    work_phase: 'implementation',
+    effective_priority: effectivePriority,
+    local_order: null,
+    continuation: false,
+    ...overrides,
+  };
+}
+
+function normalizedHandoff(ref, effectivePriority, overrides = {}) {
+  return {
+    ref,
+    repository: ref.split('#')[0],
+    work_item: ref,
+    work_phase: 'implementation',
+    effective_priority: effectivePriority,
+    local_order: null,
+    continuation: true,
+    valid: true,
+    executable_now: true,
+    occupied_by_live_winner: false,
+    stale_recovery_required: false,
+    ...overrides,
+  };
+}
+
+const implementationBranch = {
+  repository: 'netkeep80/alpha',
+  name: 'agent/issue-7',
+};
+
+test('worker policy v3 uses normalized finish-first and rejects source-order authority', () => {
+  assert.deepEqual(validateWorkerPolicy(structuredClone(normalizedPolicyV3)), normalizedPolicyV3);
+  assert.throws(
+    () => validateWorkerPolicy({
+      ...normalizedPolicyV3,
+      work_source_order: ['handoff', 'message', 'local-issue'],
+    }),
+    /work_source_order|source.*authority/i,
+  );
+});
+
+test('P0 local issue outranks lower-priority P1 handoff', () => {
+  const selected = selectBoundedWork({
+    handoffs: [normalizedHandoff('netkeep80/beta#2', 'P1')],
+    issues: [normalizedIssue('netkeep80/alpha#1', 'P0')],
+  });
+  assert.equal(selected.candidate.ref, 'netkeep80/alpha#1');
+});
+
+test('equal-rank unoccupied continuation beats genuinely new work deterministically', () => {
+  const selected = selectBoundedWork({
+    handoffs: [normalizedHandoff('netkeep80/zeta#9', 'P1')],
+    issues: [normalizedIssue('netkeep80/alpha#1', 'P1')],
+  });
+  assert.equal(selected.candidate.ref, 'netkeep80/zeta#9');
+});
+
+test('occupied top candidate is skipped for next executable normalized candidate', () => {
+  const selected = selectBoundedWork({
+    handoffs: [normalizedHandoff('netkeep80/alpha#1', 'P0', { occupied_by_live_winner: true })],
+    issues: [normalizedIssue('netkeep80/beta#2', 'P1')],
+  });
+  assert.equal(selected.candidate.ref, 'netkeep80/beta#2');
+});
+
+test('ambiguous mixed priority is non-rankable and never guessed', () => {
+  const selected = selectBoundedWork({
+    issues: [normalizedIssue('netkeep80/alpha#1', 'P0/P1')],
+  });
+  assert.deepEqual(selected, { action: 'exit_no_work', candidate: null });
+});
+
+test('predecessor branch cannot clear before successor durably adopts same branch', () => {
+  assert.deepEqual(workerRuntime.decideImplementationBranchTakeover?.({
+    predecessor: {
+      work_phase: 'implementation',
+      state: 'handoff',
+      claims: [],
+      current_branch: implementationBranch,
+    },
+    successor: {
+      work_phase: 'implementation',
+      claim_won: true,
+      current_branch: null,
+    },
+  }), {
+    action: 'persist_successor_branch',
+    current_branch: implementationBranch,
+    predecessor_clear_allowed: false,
+    target_writes_allowed: false,
+  });
+});
+
+test('acceptance Session cannot adopt implementation branch', () => {
+  assert.deepEqual(workerRuntime.decideBranchPreparation({
+    claimWon: true,
+    workPhase: 'acceptance',
+    currentBranch: null,
+    intendedBranch: implementationBranch,
+    branchExists: true,
+    matchingOpenPr: { number: 8 },
+  }), {
+    action: 'acceptance_branch_forbidden',
+    current_branch: null,
+    branch_creation_allowed: false,
+    target_writes_allowed: false,
+  });
+});
+
+test('changes_requested releases acceptance and requires explicit implementation continuation', () => {
+  assert.deepEqual(workerRuntime.decideAcceptanceOutcome?.({
+    decision: 'changes_requested',
+    integration_gates_green: false,
+  }), {
+    action: 'release_to_implementation',
+    acceptance_claim_released: true,
+    implementation_branch_adoption_allowed: false,
+    integration_allowed: false,
+  });
+});
+
+test('accepted with integration gates pending releases acceptance without branch custody', () => {
+  assert.deepEqual(workerRuntime.decideAcceptanceOutcome?.({
+    decision: 'accepted',
+    integration_gates_green: false,
+  }), {
+    action: 'release_for_integration_revalidation',
+    acceptance_claim_released: true,
+    implementation_branch_adoption_allowed: false,
+    integration_allowed: false,
+  });
+});
