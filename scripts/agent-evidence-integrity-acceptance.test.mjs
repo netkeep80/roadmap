@@ -285,11 +285,6 @@ test('deleting an authority-bearing v2 checkpoint fails closed at the changed-ev
           created_at: '2026-08-24T20:00:00Z',
           body: sessionBody(),
         },
-        comment: {
-          id: 7001,
-          created_at: '2026-08-24T20:10:00Z',
-          body: block(candidateData()),
-        },
       },
       registry: REGISTRY,
     }),
@@ -561,6 +556,34 @@ test('final acceptance requires the exact successful-validation attestation look
     },
     resolveOpenControlIssues: async () => [event.issue],
   }), /attestation.*(resolve|required|missing)|validation attestation/i);
+});
+
+test('final acceptance requires exact repository binding in attestation provenance', async () => {
+  const event = acceptanceEvent();
+  const cases = [
+    { name: 'wrong repository', includeRepository: true, repository: 'netkeep80/repo-guard' },
+    { name: 'null repository', includeRepository: true, repository: null },
+    { name: 'missing repository', includeRepository: false },
+  ];
+
+  for (const entry of cases) {
+    const provenance = {
+      databaseId: 7003,
+      issueNumber: 900,
+      authorLogin: 'github-actions[bot]',
+      editorLogin: null,
+      lastEditedAt: null,
+    };
+    if (entry.includeRepository) provenance.repository = entry.repository;
+
+    await assert.rejects(() => validateCheckpointEventEvidence({
+      event,
+      registry: REGISTRY,
+      ...acceptanceResolvers(),
+      resolveControlCommentProvenance: async () => provenance,
+      resolveOpenControlIssues: async () => [event.issue],
+    }), /attestation.*(repository|provenance)|repository.*attestation/i, entry.name);
+  }
 });
 
 test('final acceptance rejects a user-authored validation-attestation lookalike', async () => {
