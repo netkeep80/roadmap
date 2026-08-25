@@ -450,3 +450,52 @@ test('automatic evidence workflow does not rescan complete GitHub history', asyn
   assert.doesNotMatch(workflow, /--validate-live/);
   assert.match(workflow, /node --test scripts\/agent-evidence-integrity\.test\.mjs/);
 });
+
+test('final acceptance rejects an edited bot-authored attestation from bounded provenance', async () => {
+  const module = await loadIntegrityModule();
+  const candidateBody = candidateCheckpoint();
+  const event = {
+    action: 'created',
+    issue: openSessionIssue(901, v2Session({ phase: 'acceptance' }), '2026-08-24T20:20:00Z'),
+    comment: {
+      id: 7002,
+      created_at: '2026-08-24T20:30:00Z',
+      body: acceptanceCheckpoint(),
+    },
+  };
+
+  await assert.rejects(
+    () => module.validateCheckpointEventEvidence({
+      event,
+      registry: ROADMAP_REGISTRY,
+      resolvePullRequest: async (_repository, number) => ({ number, state: 'open', head: { sha: VALID_SHA }, base: { sha: OTHER_VALID_SHA } }),
+      resolveControlIssue: async (number) => {
+        if (number === 49) return roadmapRoleIssue();
+        if (number === 900) return candidateSessionIssue();
+        throw new Error(`control issue #${number} not found`);
+      },
+      resolveControlComment: async (issueNumber, commentId) => {
+        if (commentId === 7001) {
+          return {
+            id: 7001,
+            issue_number: issueNumber,
+            created_at: '2026-08-24T20:10:00Z',
+            updated_at: '2026-08-24T20:10:00Z',
+            body: candidateBody,
+          };
+        }
+        if (commentId === 7003) return validationAttestationComment(candidateBody);
+        throw new Error(`comment #${commentId} not found`);
+      },
+      resolveControlCommentProvenance: async () => ({
+        databaseId: 7003,
+        issueNumber: 900,
+        authorLogin: 'github-actions[bot]',
+        editorLogin: 'netkeep80',
+        lastEditedAt: '2026-08-24T20:12:00Z',
+      }),
+      resolveOpenControlIssues: async () => [event.issue],
+    }),
+    /attestation.*(edit|provenance|immutable)|edited.*attestation/i,
+  );
+});
