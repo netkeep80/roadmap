@@ -112,6 +112,8 @@ A terminal Session has zero claims and cannot retain non-null `current_branch`. 
 
 When a successor successfully consumes a handoff, the predecessor becomes `completed` with zero claims and is closed. An invalidated handoff becomes `abandoned` and is closed. `current_branch` is cleared only when that Session no longer owns/resumes the branch.
 
+For implementation-branch handoff, branch custody transfers **overlap-before-clear**: the predecessor remains a claim-free `handoff` owning the branch until a fresh implementation successor wins the Claim and durably persists the exact same `current_branch`. GitHub is then refreshed again; only after that refresh proves the predecessor is still claim-free and the successor is still the winning implementation Session may predecessor branch ownership be cleared. An acceptance-phase Session never adopts implementation `current_branch` custody.
+
 Closed Sessions remain historical audit evidence and are still fail-closed validated; they are not active control state.
 
 ## 4. Claim
@@ -200,6 +202,20 @@ If a LIVE/resumable Session already has `current_branch` and that exact branch e
 
 If `current_branch` points to an absent branch, a winning worker may create that exact branch only after fresh branch/PR reconciliation. A collision loser never creates, pushes, rewrites, or reuses a target branch.
 
+Phase-aware implementation handoff uses this exact transfer sequence:
+
+```text
+predecessor implementation Session
+  state=handoff, claims=[], current_branch=<B>
+→ fresh successor implementation Session wins the exact work-item Claim
+→ successor persists current_branch=<B>
+→ refresh Role / Session / Claim winner / branch / PR state
+→ predecessor clears current_branch and completes only after that refresh succeeds
+→ successor may mutate <B> only after the ordinary pre-write gate succeeds
+```
+
+The predecessor must never clear `<B>` before the successor durably adopts it. Acceptance Sessions have `current_branch=null` and must never create, adopt, push, rewrite, or otherwise own an implementation branch. `changes_requested` releases acceptance authority and requires an explicit implementation continuation; `accepted` with integration gates still pending also releases acceptance without branch custody.
+
 Preservation rules:
 
 - default branch is never a working-branch deletion target;
@@ -247,11 +263,15 @@ Rules:
 Machine policy is `data/worker-policy.json`.
 
 ```text
+schema_version = 3
+selection_policy = normalized-finish-first-v1
 lease_seconds = 7200
 heartbeat_target_seconds = 3600
 pr_reconciliation_required = true
 branch_reconciliation_required = true
 ```
+
+`work_source_order` is not authority in schema v3. Historical v1/v2 policy objects remain validation-readable migration evidence only; new autonomous selection uses normalized WorkCandidates and cannot derive priority from source type, scheduler identity, worker slot, invocation timing, or affinity.
 
 Authoritative heartbeat:
 
@@ -350,27 +370,40 @@ Use Messages only for durable cross-repository coordination, dependency readines
 
 The control plane has no implicit `invent work` transition.
 
-Admissible sources:
+Before selecting work, reconstruct current GitHub and normalize explicit executable evidence into transient WorkCandidates. Source type is not queue authority. A normalized candidate contains at least:
 
 ```text
-valid executable handoff
-OR actionable incoming Message
-OR existing open local issue
-   AND portfolio-consistent
-   AND executable now
-   AND not blocked
-   AND not occupied by a LIVE winning Session
-   AND not pending stale-session recovery
+repository
+work_item
+work_phase
+exact effective declared priority
+explicit local/dependency order when declared
+continuation = true | false
+executability / blocker state
+LIVE-winner occupancy
+stale-recovery requirement
+supporting handoff / Message / issue evidence
 ```
 
-Selection order:
+Only declared portfolio/workstream/local priority is rankable. The worker must never invent, average, interpolate, or guess priority. Mixed or ambiguous priority evidence such as `P0/P1` is non-rankable and fails closed until the declaration is unambiguous.
+
+Messages are inputs to derived work state: they may establish a blocker, dependency readiness, required decision, or other current fact. A Message is **not** a globally prioritized queue item. A handoff is continuation evidence for its exact work item; it is **not** a priority boost, lock, or separate queue.
+
+A candidate is executable only when current evidence proves it is explicit, portfolio-consistent, executable now, not blocked, not occupied by a LIVE winning Session, and not pending stale-session recovery.
+
+Deterministic normalized ranking:
 
 ```text
-1. handoff
-2. Message
-3. local issue
-4. EXIT_NO_WORK
+1. lower declared priority number first (P0 before P1 before P2 ...)
+2. explicit dependency/local order when one is declared
+3. within the same effective rank, continuation before genuinely new work
+4. repository full name lexical ascending
+5. work-item issue number ascending
 ```
+
+An occupied top-ranked candidate is skipped, never preempted; ranking continues to the next executable candidate. If no normalized executable candidate remains, `EXIT_NO_WORK`.
+
+There is no round-robin, fairness counter, worker affinity, slot authority, scheduler-time authority, time slicing, or source-queue fallback for new schema-v3 autonomous selection.
 
 No speculative backlog generation, unsolicited cleanup/refactoring, idle dependency upgrades, architecture redesign, implicit next milestone, blocker bypass, or keep-busy issue creation is permitted.
 
@@ -417,6 +450,7 @@ Refresh relevant GitHub facts:
 - after PR reconciliation, refresh complete target branch inventory and reconcile branch ownership;
 - before choosing/persisting `current_branch`;
 - after persisting `current_branch` and **before branch create or push**;
+- after a handoff successor persists predecessor `current_branch` and **before predecessor branch ownership is cleared**;
 - before branch creation or new PR creation;
 - after dependency/blocker changes;
 - before stale recovery;
@@ -425,6 +459,7 @@ Refresh relevant GitHub facts:
 - before Session/Message close transitions;
 - after merge/close transitions;
 - before clearing `current_branch`;
+- before acceptance release / implementation continuation transitions;
 - before handoff/completion.
 
 Target repository CI/repo-guard rules remain integration authority.
@@ -466,6 +501,7 @@ The protocol does not:
 - infer work-item identity from changed-file overlap alone;
 - infer deletion authority from branch age/name/ancestry/behind state;
 - introduce a merge queue or global repository lock;
+- introduce round-robin, fairness counters, worker affinity, slot authority, scheduler-time authority, or time slicing;
 - create a privileged roadmap-admin execution mode outside Role #49;
 - coordinate private repositories;
 - store hidden chain-of-thought.
