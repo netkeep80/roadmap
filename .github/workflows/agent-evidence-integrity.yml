@@ -5,6 +5,7 @@ on:
     paths:
       - "scripts/agent-evidence-integrity.mjs"
       - "scripts/agent-evidence-integrity.test.mjs"
+      - "scripts/agent-evidence-integrity-acceptance.test.mjs"
       - ".github/workflows/agent-evidence-integrity.yml"
       - ".github/workflows/agent-status.yml"
   workflow_dispatch:
@@ -20,4 +21,4 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Test evidence integrity boundary
-        run: node --test scripts/agent-evidence-integrity.test.mjs
+        run: node --test scripts/agent-evidence-integrity.test.mjs scripts/agent-evidence-integrity-acceptance.test.mjs

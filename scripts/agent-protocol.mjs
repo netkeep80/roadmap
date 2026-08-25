@@ -2,13 +2,21 @@ const START = '<!-- roadmap-agent:start -->';
 const END = '<!-- roadmap-agent:end -->';
 const OWNER = 'netkeep80';
 
+const SESSION_PROTOCOL_V1 = 'roadmap-agent-session/v1';
+const SESSION_PROTOCOL_V2 = 'roadmap-agent-session/v2';
+const CHECKPOINT_PROTOCOL_V1 = 'roadmap-agent-checkpoint/v1';
+const CHECKPOINT_PROTOCOL_V2 = 'roadmap-agent-checkpoint/v2';
+
 const ISSUE_PROTOCOLS = new Map([
   ['roadmap-agent-role/v1', 'role'],
-  ['roadmap-agent-session/v1', 'session'],
+  [SESSION_PROTOCOL_V1, 'session'],
+  [SESSION_PROTOCOL_V2, 'session'],
   ['roadmap-agent-message/v1', 'message'],
 ]);
 
-const CHECKPOINT_PROTOCOL = 'roadmap-agent-checkpoint/v1';
+const CHECKPOINT_PROTOCOLS = new Set([CHECKPOINT_PROTOCOL_V1, CHECKPOINT_PROTOCOL_V2]);
+const WORK_PHASES = new Set(['implementation', 'acceptance']);
+const ACCEPTANCE_DECISIONS = new Set(['accepted', 'changes_requested']);
 
 const SESSION_STATES = new Set([
   'starting',
@@ -109,6 +117,13 @@ function validatePublicIssueReference(ref, publicRepositories, field, requiredRe
   return parsed;
 }
 
+function validateSha(value, field) {
+  if (typeof value !== 'string' || !/^[0-9a-f]{40,64}$/i.test(value)) {
+    fail(`${field} must be a 40-64 hex commit SHA`);
+  }
+  return value.toLowerCase();
+}
+
 function validateBranchName(name, field) {
   if (typeof name !== 'string' || !name.trim()) fail(`${field} branch name must be a non-empty string`);
   if (name !== name.trim() || name.startsWith('refs/heads/') || name.startsWith('/') || name.endsWith('/')) {
@@ -161,6 +176,51 @@ function assertGitHubIssueState(issue, expectedState, label) {
   if (issue.state !== expectedState) {
     fail(`${label} lifecycle requires GitHub issue ${expectedState}, got ${issue.state}`);
   }
+}
+
+function assertPlainObject(value, field) {
+  if (!value || Array.isArray(value) || typeof value !== 'object') fail(`${field} must be an object`);
+  return value;
+}
+
+function validateReviewCandidate(value, publicRepositories, sessionRepository, sessionData) {
+  const candidate = assertPlainObject(value, 'review_candidate');
+  if (sessionData.work_phase !== 'implementation') fail('review_candidate requires implementation Session phase');
+  if (candidate.work_item !== sessionData.work_item) fail('review_candidate work_item must match Session work_item');
+  validatePublicIssueReference(candidate.work_item, publicRepositories, 'review_candidate work_item', sessionRepository);
+  validatePublicIssueReference(candidate.pr, publicRepositories, 'review_candidate pr', sessionRepository);
+  if (sessionData.current_pr !== null && sessionData.current_pr !== candidate.pr) {
+    fail('review_candidate pr must match Session current_pr');
+  }
+  candidate.head_sha = validateSha(candidate.head_sha, 'review_candidate head_sha');
+  candidate.base_sha = validateSha(candidate.base_sha, 'review_candidate base_sha');
+  return candidate;
+}
+
+function validateAcceptance(value, publicRepositories, sessionRepository, sessionData) {
+  const acceptance = assertPlainObject(value, 'acceptance');
+  if (sessionData.work_phase !== 'acceptance') fail('acceptance certificate requires acceptance Session phase');
+  if (!Number.isInteger(acceptance.candidate_session) || acceptance.candidate_session <= 0) {
+    fail('acceptance candidate_session must be a positive integer');
+  }
+  if (!Number.isInteger(acceptance.candidate_checkpoint_comment_id) || acceptance.candidate_checkpoint_comment_id <= 0) {
+    fail('acceptance candidate_checkpoint_comment_id must be a positive integer');
+  }
+  if (!Number.isInteger(acceptance.candidate_validation_attestation_comment_id) || acceptance.candidate_validation_attestation_comment_id <= 0) {
+    fail('acceptance candidate_validation_attestation_comment_id must be a positive integer');
+  }
+  if (acceptance.work_item !== sessionData.work_item) fail('acceptance work_item must match Session work_item');
+  validatePublicIssueReference(acceptance.work_item, publicRepositories, 'acceptance work_item', sessionRepository);
+  validatePublicIssueReference(acceptance.pr, publicRepositories, 'acceptance pr', sessionRepository);
+  if (sessionData.current_pr !== null && sessionData.current_pr !== acceptance.pr) {
+    fail('acceptance pr must match Session current_pr');
+  }
+  acceptance.head_sha = validateSha(acceptance.head_sha, 'acceptance head_sha');
+  acceptance.base_sha = validateSha(acceptance.base_sha, 'acceptance base_sha');
+  if (!ACCEPTANCE_DECISIONS.has(acceptance.decision)) {
+    fail('acceptance decision must be accepted or changes_requested');
+  }
+  return acceptance;
 }
 
 export function parseProtocolBlock(body) {
@@ -263,7 +323,10 @@ export function validateSession(issue, roleMap) {
   } else {
     assertGitHubIssueState(issue, 'open', `active/handoff session state ${data.state}`);
   }
-  if (data.worker_slot !== undefined && (!Number.isInteger(data.worker_slot) || data.worker_slot <= 0)) {
+
+  const isV2 = data.protocol === SESSION_PROTOCOL_V2;
+  if (isV2 && data.worker_slot !== undefined) fail('v2 Session cannot persist worker_slot');
+  if (!isV2 && data.worker_slot !== undefined && (!Number.isInteger(data.worker_slot) || data.worker_slot <= 0)) {
     fail('session worker_slot must be a positive integer when present');
   }
 
@@ -272,6 +335,14 @@ export function validateSession(issue, roleMap) {
   const claims = assertArray(data.claims, 'session claims');
   for (const claim of claims) {
     validatePublicIssueReference(claim, publicRepositories, 'claim', repository);
+  }
+
+  if (isV2) {
+    validatePublicIssueReference(data.work_item, publicRepositories, 'work_item', repository);
+    if (!WORK_PHASES.has(data.work_phase)) fail('work_phase must be implementation or acceptance');
+    if (claims.length > 1) fail('v2 Session can claim at most one work item');
+    if (claims.length === 1 && claims[0] !== data.work_item) fail('v2 claim must equal session work_item');
+    if (!Object.hasOwn(data, 'current_branch')) fail('v2 Session must declare current_branch explicitly');
   }
 
   if (TERMINAL_SESSION_STATES.has(data.state) && claims.length) {
@@ -285,6 +356,9 @@ export function validateSession(issue, roleMap) {
     data.current_branch = validateCurrentBranch(data.current_branch, publicRepositories, repository, 'session current_branch');
     if (TERMINAL_SESSION_STATES.has(data.state) && data.current_branch !== null) {
       fail(`terminal session state ${data.state} cannot retain current_branch ownership`);
+    }
+    if (isV2 && data.work_phase === 'acceptance' && data.current_branch !== null) {
+      fail('acceptance Session cannot retain current_branch');
     }
   }
 
@@ -334,7 +408,12 @@ export function validateCheckpoint(comment, roleMap, sessionData) {
   if (!comment || typeof comment !== 'object') fail('checkpoint comment object is required');
   if (!sessionData || typeof sessionData !== 'object') fail('checkpoint session data is required');
   const data = parseProtocolBlock(comment.body);
-  if (data.protocol !== CHECKPOINT_PROTOCOL) fail(`checkpoint protocol must be ${CHECKPOINT_PROTOCOL}`);
+  if (!CHECKPOINT_PROTOCOLS.has(data.protocol)) {
+    fail(`checkpoint protocol must be ${CHECKPOINT_PROTOCOL_V1} or ${CHECKPOINT_PROTOCOL_V2}`);
+  }
+  const sessionIsV2 = sessionData.protocol === SESSION_PROTOCOL_V2;
+  const checkpointIsV2 = data.protocol === CHECKPOINT_PROTOCOL_V2;
+  if (sessionIsV2 !== checkpointIsV2) fail('Checkpoint protocol version must match Session protocol version');
   if (!SESSION_STATES.has(data.state)) fail(`invalid checkpoint state ${JSON.stringify(data.state)}`);
 
   const completed = assertStringArray(data.completed, 'checkpoint completed');
@@ -348,6 +427,20 @@ export function validateCheckpoint(comment, roleMap, sessionData) {
   for (const ref of refs) validateCheckpointEvidenceReference(ref, publicRepositories, sessionRepository);
   for (const blocker of blockers) validatePublicIssueReference(blocker, publicRepositories, 'checkpoint blocker');
   for (const message of messages) validatePublicIssueReference(message, publicRepositories, 'checkpoint message');
+
+  if (checkpointIsV2) {
+    if (data.work_item !== sessionData.work_item) fail('checkpoint work_item must match Session work_item');
+    validatePublicIssueReference(data.work_item, publicRepositories, 'checkpoint work_item', sessionRepository);
+    if (Object.hasOwn(data, 'review_candidate') && Object.hasOwn(data, 'acceptance')) {
+      fail('Checkpoint cannot contain both review_candidate and acceptance');
+    }
+    if (Object.hasOwn(data, 'review_candidate')) {
+      data.review_candidate = validateReviewCandidate(data.review_candidate, publicRepositories, sessionRepository, sessionData);
+    }
+    if (Object.hasOwn(data, 'acceptance')) {
+      data.acceptance = validateAcceptance(data.acceptance, publicRepositories, sessionRepository, sessionData);
+    }
+  }
 
   const sessionHasCurrentBranchField = Object.hasOwn(sessionData, 'current_branch');
   const sessionCurrentBranch = sessionHasCurrentBranchField ? sessionData.current_branch : undefined;
@@ -394,7 +487,10 @@ export const AGENT_PROTOCOL = Object.freeze({
   startMarker: START,
   endMarker: END,
   owner: OWNER,
-  checkpointProtocol: CHECKPOINT_PROTOCOL,
+  checkpointProtocol: CHECKPOINT_PROTOCOL_V1,
+  checkpointProtocols: Object.freeze([...CHECKPOINT_PROTOCOLS]),
+  sessionProtocols: Object.freeze([SESSION_PROTOCOL_V1, SESSION_PROTOCOL_V2]),
+  workPhases: Object.freeze([...WORK_PHASES]),
   sessionStates: Object.freeze([...SESSION_STATES]),
   messageKinds: Object.freeze([...MESSAGE_KINDS]),
   messageStates: Object.freeze([...MESSAGE_STATES]),
