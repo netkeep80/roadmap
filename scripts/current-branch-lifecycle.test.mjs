@@ -298,3 +298,72 @@ test('anonymous bootstrap documents PR then branch reconciliation and durable pr
     assert.match(text, /no open PR[\s\S]*dead branch|no open PR != dead branch/i);
   }
 });
+
+test('implementation handoff uses overlap-before-clear with a mandatory post-adoption refresh', () => {
+  const branch = owned();
+  const predecessor = {
+    work_phase: 'implementation',
+    state: 'handoff',
+    claims: [],
+    current_branch: branch,
+  };
+
+  assert.deepEqual(workerRuntime.decideImplementationBranchTakeover({
+    predecessor,
+    successor: {
+      work_phase: 'implementation',
+      claim_won: true,
+      current_branch: null,
+    },
+  }), {
+    action: 'persist_successor_branch',
+    current_branch: branch,
+    predecessor_clear_allowed: false,
+    target_writes_allowed: false,
+  });
+
+  assert.deepEqual(workerRuntime.decideImplementationBranchTakeover({
+    predecessor,
+    successor: {
+      work_phase: 'implementation',
+      claim_won: true,
+      current_branch: branch,
+    },
+  }), {
+    action: 'refresh_before_predecessor_clear',
+    current_branch: branch,
+    predecessor_clear_allowed: false,
+    target_writes_allowed: false,
+  });
+
+  assert.deepEqual(workerRuntime.decideImplementationBranchTakeover({
+    predecessor,
+    successor: {
+      work_phase: 'implementation',
+      claim_won: true,
+      current_branch: branch,
+    },
+    revalidatedAfterAdoption: true,
+  }), {
+    action: 'clear_predecessor_branch',
+    current_branch: branch,
+    predecessor_clear_allowed: true,
+    target_writes_allowed: false,
+  });
+});
+
+test('acceptance branch preparation cannot adopt implementation branch custody', () => {
+  assert.deepEqual(workerRuntime.decideBranchPreparation({
+    claimWon: true,
+    workPhase: 'acceptance',
+    currentBranch: null,
+    intendedBranch: owned(),
+    branchExists: true,
+    matchingOpenPr: { number: 8 },
+  }), {
+    action: 'acceptance_branch_forbidden',
+    current_branch: null,
+    branch_creation_allowed: false,
+    target_writes_allowed: false,
+  });
+});
