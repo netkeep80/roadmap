@@ -9,6 +9,8 @@ on:
       - "scripts/agent-protocol.mjs"
       - "scripts/agent-protocol.test.mjs"
       - "scripts/agent-protocol-v2.test.mjs"
+      - "scripts/acceptance-pointer.mjs"
+      - "scripts/acceptance-pointer.test.mjs"
       - "scripts/agent-session-liveness.test.mjs"
       - "scripts/validate-agents.mjs"
       - "scripts/validate-agents.test.mjs"
@@ -47,6 +49,8 @@ on:
       - "scripts/agent-protocol.mjs"
       - "scripts/agent-protocol.test.mjs"
       - "scripts/agent-protocol-v2.test.mjs"
+      - "scripts/acceptance-pointer.mjs"
+      - "scripts/acceptance-pointer.test.mjs"
       - "scripts/agent-session-liveness.test.mjs"
       - "scripts/validate-agents.mjs"
       - "scripts/validate-agents.test.mjs"
@@ -88,7 +92,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Test agent control plane
-        run: node --test scripts/agent-protocol.test.mjs scripts/agent-protocol-v2.test.mjs scripts/agent-session-liveness.test.mjs scripts/validate-agents.test.mjs scripts/agent-role-template.test.mjs scripts/reconcile-agent-roles.test.mjs scripts/agent-status.test.mjs scripts/agent-status-privacy.test.mjs scripts/worker-runtime.test.mjs scripts/current-branch-lifecycle.test.mjs scripts/pr-reconciliation.test.mjs scripts/sync-agent-status.test.mjs
+        run: node --test scripts/agent-protocol.test.mjs scripts/agent-protocol-v2.test.mjs scripts/acceptance-pointer.test.mjs scripts/agent-session-liveness.test.mjs scripts/validate-agents.test.mjs scripts/agent-role-template.test.mjs scripts/reconcile-agent-roles.test.mjs scripts/agent-status.test.mjs scripts/agent-status-privacy.test.mjs scripts/worker-runtime.test.mjs scripts/current-branch-lifecycle.test.mjs scripts/pr-reconciliation.test.mjs scripts/sync-agent-status.test.mjs
       - name: Validate registry
         run: node scripts/sync-roadmap.mjs --validate
       - name: Validate live GitHub coverage
