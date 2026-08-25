@@ -5,9 +5,9 @@
 - Owner: `netkeep80`
 - Registered repositories: **26**
 - Verified child roadmap backlinks: **25/25**
-- Last successful GitHub check: **2026-08-25T01:53:32.738Z**
-- Latest observed GitHub change in snapshot: **2026-08-25T01:19:49Z**
-- State hash (excluding check time): `b20a431a1bd9e7c40b5d7b8905bd25e7b730fe38feaf308dd0803e6ebd800fb4`
+- Last successful GitHub check: **2026-08-25T07:10:01.553Z**
+- Latest observed GitHub change in snapshot: **2026-08-25T01:53:37Z**
+- State hash (excluding check time): `0b4a3eef7cf4210f5f3d192c2ce48144e0bd8befbdac7372183a3afd44769bd3`
 
 ## Control-plane health
 
@@ -130,7 +130,7 @@
 | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-24T17:47:37Z | 16 | 6 |
 | [`pjson`](https://github.com/netkeep80/pjson) | `main` | no | 2026-08-09T09:56:53Z | 17 | 0 |
 | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-24T19:58:04Z | 7 | 1 |
-| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-25T01:19:49Z | 62 | 1 |
+| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-25T01:53:33Z | 62 | 1 |
 | [`termowood`](https://github.com/netkeep80/termowood) | `main` | no | 2026-08-09T09:58:27Z | 0 | 0 |
 | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `main` | no | 2026-08-09T09:57:59Z | 6 | 0 |
 | [`god-mode`](https://github.com/netkeep80/god-mode) | `main` | no | 2026-08-09T09:58:17Z | 0 | 0 |
