@@ -25,6 +25,7 @@ import {
 const REGISTRY_PATH = new URL('../data/portfolio.json', import.meta.url);
 const WORKER_POLICY_PATH = new URL('../data/worker-policy.json', import.meta.url);
 const DEFAULT_STATUS_ISSUE_NUMBER = 103;
+const CHECKPOINT_PROTOCOLS = new Set(['roadmap-agent-checkpoint/v1', 'roadmap-agent-checkpoint/v2']);
 const validateOnly = process.argv.includes('--validate-live');
 
 async function readRegistry() {
@@ -175,7 +176,7 @@ export async function buildLiveAgentSnapshot({
     const checkpoints = [];
     for (const comment of checkpointCommentsOnly(comments)) {
       const parsed = parseProtocolBlock(comment.body);
-      if (parsed.protocol !== 'roadmap-agent-checkpoint/v1') {
+      if (!CHECKPOINT_PROTOCOLS.has(parsed.protocol)) {
         throw new Error(`agent protocol: marked comment ${comment.id} on session #${session.number} is not a checkpoint`);
       }
       checkpoints.push({

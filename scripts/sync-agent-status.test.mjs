@@ -62,6 +62,26 @@ const terminalSessionIssue = {
   }),
 };
 
+const terminalV2SessionIssue = {
+  number: 72,
+  state: 'closed',
+  html_url: 'https://github.com/netkeep80/roadmap/issues/72',
+  created_at: '2026-08-24T09:30:00Z',
+  updated_at: '2026-08-24T09:40:00Z',
+  body: block({
+    protocol: 'roadmap-agent-session/v2',
+    role_issue: 49,
+    repository: 'netkeep80/roadmap',
+    work_item: 'netkeep80/roadmap#62',
+    work_phase: 'implementation',
+    state: 'completed',
+    claims: [],
+    current_branch: null,
+    current_pr: null,
+    blocked_by: [],
+  }),
+};
+
 const closedHistoricalSessionIssue = {
   ...terminalSessionIssue,
   number: 71,
@@ -127,6 +147,36 @@ test('valid terminal Checkpoint history is validated but closed Session is not p
         messages: [],
       }),
     }],
+  });
+
+  assert.equal(snapshot.active_session_count, 0);
+});
+
+test('historical status audit dual-reads a valid v2 Session and v2 Checkpoint', async () => {
+  const snapshot = await buildLiveAgentSnapshot({
+    registry,
+    workerPolicy,
+    repositories,
+    issues: [roleIssue],
+    historicalIssues: [roleIssue, terminalV2SessionIssue],
+    checkedAt: '2026-08-24T12:00:00Z',
+    listPullRequests: noPullRequests,
+    listComments: async (_owner, _repository, issueNumber) => issueNumber === 72 ? [{
+      id: 1002,
+      created_at: '2026-08-24T09:35:00Z',
+      updated_at: '2026-08-24T09:35:00Z',
+      body: block({
+        protocol: 'roadmap-agent-checkpoint/v2',
+        state: 'completed',
+        work_item: 'netkeep80/roadmap#62',
+        completed: ['accepted terminal v2 state'],
+        refs: ['netkeep80/roadmap#62'],
+        blockers: [],
+        next: [],
+        messages: [],
+        current_branch: null,
+      }),
+    }] : [],
   });
 
   assert.equal(snapshot.active_session_count, 0);

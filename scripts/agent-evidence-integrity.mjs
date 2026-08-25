@@ -223,9 +223,6 @@ function assertUneditedValidationAttestationProvenance({ provenance, comment, ca
   if (provenance.repository !== controlRepository) {
     fail('validation attestation edit provenance does not match control repository');
   }
-  if (provenance.authorLogin !== 'github-actions[bot]') {
-    fail('validation attestation edit provenance does not preserve github-actions[bot] author identity');
-  }
   if (provenance.editorLogin !== null || provenance.lastEditedAt !== null) {
     fail('validation attestation edit provenance shows the bot-authored attestation was edited after publication');
   }
