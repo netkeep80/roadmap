@@ -285,6 +285,11 @@ test('deleting an authority-bearing v2 checkpoint fails closed at the changed-ev
           created_at: '2026-08-24T20:00:00Z',
           body: sessionBody(),
         },
+        comment: {
+          id: 7001,
+          created_at: '2026-08-24T20:10:00Z',
+          body: block(candidateData()),
+        },
       },
       registry: REGISTRY,
     }),
