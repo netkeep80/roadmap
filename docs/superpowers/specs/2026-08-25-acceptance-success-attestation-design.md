@@ -82,6 +82,8 @@ An acceptance-validation attestation has authority only when bounded resolution 
 - the current exact acceptance checkpoint body SHA-256 matches the attested digest;
 - edit/delete provenance for the attestation remains append-only according to the existing event-local evidence-integrity boundary.
 
+REST bot identity is authoritative. GraphQL/edit provenance is used to bind the exact same comment and prove the absence of edits; it must not reintroduce a second exact-login-spelling requirement for the bot identity.
+
 User-authored lookalikes, copied bot text, malformed blocks, wrong comment ids, wrong Sessions, wrong digest, wrong decision, wrong H/B, wrong PR, or wrong work item have zero authority.
 
 ## Emission boundary
@@ -204,19 +206,41 @@ Required RED/GREEN cases:
 10. Existing v1 pointer fixtures and candidate-attestation semantics remain unchanged and GREEN.
 11. Full exact-head Portfolio validate and repo-guard remain GREEN before sealing.
 
+## Bootstrap deployment boundary
+
+The producer cannot use candidate code to attest its own pre-deployment acceptance. `issue_comment` authority must remain anchored in the already deployed roadmap validator/workflow on `main`; loading the #182 PR head to validate or attest #182 itself would violate the trust boundary.
+
+Therefore #182 has a staged bootstrap:
+
+1. #182 implementation is developed and tested on the stacked branch.
+2. After #177 is integrated, #182 is reconciled to exact new main and all exact-head CI is rerun.
+3. #182 receives a fresh immutable implementation seal, the existing candidate successful-validation attestation, and fresh independent acceptance under the already deployed validator.
+4. Because roadmap enforcement remains advisory and target no-bypass enforcement is not yet proven, this pre-deployment acceptance does **not** permit an automated worker/agent merge of #182. Integration must use the current explicitly permitted human/manual path (or another separately authorized non-automated path); no bootstrap exception grants automation merge authority.
+5. After deployment, exact new-main workflows must be GREEN and Agent Status must remain valid.
+6. Only post-deployment acceptance events may create authoritative `roadmap-agent-acceptance-validation-attestation/v1` comments.
+7. The first real downstream consumer acceptance — expected to be the resumed `repo-guard#351` pilot — is the mandatory physical proof that the deployed emitter produces the exact bot-authenticated attestation and that v2 target verification consumes it correctly.
+
+The producer issue may remain open through that first post-deployment proof. Once #182 is integrated and new-main validation is GREEN, roadmap may remove #182 from the repo-guard pilot's `blocked_by` state and send a dependency-ready coordination Message; this unblocks execution without pretending that post-deployment physical proof already happened.
+
 ## Integration topology
 
 Development for #182 may be stacked from the exact independently accepted #177 head so the additive work can proceed without treating advisory-policy acceptance as automated merge authority.
 
-This stack does not inherit acceptance. Before #182 integration:
+This stack does not inherit acceptance. Before #182 deployment:
 
 1. Task 5 foundation #177 must be integrated through its permitted authority path.
 2. The #182 branch/PR must be reconciled to the resulting exact main.
 3. All exact-head CI must be rerun after reconciliation.
 4. A new immutable #182 implementation seal and successful candidate attestation must bind the reconciled H/B.
-5. A fresh different acceptance Session must independently accept that exact candidate.
-6. The final accepted checkpoint must itself produce the new acceptance-validation attestation.
-7. Only then can downstream repo-guard#351 resume the physical required-check/no-bypass pilot.
+5. A fresh different acceptance Session must independently accept that exact candidate under the deployed pre-#182 validator.
+6. Integration follows the bootstrap boundary above; no automated material merge authority is inferred.
+
+After #182 deployment:
+
+1. exact new-main Agent Status/Portfolio/repo-guard workflows must be GREEN;
+2. repo-guard#351 may resume through explicit dependency-ready coordination;
+3. its fresh exact candidate acceptance must produce the first real acceptance-validation attestation;
+4. repo-guard's required-check pilot must consume that v2 chain and prove positive + negative no-bypass behavior before any target automated material merge is enabled.
 
 Any head/base movement invalidates prior #182 seal/acceptance evidence.
 
@@ -235,4 +259,6 @@ This change does not:
 
 ## Success criteria
 
-The producer capability is complete when exact-head tests prove fail-closed v2 semantics, a real fresh accepted checkpoint produces a platform-authenticated acceptance-validation attestation, v1 remains compatible and non-merge-authoritative, independent exact-candidate acceptance succeeds, and downstream `repo-guard#351` can consume the new bounded chain for its separate physical enforcement/no-bypass pilot.
+#182 is deployment-ready when exact-head tests prove fail-closed v2 semantics, v1 remains compatible and non-merge-authoritative, exact reconciled #182 CI is GREEN, and independent exact-candidate acceptance succeeds under the deployed pre-#182 validator.
+
+#182 is fully closed only after deployment is verified on exact new main and the first real downstream accepted candidate produces a platform-authenticated acceptance-validation attestation that is successfully consumed by bounded v2 verification. Until the repo-guard#351 physical enforcement/no-bypass pilot completes, automated material merge remains disabled.
