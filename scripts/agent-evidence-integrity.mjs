@@ -220,7 +220,7 @@ function assertUneditedValidationAttestationProvenance({ provenance, comment, ca
   if (!Number.isInteger(Number(provenance.issueNumber)) || Number(provenance.issueNumber) !== Number(candidateSession)) {
     fail('validation attestation edit provenance does not match candidate Session');
   }
-  if (provenance.repository !== undefined && provenance.repository !== null && provenance.repository !== controlRepository) {
+  if (provenance.repository !== controlRepository) {
     fail('validation attestation edit provenance does not match control repository');
   }
   if (provenance.authorLogin !== 'github-actions[bot]') {
