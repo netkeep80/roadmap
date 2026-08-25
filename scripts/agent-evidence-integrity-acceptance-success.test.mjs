@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 
-import { validateCheckpointEventEvidence } from './agent-evidence-integrity.mjs';
+import { validateAcceptanceValidationEventEvidence } from './agent-acceptance-validation.mjs';
 import {
   parseAcceptanceValidationAttestation,
   renderAcceptanceValidationAttestation,
@@ -180,7 +180,7 @@ function resolvers(event) {
 
 test('successful created final acceptance emits acceptance-success attestation only after validation', async () => {
   const event = eventFor('accepted');
-  const result = await validateCheckpointEventEvidence({ event, registry: REGISTRY, ...resolvers(event) });
+  const result = await validateAcceptanceValidationEventEvidence({ event, registry: REGISTRY, ...resolvers(event) });
   assert.equal(result.acceptance_checked, true);
   assert.equal(typeof result.acceptance_validation_attestation_body, 'string');
   const attestation = parseAcceptanceValidationAttestation(result.acceptance_validation_attestation_body);
@@ -198,7 +198,7 @@ test('successful created final acceptance emits acceptance-success attestation o
 
 test('changes_requested acceptance never emits acceptance-success attestation', async () => {
   const event = eventFor('changes_requested');
-  const result = await validateCheckpointEventEvidence({ event, registry: REGISTRY, ...resolvers(event) });
+  const result = await validateAcceptanceValidationEventEvidence({ event, registry: REGISTRY, ...resolvers(event) });
   assert.equal(result.acceptance_checked, true);
   assert.equal(result.acceptance_validation_attestation_body, undefined);
 });
@@ -209,7 +209,7 @@ test('ordinary creation of acceptance-success bot attestation does not recurse i
     acceptanceComment: { id: 7002, body: block(acceptanceData()) },
     acceptance: acceptanceData().acceptance,
   });
-  const result = await validateCheckpointEventEvidence({
+  const result = await validateAcceptanceValidationEventEvidence({
     event: { action: 'created', issue: { number: 901, body: sessionBody({ phase: 'acceptance' }) }, comment: { id: 8000, body } },
     registry: REGISTRY,
   });
@@ -224,7 +224,7 @@ test('acceptance-success attestation edit and delete fail closed as append-only 
   });
   for (const action of ['edited', 'deleted']) {
     await assert.rejects(
-      () => validateCheckpointEventEvidence({
+      () => validateAcceptanceValidationEventEvidence({
         event: {
           action,
           issue: { number: 901, body: sessionBody({ phase: 'acceptance' }) },
@@ -242,6 +242,7 @@ test('Agent Status runtime routes, fetches, outputs and publishes acceptance-suc
   const workflow = await readFile(new URL('../.github/workflows/agent-status.yml', import.meta.url), 'utf8');
   assert.ok(workflow.includes(ACCEPTANCE_ATTESTATION_START));
   assert.match(workflow, /scripts\/acceptance-validation-attestation\.mjs/);
+  assert.match(workflow, /scripts\/agent-acceptance-validation\.mjs/);
   assert.match(workflow, /acceptance_validation_attestation_body_b64/);
   assert.match(workflow, /Publish successful acceptance validation attestation/);
   assert.match(workflow, /roadmap-agent-acceptance-validation-attestation:start/);

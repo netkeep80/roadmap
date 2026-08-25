@@ -9,6 +9,8 @@ on:
       - "scripts/agent-evidence-integrity-acceptance-attestation.test.mjs"
       - "scripts/agent-evidence-integrity-acceptance-success.test.mjs"
       - "scripts/agent-evidence-integrity-provenance.test.mjs"
+      - "scripts/acceptance-validation-attestation.mjs"
+      - "scripts/agent-acceptance-validation.mjs"
       - ".github/workflows/agent-evidence-integrity.yml"
       - ".github/workflows/agent-status.yml"
   workflow_dispatch:
