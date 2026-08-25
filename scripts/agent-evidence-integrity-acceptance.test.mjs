@@ -204,6 +204,7 @@ function acceptanceResolvers({
     resolveControlCommentProvenance: async () => ({
       databaseId: 7003,
       issueNumber: 900,
+      repository: 'netkeep80/roadmap',
       authorLogin: 'github-actions[bot]',
       editorLogin: null,
       lastEditedAt: null,
