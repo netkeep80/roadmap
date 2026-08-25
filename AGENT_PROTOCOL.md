@@ -510,7 +510,7 @@ The protocol does not:
 
 A target pull request may carry exactly one bounded acceptance index block:
 
-```text
+````text
 <!-- roadmap-agent-pr:start -->
 ```json
 {
@@ -527,7 +527,7 @@ A target pull request may carry exactly one bounded acceptance index block:
 }
 ```
 <!-- roadmap-agent-pr:end -->
-```
+````
 
 The pointer is an **index only**. It never replaces roadmap Session/Checkpoint evidence and never grants merge authority by itself.
 
