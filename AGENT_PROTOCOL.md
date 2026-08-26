@@ -269,8 +269,8 @@ Machine policy is `data/worker-policy.json`.
 ```text
 schema_version = 3
 selection_policy = normalized-finish-first-v1
-lease_seconds = 7200
-heartbeat_target_seconds = 3600
+lease_seconds = 3600
+heartbeat_target_seconds = 1800
 pr_reconciliation_required = true
 branch_reconciliation_required = true
 ```
@@ -281,6 +281,8 @@ Authoritative heartbeat:
 
 1. GitHub server `created_at` of the latest valid structured Checkpoint;
 2. otherwise Session issue `created_at`.
+
+A genuinely active long-running Session refreshes this same heartbeat with an ordinary structured Checkpoint around `heartbeat_target_seconds`; no separate heartbeat object is introduced.
 
 Session `updated_at` is not heartbeat authority.
 
