@@ -27,6 +27,7 @@ const WORKER_POLICY_PATH = new URL('../data/worker-policy.json', import.meta.url
 const DEFAULT_STATUS_ISSUE_NUMBER = 103;
 const CHECKPOINT_PROTOCOLS = new Set(['roadmap-agent-checkpoint/v1', 'roadmap-agent-checkpoint/v2']);
 const validateOnly = process.argv.includes('--validate-live');
+const auditHistory = process.argv.includes('--audit-history');
 
 async function readRegistry() {
   return JSON.parse(await fs.readFile(REGISTRY_PATH, 'utf8'));
@@ -34,6 +35,18 @@ async function readRegistry() {
 
 async function readWorkerPolicy() {
   return JSON.parse(await fs.readFile(WORKER_POLICY_PATH, 'utf8'));
+}
+
+export async function collectAgentStatusInputs(registry, {
+  auditHistory: includeHistory = false,
+  collectLive = collectLiveAgentInputs,
+  listHistorical = listAllControlIssues,
+} = {}) {
+  const live = await collectLive(registry);
+  const historicalIssues = includeHistory
+    ? await listHistorical(registry.owner, registry.control_repository)
+    : live.issues;
+  return { ...live, historicalIssues };
 }
 
 async function listIssueComments(owner, repository, issueNumber) {
@@ -226,10 +239,7 @@ async function main() {
   if (!process.env.GITHUB_TOKEN) {
     console.warn('WARN: GITHUB_TOKEN is not set; public API rate limits may apply.');
   }
-  const [{ repositories, issues }, historicalIssues] = await Promise.all([
-    collectLiveAgentInputs(registry),
-    listAllControlIssues(registry.owner, registry.control_repository),
-  ]);
+  const { repositories, issues, historicalIssues } = await collectAgentStatusInputs(registry, { auditHistory });
   const snapshot = await buildLiveAgentSnapshot({
     registry,
     workerPolicy,
@@ -239,8 +249,8 @@ async function main() {
     listBranches: listRepositoryBranches,
   });
 
-  console.log(`agent status live ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.stale_candidate_session_count} stale candidates, ${snapshot.claim_count} active claims, ${snapshot.stale_claim_count} stale claims, ${snapshot.duplicate_work_item_pr_count} duplicate-work PR groups, ${snapshot.unreconciled_supersession_count} unreconciled supersessions, ${snapshot.branch_drift_count} branch drift, ${snapshot.unresolved_message_count} unresolved messages`);
-  if (validateOnly) return;
+  console.log(`${auditHistory ? 'agent historical audit' : 'agent status live'} ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.stale_candidate_session_count} stale candidates, ${snapshot.claim_count} active claims, ${snapshot.stale_claim_count} stale claims, ${snapshot.duplicate_work_item_pr_count} duplicate-work PR groups, ${snapshot.unreconciled_supersession_count} unreconciled supersessions, ${snapshot.branch_drift_count} branch drift, ${snapshot.unresolved_message_count} unresolved messages`);
+  if (validateOnly || auditHistory) return;
 
   const configuredIssueNumber = Number.parseInt(process.env.AGENT_STATUS_ISSUE_NUMBER ?? `${DEFAULT_STATUS_ISSUE_NUMBER}`, 10);
   const issueBody = `${renderAgentStatus(snapshot).replace('GENERATED FILE — DO NOT EDIT.', 'GENERATED ISSUE VIEW — DO NOT EDIT.')}\n`;
