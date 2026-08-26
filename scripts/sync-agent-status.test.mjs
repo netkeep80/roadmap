@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildLiveAgentSnapshot, updateAgentStatusIssue } from './sync-agent-status.mjs';
+import {
+  buildLiveAgentSnapshot,
+  collectAgentStatusInputs,
+  updateAgentStatusIssue,
+} from './sync-agent-status.mjs';
 
 const block = (value) => `before\n<!-- roadmap-agent:start -->\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\`\n<!-- roadmap-agent:end -->\nafter`;
 
@@ -89,6 +93,41 @@ const closedHistoricalSessionIssue = {
 };
 
 const noPullRequests = async () => [];
+
+test('default Agent Status input collection stays on current open operational issues', async () => {
+  let historicalReads = 0;
+  const live = { repositories, issues: [roleIssue] };
+  const result = await collectAgentStatusInputs(registry, {
+    collectLive: async () => live,
+    listHistorical: async () => {
+      historicalReads += 1;
+      return [roleIssue, terminalSessionIssue];
+    },
+  });
+
+  assert.equal(historicalReads, 0);
+  assert.deepEqual(result.repositories, repositories);
+  assert.deepEqual(result.issues, [roleIssue]);
+  assert.strictEqual(result.historicalIssues, result.issues);
+});
+
+test('explicit historical audit preserves full Session history collection', async () => {
+  let historicalReads = 0;
+  const historicalIssues = [roleIssue, terminalSessionIssue, terminalV2SessionIssue];
+  const result = await collectAgentStatusInputs(registry, {
+    auditHistory: true,
+    collectLive: async () => ({ repositories, issues: [roleIssue] }),
+    listHistorical: async (owner, repository) => {
+      historicalReads += 1;
+      assert.equal(owner, 'netkeep80');
+      assert.equal(repository, 'roadmap');
+      return historicalIssues;
+    },
+  });
+
+  assert.equal(historicalReads, 1);
+  assert.strictEqual(result.historicalIssues, historicalIssues);
+});
 
 test('terminal Session marked comments are still validated fail-closed', async () => {
   let commentReads = 0;
