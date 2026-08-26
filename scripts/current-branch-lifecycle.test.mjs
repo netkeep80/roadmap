@@ -351,19 +351,3 @@ test('implementation handoff uses overlap-before-clear with a mandatory post-ado
     target_writes_allowed: false,
   });
 });
-
-test('acceptance branch preparation cannot adopt implementation branch custody', () => {
-  assert.deepEqual(workerRuntime.decideBranchPreparation({
-    claimWon: true,
-    workPhase: 'acceptance',
-    currentBranch: null,
-    intendedBranch: owned(),
-    branchExists: true,
-    matchingOpenPr: { number: 8 },
-  }), {
-    action: 'acceptance_branch_forbidden',
-    current_branch: null,
-    branch_creation_allowed: false,
-    target_writes_allowed: false,
-  });
-});

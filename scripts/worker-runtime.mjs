@@ -4,7 +4,7 @@ const EXPECTED_WORK_ORDER = ['handoff', 'message', 'local-issue'];
 const NORMALIZED_SELECTION_POLICY = 'normalized-finish-first-v1';
 const LEASED_STATES = new Set(['starting', 'working', 'waiting', 'blocked']);
 const TERMINAL_STATES = new Set(['completed', 'abandoned']);
-const WORK_PHASES = new Set(['implementation', 'acceptance']);
+const WORK_PHASES = new Set(['implementation']);
 
 function fail(message) {
   throw new Error(`worker runtime: ${message}`);
@@ -281,15 +281,7 @@ export function decideBranchPreparation({
   branchExists,
   matchingOpenPr = null,
 }) {
-  if (!WORK_PHASES.has(workPhase)) fail('workPhase must be implementation or acceptance');
-  if (workPhase === 'acceptance') {
-    return {
-      action: 'acceptance_branch_forbidden',
-      current_branch: null,
-      branch_creation_allowed: false,
-      target_writes_allowed: false,
-    };
-  }
+  if (workPhase !== 'implementation') fail('workPhase must be implementation');
 
   const intended = normalizeBranch(intendedBranch, 'intendedBranch');
   const current = currentBranch === null ? null : normalizeBranch(currentBranch, 'currentBranch');
@@ -389,36 +381,6 @@ export function decideImplementationBranchTakeover({
     current_branch: successorBranch,
     predecessor_clear_allowed: true,
     target_writes_allowed: false,
-  };
-}
-
-export function decideAcceptanceOutcome({ decision, integration_gates_green }) {
-  if (decision === 'changes_requested') {
-    return {
-      action: 'release_to_implementation',
-      acceptance_claim_released: true,
-      implementation_branch_adoption_allowed: false,
-      integration_allowed: false,
-    };
-  }
-  if (decision !== 'accepted') fail('acceptance decision must be accepted or changes_requested');
-
-  if (integration_gates_green !== true) {
-    return {
-      action: 'release_for_integration_revalidation',
-      acceptance_claim_released: true,
-      implementation_branch_adoption_allowed: false,
-      integration_allowed: false,
-    };
-  }
-
-  // Acceptance alone never grants merge authority. Target enforcement and exact
-  // integration gates remain a later, separately validated authority boundary.
-  return {
-    action: 'accepted_requires_target_integration_authority',
-    acceptance_claim_released: true,
-    implementation_branch_adoption_allowed: false,
-    integration_allowed: false,
   };
 }
 

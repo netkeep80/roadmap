@@ -77,6 +77,8 @@ A Session references exactly one Role and the same repository as that Role. The 
 
 Historical public v1 Sessions may omit `current_branch` and may contain previously accepted scheduler metadata. Both are read-tolerated migration cases only; scheduler metadata has no authority, liveness, collision, selection, or generated-status meaning.
 
+Historical v2 Sessions/Checkpoints, including acceptance-phase evidence, remain fail-closed readable for compatibility and forensic history. New forward workers do not create acceptance-phase Sessions; forward Session execution is implementation coordination only.
+
 `current_branch` is either `null` or an exact same-repository branch identity:
 
 ```json
@@ -112,7 +114,9 @@ A terminal Session has zero claims and cannot retain non-null `current_branch`. 
 
 When a successor successfully consumes a handoff, the predecessor becomes `completed` with zero claims and is closed. An invalidated handoff becomes `abandoned` and is closed. `current_branch` is cleared only when that Session no longer owns/resumes the branch.
 
-For implementation-branch handoff, branch custody transfers **overlap-before-clear**: the predecessor remains a claim-free `handoff` owning the branch until a fresh implementation successor wins the Claim and durably persists the exact same `current_branch`. GitHub is then refreshed again; only after that refresh proves the predecessor is still claim-free and the successor is still the winning implementation Session may predecessor branch ownership be cleared. An acceptance-phase Session never adopts implementation `current_branch` custody.
+For implementation-branch handoff, branch custody transfers **overlap-before-clear**: the predecessor remains a claim-free `handoff` owning the branch until a fresh implementation successor wins the Claim and durably persists the exact same `current_branch`. GitHub is then refreshed again; only after that refresh proves the predecessor is still claim-free and the successor is still the winning implementation Session may predecessor branch ownership be cleared.
+
+A forward handoff remains open only for genuine unfinished execution state that cannot be reconstructed from the local issue alone, normally an unfinished branch/PR or a concrete partial implementation boundary. Waiting for a dependency, naming a future task, or preserving an architectural note belongs in the local Issue or a Message and does not justify a resumable Session.
 
 Closed Sessions remain historical audit evidence and are still fail-closed validated; they are not active control state.
 
@@ -191,7 +195,7 @@ explicit work item
 → refresh GitHub and confirm durable ownership
 → only then create/reuse the exact branch
 → one canonical PR
-→ CI / repo-guard
+→ target CI / repo-guard / branch protection
 → merge
 → ordinary ephemeral branch disappears
 ```
@@ -202,7 +206,7 @@ If a LIVE/resumable Session already has `current_branch` and that exact branch e
 
 If `current_branch` points to an absent branch, a winning worker may create that exact branch only after fresh branch/PR reconciliation. A collision loser never creates, pushes, rewrites, or reuses a target branch.
 
-Phase-aware implementation handoff uses this exact transfer sequence:
+Implementation handoff uses this exact transfer sequence:
 
 ```text
 predecessor implementation Session
@@ -214,7 +218,7 @@ predecessor implementation Session
 → successor may mutate <B> only after the ordinary pre-write gate succeeds
 ```
 
-The predecessor must never clear `<B>` before the successor durably adopts it. Acceptance Sessions have `current_branch=null` and must never create, adopt, push, rewrite, or otherwise own an implementation branch. `changes_requested` releases acceptance authority and requires an explicit implementation continuation; `accepted` with integration gates still pending also releases acceptance without branch custody.
+The predecessor must never clear `<B>` before the successor durably adopts it. Forward workers have no independent acceptance phase or acceptance branch custody. Historical v2 acceptance Sessions remain readable compatibility evidence only and are not created, resumed, or required by the forward worker flow.
 
 Preservation rules:
 
@@ -370,12 +374,12 @@ Use Messages only for durable cross-repository coordination, dependency readines
 
 The control plane has no implicit `invent work` transition.
 
-Before selecting work, reconstruct current GitHub and normalize explicit executable evidence into transient WorkCandidates. Source type is not queue authority. A normalized candidate contains at least:
+Before selecting work, reconstruct current GitHub and normalize explicit executable evidence into transient WorkCandidates. Source type is not queue authority. A normalized forward candidate contains at least:
 
 ```text
 repository
 work_item
-work_phase
+work_phase = implementation
 exact effective declared priority
 explicit local/dependency order when declared
 continuation = true | false
@@ -428,7 +432,7 @@ Examples of valid triggers:
 - consumed handoff predecessor still open;
 - stale Session requiring protocol recovery;
 - generated status / validator / portfolio drift against a declared invariant;
-- existing roadmap umbrella/acceptance/governance issue whose already-proven evidence needs reconciliation.
+- existing roadmap umbrella/governance issue whose already-proven evidence needs reconciliation.
 
 Where the maintenance target is itself an open roadmap issue, claim that exact issue. Do not create a second housekeeping issue merely to track the repair.
 
@@ -459,10 +463,9 @@ Refresh relevant GitHub facts:
 - before Session/Message close transitions;
 - after merge/close transitions;
 - before clearing `current_branch`;
-- before acceptance release / implementation continuation transitions;
 - before handoff/completion.
 
-Target repository CI/repo-guard rules remain integration authority.
+Target repository CI/repo-guard/branch-protection rules remain integration authority. Roadmap coordination state never grants merge authority and does not require an independent acceptance ceremony.
 
 ## 10. Public-only reference grammar
 
@@ -496,8 +499,10 @@ The protocol does not:
 
 - choose portfolio priority or canonical ownership automatically;
 - create work because a timer fired or a worker is idle;
-- grant merge authority from a Claim, Session, or `current_branch`;
-- replace repository issues/PRs, local CI, or repo-guard;
+- grant merge authority from a Claim, Session, Checkpoint, handoff, or `current_branch`;
+- replace repository issues/PRs, local CI, repo-guard, or branch protection;
+- create new independent acceptance Sessions, candidate/acceptance seal chains, bot acceptance attestations, or roadmap merge-pointer protocols;
+- require target-side replay of roadmap acceptance, GraphQL provenance as a merge gate, worker no-bypass proof, or a roadmap-owned merge queue;
 - infer work-item identity from changed-file overlap alone;
 - infer deletion authority from branch age/name/ancestry/behind state;
 - introduce a merge queue or global repository lock;

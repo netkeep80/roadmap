@@ -28,6 +28,8 @@ Do NOT clone or checkout netkeep80/roadmap for discovery, status, coordination, 
 Reconstruct current Role/Session/Checkpoint/Claim/Message/portfolio state from GitHub.
 Select only explicitly executable work permitted by the control plane, then enter the corresponding permanent Role issue.
 
+Rank executable work by one normalized selector: explicit declared priority (P0 before P1 before P2 and so on), then explicit local/dependency order when declared, then continuation before genuinely new work only within the same effective rank, then repository lexical order, then issue number. Source type is not priority. A handoff is continuation evidence, not a separate priority queue. A Message changes derived work/dependency state and is not a global queue lane. Mixed or ambiguous priority fails closed until portfolio intent is explicit.
+
 Treat netkeep80/roadmap itself as a normal managed repository. Roadmap/control-plane maintenance is allowed only through permanent roadmap Role #49, only for a concrete current management trigger or explicit roadmap work item, and uses ordinary Session/Claim collision rules. Only if Role #49 actually selects executable work in netkeep80/roadmap does roadmap become the target repository and may be cloned/checked out.
 
 For any other Role, clone/checkout only the selected target repository when implementation work requires it. Never clone roadmap merely because it is the control plane.
@@ -37,9 +39,9 @@ Never create housekeeping work merely because the worker is idle.
 Never duplicate work held by a LIVE winning Session.
 Recover STALE_CANDIDATE work only through the documented complete GitHub revalidation protocol.
 
-If no executable work exists, make zero repository changes, create no idle Session, and terminate this run.
+If no executable work exists, return EXIT_NO_WORK: make zero repository changes, create no idle Session, and terminate this run.
 
-When work exists, create a unique Agent Session issue for this execution. New Sessions carry explicit `current_branch: null` until branch ownership is selected. After Session creation, refresh the complete competing LIVE Session/Claim set before any target-repository write. Proceed only if this Session is the deterministic winning claimant. If it loses, perform zero target-repository writes, create no target branch, transition the losing Session to terminal state, close it, then bounded-reselect another explicit candidate or exit.
+When work exists, create a unique Agent Session issue for this execution. New forward Sessions are implementation coordination only and carry explicit `current_branch: null` until branch ownership is selected. After Session creation, refresh the complete competing LIVE Session/Claim set before any target-repository write. Proceed only if this Session is the deterministic winning claimant. If it loses, perform zero target-repository writes, create no target branch, transition the losing Session to terminal state, close it, then bounded-reselect another explicit candidate or exit.
 
 After winning the claim and before any target-repository code write, branch creation, or new PR creation, refresh all open PRs in the selected target repository. If exactly one open PR explicitly implements/closes the same work item, reuse that PR instead of creating another. If multiple open PRs explicitly implement/close the same work item, perform zero target code writes until the duplicate PR state is reconciled to one canonical open PR. A replacement PR must explicitly declare `Supersedes: #N` and the superseded PR must be closed/reconciled; do not leave both open. Shared changed-file overlap alone does not serialize independent work.
 
@@ -51,9 +53,9 @@ If no branch is yet owned, choose the exact intended branch, persist `current_br
 
 Never delete or abandon a branch merely because it is old, behind, oddly named, has no PR, overlaps another change, or is an ancestor of another commit. Preserve default/persistent configured branches, open PR heads, and LIVE/resumable owned branches. A terminal Session with an unexplained surviving ordinary working branch is reconciliation drift, not automatic deletion authority.
 
-Before every repository write or lifecycle transition, refresh exact GitHub state and obey the target repository's actual CI/repo-guard policy.
+Before every repository write or lifecycle transition, refresh exact GitHub state and obey the target repository's actual CI/repo-guard/branch-protection policy. The target repository is the integration authority. Do not create independent acceptance Sessions, candidate/acceptance seal chains, roadmap merge-authority pointers, target-side roadmap acceptance replay, or a roadmap-owned merge queue.
 
-Before finishing meaningful work, leave a durable Checkpoint. While the Session owns a branch, the Checkpoint must carry the same `current_branch`. If work is complete or abandoned, clear claims and clear `current_branch` only once the Session no longer owns/resumes that branch, then close the Session issue. Keep a handoff issue open only while it is genuinely resumable; a handoff may retain `current_branch` when the exact useful branch is part of the handoff. When a successor consumes it, complete/close the predecessor.
+Before finishing meaningful work, leave a durable Checkpoint. While the Session owns a branch, the Checkpoint must carry the same `current_branch`. If work is complete or abandoned, clear claims and clear `current_branch` only once the Session no longer owns/resumes that branch, then close the Session issue. Keep a handoff issue open only while it carries genuine unfinished execution state that cannot be reconstructed from the local issue alone, normally an unfinished branch/PR or a concrete partial implementation boundary. Do not keep a handoff open merely to say wait for a dependency, read an issue later, remember a note, or mark the next task; those facts belong in the local Issue or a Message. When a successor consumes a genuine handoff, complete/close the predecessor.
 ```
 
 ## Bootstrap and work selection
@@ -76,16 +78,19 @@ roadmap main via GitHub API
 
 Permanent Agent Status Issue #103 may be used as a quick human-oriented dashboard, but workers must not use it as coordination authority or as a substitute for live issue reconstruction.
 
-Selection order is fixed:
+Forward work selection uses one normalized rank:
 
 ```text
-1. valid executable handoff
-2. actionable incoming Message
-3. existing executable open local issue
-4. EXIT_NO_WORK
+1. explicit declared priority: P0 < P1 < P2 < ...
+2. explicit local/dependency order when declared
+3. continuation before genuinely new work only inside the same effective rank
+4. repository lexical order
+5. issue number
 ```
 
-Executable local work must be public, portfolio-consistent, executable now, unblocked, not occupied by a LIVE winning Session, and not pending stale-session recovery.
+Source type is not priority. A handoff contributes continuation evidence. A Message changes derived executable/blocker/dependency state. It does not outrank a local Issue merely because it is a Message. Mixed or ambiguous priority is non-rankable and fails closed until portfolio intent is explicit.
+
+Executable local work must be public, portfolio-consistent, executable now, unblocked, not occupied by a LIVE winning Session, and not pending stale-session recovery. If the normalized candidate set is empty, the only result is `EXIT_NO_WORK` with zero repository writes and zero idle Session creation.
 
 There is no branch that creates work merely because the worker is idle. No speculative backlog generation, unsolicited cleanup/refactoring, idle dependency upgrades, implicit milestones, blocker bypasses, or keep-busy issues are allowed.
 
@@ -100,7 +105,7 @@ A roadmap maintenance candidate requires both a concrete current fact and declar
 - consumed handoff predecessor still open;
 - stale Session requiring protocol recovery;
 - generated status / validator / portfolio drift against an existing invariant;
-- existing roadmap umbrella/acceptance/governance issue whose already-proven evidence needs reconciliation.
+- existing roadmap umbrella/governance issue whose already-proven evidence needs reconciliation.
 
 Where the maintenance target is itself an open roadmap issue, claim that exact issue. Do not create another meta-issue just to track the cleanup.
 
@@ -121,7 +126,7 @@ No concrete management trigger means no roadmap housekeeping candidate and there
 
 ## Session identity, lifecycle and collision gate
 
-A Session issue is the durable identity of one execution. The timer invocation itself has no durable identity.
+A Session issue is the durable identity of one execution. The timer invocation itself has no durable identity. New forward Sessions coordinate implementation work only; historical v1/v2 acceptance evidence remains readable history but is not a forward execution phase.
 
 Two anonymous invocations may race and both select the same apparently-unclaimed item before either Session exists. That is acceptable. Correctness begins after Session creation:
 
@@ -203,6 +208,7 @@ Machine policy lives in `data/worker-policy.json` and is read through GitHub Con
 ```text
 lease_seconds = 7200
 heartbeat_target_seconds = 3600
+selection_policy = normalized-finish-first-v1
 pr_reconciliation_required = true
 branch_reconciliation_required = true
 ```
@@ -229,7 +235,9 @@ A stale retained claim or branch is **not free**. Recovery requires complete cur
 
 The pool coordinates only registered public owner repositories. Unknown or non-public repository references fail closed.
 
-Roadmap decides whether work is explicit and unoccupied through API-visible control state. The target repository decides whether a change may integrate. Before every write or lifecycle transition, re-read exact target state and obey its actual CI/repo-guard policy.
+Roadmap decides whether work is explicit and unoccupied through API-visible control state. The target repository decides whether a change may integrate. Before integration, re-read exact target CI/repo-guard/branch-protection state and obey it. Roadmap coordination state never grants merge authority, and new forward workers do not create independent acceptance Sessions, acceptance seals/attestations, `roadmap-agent-pr/v1` or `/v2` merge pointers, GraphQL merge-provenance gates, target-side roadmap acceptance replay, no-bypass proofs, or a roadmap-owned merge queue.
+
+Historical v1/v2 Session/Checkpoint evidence remains readable for compatibility and forensic history. It is not authority to create new forward acceptance work.
 
 ## Human operating model
 
@@ -238,7 +246,7 @@ create N identical Scheduled Tasks
         ↓
 anonymous invocations read roadmap control plane via GitHub API only
         ↓
-select explicit executable target
+select explicit executable target by normalized rank
         ↓
 Session + deterministic Claim winner
         ↓
@@ -246,11 +254,11 @@ PR reconciliation → branch reconciliation → durable current_branch
         ↓
 checkout only that target repository when required
         ↓
-normal repository work + bounded Role #49 roadmap maintenance
+normal repository implementation + target CI/repo-guard integration
         ↓
-Sessions/Claims/Checkpoints + PR/branch reconciliation coordinate concurrency
+Sessions/Claims/Checkpoints/Messages coordinate concurrency and handoff
         ↓
 open roadmap state reflects current work, closed issues retain history
 ```
 
-Production acceptance evidence is tracked in roadmap #62. Numbered scheduler identities are not part of the forward model.
+Production pilot evidence is tracked in roadmap #62. Numbered scheduler identities are not part of the forward model.
