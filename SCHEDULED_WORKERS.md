@@ -55,6 +55,8 @@ Never delete or abandon a branch merely because it is old, behind, oddly named, 
 
 Before every repository write or lifecycle transition, refresh exact GitHub state and obey the target repository's actual CI/repo-guard/branch-protection policy. The target repository is the integration authority. Do not create independent acceptance Sessions, candidate/acceptance seal chains, roadmap merge-authority pointers, target-side roadmap acceptance replay, or a roadmap-owned merge queue.
 
+If meaningful work continues for longer than `heartbeat_target_seconds`, refresh the authoritative heartbeat by writing another ordinary structured Checkpoint. Do not create a separate heartbeat object, keepalive service, or scheduler identity.
+
 Before finishing meaningful work, leave a durable Checkpoint. While the Session owns a branch, the Checkpoint must carry the same `current_branch`. If work is complete or abandoned, clear claims and clear `current_branch` only once the Session no longer owns/resumes that branch, then close the Session issue. Keep a handoff issue open only while it carries genuine unfinished execution state that cannot be reconstructed from the local issue alone, normally an unfinished branch/PR or a concrete partial implementation boundary. Do not keep a handoff open merely to say wait for a dependency, read an issue later, remember a note, or mark the next task; those facts belong in the local Issue or a Message. When a successor consumes a genuine handoff, complete/close the predecessor.
 ```
 
@@ -206,8 +208,8 @@ Default branch, active open-PR heads, LIVE/resumable owned branches, and branche
 Machine policy lives in `data/worker-policy.json` and is read through GitHub Contents API during bootstrap.
 
 ```text
-lease_seconds = 7200
-heartbeat_target_seconds = 3600
+lease_seconds = 3600
+heartbeat_target_seconds = 1800
 selection_policy = normalized-finish-first-v1
 pr_reconciliation_required = true
 branch_reconciliation_required = true
@@ -217,6 +219,8 @@ Authoritative heartbeat:
 
 1. GitHub server `created_at` of the latest valid structured Checkpoint;
 2. otherwise Session issue `created_at`.
+
+A genuinely active long-running Session refreshes this same heartbeat with an ordinary structured Checkpoint around `heartbeat_target_seconds`; no separate heartbeat object is introduced.
 
 Session `updated_at` is not heartbeat authority.
 
