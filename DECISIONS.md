@@ -186,6 +186,44 @@ Non-public repository names/URLs/issues/PRs/SHAs/status/dependencies/roles не 
 
 **Следствие:** работающий или новый AI-агент может быть введён/повторно введён в роль одной постоянной GitHub URL, восстановить durable context через Sessions/Messages и продолжить работу после обязательной проверки свежего local GitHub state.
 
+## D-009 — Forward Agent Control Plane остаётся coordination-only
+
+**Статус:** accepted  
+**Дата:** 2026-08-26  
+**Связано:** roadmap #62, PR #188
+
+Forward-модель намеренно ограничена координацией.
+
+`roadmap` отвечает за:
+
+- work discovery и normalized priority selection;
+- permanent Role;
+- transient Session и optimistic Claim;
+- deterministic collision handling;
+- genuine implementation handoff;
+- stale recovery после fresh GitHub revalidation;
+- durable cross-repository Messages.
+
+Target repository отвечает за:
+
+- implementation и tests;
+- CI / repo-guard / branch protection;
+- merge/integration correctness.
+
+Рабочий selector один: explicit `P0/P1/P2...`, затем declared local/dependency order, затем continuation только как tie-break внутри одинакового effective rank, затем repository lexical order и issue number. Source type не является priority: handoff — continuation evidence, Message — вход в derived work/dependency state. Ambiguous mixed priority fail closed до explicit portfolio intent.
+
+Новый forward flow **не создаёт и не требует** independent acceptance Sessions, candidate/acceptance seals, bot acceptance attestations, `roadmap-agent-pr/v1` или `/v2` merge pointers, GraphQL provenance merge gates, target-side replay roadmap acceptance, worker no-bypass proofs или roadmap-owned merge queue. Historical v1/v2 Session/Checkpoint evidence остаётся читаемым compatibility/history и не переписывается.
+
+До production pilot допускается максимум два stabilization PR, причём второй только при фактически необходимой operational-state boundedness correction. После stabilization control-plane меняется только по правилу:
+
+```text
+real observed production failure
++ exact GitHub evidence / reproducer
++ smallest bounded correction
+```
+
+**Следствие:** следующим acceptance mechanism самого control plane является реальный two-worker production pilot, а не новая proof chain. Если pilot не показывает material coordination defect, инженерная разработка control plane прекращается и возобновляется полный five-worker pool.
+
 ## Как добавлять следующее решение
 
 Новая запись должна содержать:
