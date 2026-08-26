@@ -156,4 +156,7 @@ test('forward policy bounds orphaned working Sessions and tells long executions 
     scheduledWorkers,
     /meaningful work continues for longer than `heartbeat_target_seconds`[\s\S]*structured Checkpoint/i,
   );
+
+  const protocol = await readFile(new URL('../AGENT_PROTOCOL.md', import.meta.url), 'utf8');
+  assert.match(protocol, /lease_seconds = 3600[\s\S]*heartbeat_target_seconds = 1800/);
 });
