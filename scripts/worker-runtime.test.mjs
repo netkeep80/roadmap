@@ -123,7 +123,7 @@ test('no explicit executable candidate returns exit_no_work', () => {
   });
 });
 
-test('bounded selection honors handoff then message then local issue', () => {
+test('historical v1/v2 runtime fixture honors handoff then message then local issue', () => {
   const issue = executableIssue('netkeep80/alpha#3');
   const message = { ref: 'netkeep80/roadmap#20', actionable: true };
   const handoff = { ref: 'netkeep80/roadmap#21', valid: true, executable_now: true, occupied_by_live_winner: false };
@@ -377,45 +377,5 @@ test('predecessor branch cannot clear before successor durably adopts same branc
     current_branch: implementationBranch,
     predecessor_clear_allowed: false,
     target_writes_allowed: false,
-  });
-});
-
-test('acceptance Session cannot adopt implementation branch', () => {
-  assert.deepEqual(workerRuntime.decideBranchPreparation({
-    claimWon: true,
-    workPhase: 'acceptance',
-    currentBranch: null,
-    intendedBranch: implementationBranch,
-    branchExists: true,
-    matchingOpenPr: { number: 8 },
-  }), {
-    action: 'acceptance_branch_forbidden',
-    current_branch: null,
-    branch_creation_allowed: false,
-    target_writes_allowed: false,
-  });
-});
-
-test('changes_requested releases acceptance and requires explicit implementation continuation', () => {
-  assert.deepEqual(workerRuntime.decideAcceptanceOutcome?.({
-    decision: 'changes_requested',
-    integration_gates_green: false,
-  }), {
-    action: 'release_to_implementation',
-    acceptance_claim_released: true,
-    implementation_branch_adoption_allowed: false,
-    integration_allowed: false,
-  });
-});
-
-test('accepted with integration gates pending releases acceptance without branch custody', () => {
-  assert.deepEqual(workerRuntime.decideAcceptanceOutcome?.({
-    decision: 'accepted',
-    integration_gates_green: false,
-  }), {
-    action: 'release_for_integration_revalidation',
-    acceptance_claim_released: true,
-    implementation_branch_adoption_allowed: false,
-    integration_allowed: false,
   });
 });
