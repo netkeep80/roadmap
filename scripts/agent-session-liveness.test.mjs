@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import { validateMessage, validateRoleCoverage, validateSession } from './agent-protocol.mjs';
 import { buildAgentSnapshot, renderAgentStatus } from './agent-status.mjs';
@@ -142,5 +143,17 @@ test('resolved Messages close while unresolved Messages stay open', () => {
   assert.throws(
     () => validateMessage(messageIssue('open', 'closed'), coverage.roleMap),
     /unresolved|open|lifecycle/i,
+  );
+});
+
+test('forward policy bounds orphaned working Sessions and tells long executions to refresh the existing Checkpoint heartbeat', async () => {
+  const policy = JSON.parse(await readFile(new URL('../data/worker-policy.json', import.meta.url), 'utf8'));
+  assert.equal(policy.lease_seconds, 3600);
+  assert.equal(policy.heartbeat_target_seconds, 1800);
+
+  const scheduledWorkers = await readFile(new URL('../SCHEDULED_WORKERS.md', import.meta.url), 'utf8');
+  assert.match(
+    scheduledWorkers,
+    /meaningful work continues for longer than `heartbeat_target_seconds`[\s\S]*structured Checkpoint/i,
   );
 });
