@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-27T09:49:36Z",
+  "latest_observed_github_change": "2026-08-27T21:35:51Z",
   "repository_count": 26,
   "child_repository_count": 25,
   "verified_child_backlinks": 25,
@@ -114,9 +114,9 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-26T23:19:36Z",
-      "updated_at": "2026-08-26T23:19:41Z",
-      "open_issues": 46,
+      "pushed_at": "2026-08-27T15:25:41Z",
+      "updated_at": "2026-08-27T09:56:12Z",
+      "open_issues": 47,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
@@ -145,17 +145,17 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-26T22:53:34Z",
-      "updated_at": "2026-08-26T21:31:29Z",
-      "open_issues": 15,
-      "open_pull_requests": 5,
+      "pushed_at": "2026-08-27T18:12:20Z",
+      "updated_at": "2026-08-27T14:43:42Z",
+      "open_issues": 14,
+      "open_pull_requests": 3,
       "tracked_issues": [
         {
           "number": 410,
           "title": "Compaction: eliminate forest_domain_mixin.inc and fix registry relocation lifetimes",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-26T22:54:54Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-27T11:31:01Z",
           "html_url": "https://github.com/netkeep80/PersistMemoryManager/issues/410",
           "is_pull_request": false
         },
@@ -164,7 +164,7 @@
           "title": "Define and enforce pmap key/value object-lifetime contract",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-08T18:51:03Z",
+          "updated_at": "2026-08-27T14:19:55Z",
           "html_url": "https://github.com/netkeep80/PersistMemoryManager/issues/415",
           "is_pull_request": false
         },
@@ -324,8 +324,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-27T00:08:39Z",
-      "updated_at": "2026-08-26T23:36:25Z",
+      "pushed_at": "2026-08-27T19:46:53Z",
+      "updated_at": "2026-08-27T19:56:38Z",
       "open_issues": 8,
       "open_pull_requests": 1,
       "tracked_issues": [
@@ -438,9 +438,9 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-27T09:09:24Z",
-      "updated_at": "2026-08-27T09:13:10Z",
-      "open_issues": 5,
+      "pushed_at": "2026-08-27T21:15:40Z",
+      "updated_at": "2026-08-27T19:17:38Z",
+      "open_issues": 4,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
@@ -455,9 +455,9 @@
         {
           "number": 157,
           "title": "[R3] Functional mathematical prover: theorem library → deterministic search → C1-C6 corpus",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-27T09:49:36Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-27T20:20:05Z",
           "html_url": "https://github.com/netkeep80/aprover/issues/157",
           "is_pull_request": false
         },
@@ -484,7 +484,7 @@
           "title": "[Architecture] Убрать canonical AST: direct Syntax Aset + Aset-native prover/UI",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-24T11:29:25Z",
+          "updated_at": "2026-08-27T21:35:51Z",
           "html_url": "https://github.com/netkeep80/aprover/issues/183",
           "is_pull_request": false
         }
@@ -953,6 +953,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-27T09:52:05.250Z",
-  "state_hash": "efb6d2e17d9d6d98e666b37f35af141d85b8443e0dfaaa590c023a1b554ca9cc"
+  "checked_at": "2026-08-27T22:17:21.605Z",
+  "state_hash": "e56b9f7b311969ecf00c45e6fc7687cef8f775f4098026eb1095b1336e051e72"
 }
