@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-26T17:18:14Z",
+  "latest_observed_github_change": "2026-08-27T09:49:36Z",
   "repository_count": 26,
   "child_repository_count": 25,
   "verified_child_backlinks": 25,
@@ -114,9 +114,9 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-26T14:05:50Z",
-      "updated_at": "2026-08-26T14:31:44Z",
-      "open_issues": 51,
+      "pushed_at": "2026-08-26T23:19:36Z",
+      "updated_at": "2026-08-26T23:19:41Z",
+      "open_issues": 46,
       "open_pull_requests": 0,
       "tracked_issues": [
         {
@@ -145,17 +145,17 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T17:47:37Z",
-      "updated_at": "2026-08-09T09:56:44Z",
-      "open_issues": 16,
-      "open_pull_requests": 6,
+      "pushed_at": "2026-08-26T22:53:34Z",
+      "updated_at": "2026-08-26T21:31:29Z",
+      "open_issues": 15,
+      "open_pull_requests": 5,
       "tracked_issues": [
         {
           "number": 410,
           "title": "Compaction: eliminate forest_domain_mixin.inc and fix registry relocation lifetimes",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-08T15:54:36Z",
+          "updated_at": "2026-08-26T22:54:54Z",
           "html_url": "https://github.com/netkeep80/PersistMemoryManager/issues/410",
           "is_pull_request": false
         },
@@ -324,10 +324,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-26T17:18:14Z",
-      "updated_at": "2026-08-26T15:06:21Z",
-      "open_issues": 11,
-      "open_pull_requests": 2,
+      "pushed_at": "2026-08-27T00:08:39Z",
+      "updated_at": "2026-08-26T23:36:25Z",
+      "open_issues": 8,
+      "open_pull_requests": 1,
       "tracked_issues": [
         {
           "number": 122,
@@ -438,10 +438,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T15:58:25Z",
-      "updated_at": "2026-08-24T11:25:29Z",
-      "open_issues": 6,
-      "open_pull_requests": 1,
+      "pushed_at": "2026-08-27T09:09:24Z",
+      "updated_at": "2026-08-27T09:13:10Z",
+      "open_issues": 5,
+      "open_pull_requests": 0,
       "tracked_issues": [
         {
           "number": 153,
@@ -457,7 +457,7 @@
           "title": "[R3] Functional mathematical prover: theorem library → deterministic search → C1-C6 corpus",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-24T18:31:55Z",
+          "updated_at": "2026-08-27T09:49:36Z",
           "html_url": "https://github.com/netkeep80/aprover/issues/157",
           "is_pull_request": false
         },
@@ -473,9 +473,9 @@
         {
           "number": 181,
           "title": "[R3.1] Versioned replayable theorem record без stored-truth authority",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-23T10:35:38Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-27T01:10:21Z",
           "html_url": "https://github.com/netkeep80/aprover/issues/181",
           "is_pull_request": false
         },
@@ -953,6 +953,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-26T20:04:00.192Z",
-  "state_hash": "86bb3ac1dc7a54571028416742e0df8f1e51d2411752e2408327f062cb25008d"
+  "checked_at": "2026-08-27T09:52:05.250Z",
+  "state_hash": "efb6d2e17d9d6d98e666b37f35af141d85b8443e0dfaaa590c023a1b554ca9cc"
 }

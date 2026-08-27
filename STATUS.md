@@ -5,9 +5,9 @@
 - Owner: `netkeep80`
 - Registered repositories: **26**
 - Verified child roadmap backlinks: **25/25**
-- Last successful GitHub check: **2026-08-26T20:04:00.192Z**
-- Latest observed GitHub change in snapshot: **2026-08-26T17:18:14Z**
-- State hash (excluding check time): `86bb3ac1dc7a54571028416742e0df8f1e51d2411752e2408327f062cb25008d`
+- Last successful GitHub check: **2026-08-27T09:52:05.250Z**
+- Latest observed GitHub change in snapshot: **2026-08-27T09:49:36Z**
+- State hash (excluding check time): `efb6d2e17d9d6d98e666b37f35af141d85b8443e0dfaaa590c023a1b554ca9cc`
 
 ## Control-plane health
 
@@ -34,18 +34,18 @@
 
 | Priority | Repository | Lifecycle | Current objective | Next portfolio gate | GitHub | Roadmap |
 |---:|---|---|---|---|---|---|
-| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | поддерживать accepted MTS v0.11 как единственный current production/reference semantic+proof baseline; package/identity и SyntaxAset work развивается через явные bounded/versioned gates, а visualization package authority находится отдельно в mts_visual | #925 portable theorem reuse + #926 untrusted producer facade завершить поверх accepted v0.11; #944 SyntaxAset architecture продолжает независимый S1+ migration path; #122/#123 остаются versioned research extensions; visual consumers repin independently | 11 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
-| **P0** | [`aprover`](https://github.com/netkeep80/aprover) | `active` | стать functional mathematical MTS prover: exact consumer accepted anum_docs proof semantics, trusted exact-Theory replay/approval, untrusted theorem/search/import tooling и независимая presentation lane через exact mts_visual consumer boundary | anum_docs#925/#926 accepted → ONE exact @mts/core repin → trusted expected-Theory binding → #181 theorem record → theorem repository/index → deterministic untrusted search → C1-C6 corpus; #168/#183 source/visual migration proceeds independently without AST authority | 6 issues / 1 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | поддерживать accepted MTS v0.11 как единственный current production/reference semantic+proof baseline; package/identity и SyntaxAset work развивается через явные bounded/versioned gates, а visualization package authority находится отдельно в mts_visual | #925 portable theorem reuse + #926 untrusted producer facade завершить поверх accepted v0.11; #944 SyntaxAset architecture продолжает независимый S1+ migration path; #122/#123 остаются versioned research extensions; visual consumers repin independently | 8 issues / 1 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`aprover`](https://github.com/netkeep80/aprover) | `active` | стать functional mathematical MTS prover: exact consumer accepted anum_docs proof semantics, trusted exact-Theory replay/approval, untrusted theorem/search/import tooling и независимая presentation lane через exact mts_visual consumer boundary | anum_docs#925/#926 accepted → ONE exact @mts/core repin → trusted expected-Theory binding → #181 theorem record → theorem repository/index → deterministic untrusted search → C1-C6 corpus; #168/#183 source/visual migration proceeds independently without AST authority | 5 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`avm`](https://github.com/netkeep80/avm) | `active` | закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая accepted МТС semantics | #174 semantic migrator → #131 differential end-to-end; #169 remains Native JSON umbrella; MTS-dependent frontend exact-repins только явный current accepted anum_docs boundary, без local alternative semantics | 1 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`mts_visual`](https://github.com/netkeep80/mts_visual) | `active` | быть единственным forward-looking owner standalone @mts/visual, независимо развивая presentation/rendering infrastructure без владения нормативной МТС semantics и без зависимости от @mts/core | продолжать M4 independent visual development; consumers exact-pin accepted visual commits independently of MTS semantic releases | 2 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0/P1** | [`anum_parser`](https://github.com/netkeep80/anum_parser) | `research` | экспериментировать с сериализацией, десериализацией и parser/Aset UX без создания второго нормативного источника МТС или второго visual package authority | сохранять accepted anum_docs semantic provenance и exact mts_visual consumer lock; parser-owned adapters map domain/Aset state into standalone @mts/visual | 2 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P1** | [`aes`](https://github.com/netkeep80/aes) | `active` | перевести проект от design assumptions к проверенному commissioning и as-built состоянию | design freeze → staged commissioning → measured as-built | 0 issues / 0 PRs | [#7](https://github.com/netkeep80/roadmap/issues/7) |
 | **P1** | [`isocubic`](https://github.com/netkeep80/isocubic) | `active` | восстановить test-first product core и завершить dev-tool extraction boundary | #300 → #301 → #302/#303/#304 → #305 → #306/#307 | 13 issues / 1 PRs | [#5](https://github.com/netkeep80/roadmap/issues/5) |
 | **P1** | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `active` | закрыть физическую и нормативную верификацию dynamic wind и erection stages до дальнейшего feature growth | modal/eigen → #97/#102 dynamic SP20 → #72/#98 erection → verification passport | 11 issues / 1 PRs | [#4](https://github.com/netkeep80/roadmap/issues/4) |
-| **P1** | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `active` | закрыть consumer-shaped readiness для native persistent object storage pjson | #410/#415/#416/#426 → #421 | 16 issues / 6 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
+| **P1** | [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `active` | закрыть consumer-shaped readiness для native persistent object storage pjson | #410/#415/#416/#426 → #421 | 15 issues / 5 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
 | **P1** | [`pjson`](https://github.com/netkeep80/pjson) | `blocked` | довести pjson 1.0 до native PMM-backed JSON без private storage workaround | после PMM#421: #55 → #34, затем #35..#44 | 17 issues / 0 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2) |
 | **P1** | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `active` | раскатывать consumer-driven governance baseline без speculative DSL growth | Tier A active repos use reproducible immutable-pinned policy | 7 issues / 1 PRs | [#6](https://github.com/netkeep80/roadmap/issues/6) |
-| **P1** | [`roadmap`](https://github.com/netkeep80/roadmap) | `control-plane` | быть единой точкой входа для актуального состояния, зависимостей, решений и направления развития всего portfolio | ongoing: поддерживать live control loop и явно reconciliate detected semantic drift | 51 issues / 0 PRs | [#1](https://github.com/netkeep80/roadmap/issues/1), [#13](https://github.com/netkeep80/roadmap/issues/13), [#16](https://github.com/netkeep80/roadmap/issues/16) |
+| **P1** | [`roadmap`](https://github.com/netkeep80/roadmap) | `control-plane` | быть единой точкой входа для актуального состояния, зависимостей, решений и направления развития всего portfolio | ongoing: поддерживать live control loop и явно reconciliate detected semantic drift | 46 issues / 0 PRs | [#1](https://github.com/netkeep80/roadmap/issues/1), [#13](https://github.com/netkeep80/roadmap/issues/13), [#16](https://github.com/netkeep80/roadmap/issues/16) |
 | **P1** | [`termowood`](https://github.com/netkeep80/termowood) | `active` | закрыть failure-mode, independent cutoff, calibration, HIL/bench и OTA recovery evidence | safe-state matrix → protection → calibration/HIL → measured evidence | 0 issues / 0 PRs | [#7](https://github.com/netkeep80/roadmap/issues/7) |
 | **P1/P2** | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `transitional` | отдать persistent JSON ownership pjson, сохранить mature fixtures как migration evidence и оставить diff/sync responsibilities | pjson#41/#44 migration, затем удалить duplicate persistent-JSON implementation | 6 issues / 0 PRs | [#2](https://github.com/netkeep80/roadmap/issues/2), [#8](https://github.com/netkeep80/roadmap/issues/8) |
 | **P1/P2** | [`god-mode`](https://github.com/netkeep80/god-mode) | `incubation` | разрешить точное отношение God Mode / MetaMode / isocubic consumer boundary до нового feature growth | provenance + consumer decision in roadmap#5 | 0 issues / 0 PRs | [#5](https://github.com/netkeep80/roadmap/issues/5) |
@@ -83,7 +83,7 @@
 - 🟡 [#153](https://github.com/netkeep80/aprover/issues/153) `open` — [Roadmap] `aprover` → mathematical MTS prover: trusted replay, exact Theory binding, theorem library + search
 - 🟡 [#157](https://github.com/netkeep80/aprover/issues/157) `open` — [R3] Functional mathematical prover: theorem library → deterministic search → C1-C6 corpus
 - 🟡 [#168](https://github.com/netkeep80/aprover/issues/168) `open` — [Visual migration] Перейти на standalone @mts/visual без расширения trusted proof boundary
-- 🟡 [#181](https://github.com/netkeep80/aprover/issues/181) `open` — [R3.1] Versioned replayable theorem record без stored-truth authority
+- ✅ [#181](https://github.com/netkeep80/aprover/issues/181) `closed` — [R3.1] Versioned replayable theorem record без stored-truth authority
 - 🟡 [#183](https://github.com/netkeep80/aprover/issues/183) `open` — [Architecture] Убрать canonical AST: direct Syntax Aset + Aset-native prover/UI
 
 ### avm — active
@@ -119,18 +119,18 @@
 
 | Repository | Branch | Archived | Last push | Open issues | Open PRs |
 |---|---|---:|---|---:|---:|
-| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-26T17:18:14Z | 11 | 2 |
-| [`aprover`](https://github.com/netkeep80/aprover) | `main` | no | 2026-08-24T15:58:25Z | 6 | 1 |
+| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-27T00:08:39Z | 8 | 1 |
+| [`aprover`](https://github.com/netkeep80/aprover) | `main` | no | 2026-08-27T09:09:24Z | 5 | 0 |
 | [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-15T09:13:18Z | 1 | 0 |
 | [`mts_visual`](https://github.com/netkeep80/mts_visual) | `main` | no | 2026-08-24T11:09:04Z | 2 | 0 |
 | [`anum_parser`](https://github.com/netkeep80/anum_parser) | `main` | no | 2026-08-24T12:32:48Z | 2 | 0 |
 | [`aes`](https://github.com/netkeep80/aes) | `main` | no | 2026-08-09T09:58:37Z | 0 | 0 |
 | [`isocubic`](https://github.com/netkeep80/isocubic) | `main` | no | 2026-08-09T09:58:08Z | 13 | 1 |
 | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `main` | no | 2026-08-24T18:23:52Z | 11 | 1 |
-| [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-24T17:47:37Z | 16 | 6 |
+| [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-26T22:53:34Z | 15 | 5 |
 | [`pjson`](https://github.com/netkeep80/pjson) | `main` | no | 2026-08-09T09:56:53Z | 17 | 0 |
 | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-26T09:11:03Z | 7 | 1 |
-| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-26T14:05:50Z | 51 | 0 |
+| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-26T23:19:36Z | 46 | 0 |
 | [`termowood`](https://github.com/netkeep80/termowood) | `main` | no | 2026-08-09T09:58:27Z | 0 | 0 |
 | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `main` | no | 2026-08-09T09:57:59Z | 6 | 0 |
 | [`god-mode`](https://github.com/netkeep80/god-mode) | `main` | no | 2026-08-09T09:58:17Z | 0 | 0 |
@@ -158,7 +158,7 @@
 - 🟡 [#153](https://github.com/netkeep80/aprover/issues/153) `open` — [Roadmap] `aprover` → mathematical MTS prover: trusted replay, exact Theory binding, theorem library + search
 - 🟡 [#157](https://github.com/netkeep80/aprover/issues/157) `open` — [R3] Functional mathematical prover: theorem library → deterministic search → C1-C6 corpus
 - 🟡 [#168](https://github.com/netkeep80/aprover/issues/168) `open` — [Visual migration] Перейти на standalone @mts/visual без расширения trusted proof boundary
-- 🟡 [#181](https://github.com/netkeep80/aprover/issues/181) `open` — [R3.1] Versioned replayable theorem record без stored-truth authority
+- ✅ [#181](https://github.com/netkeep80/aprover/issues/181) `closed` — [R3.1] Versioned replayable theorem record без stored-truth authority
 - 🟡 [#183](https://github.com/netkeep80/aprover/issues/183) `open` — [Architecture] Убрать canonical AST: direct Syntax Aset + Aset-native prover/UI
 
 ### avm
