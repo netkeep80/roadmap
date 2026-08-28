@@ -59,3 +59,14 @@ test('scheduled worker docs use normalized rank rather than source-type queue', 
   );
   assert.match(text, /source type[^\n]*not[^\n]*priority|source[^\n]*not[^\n]*priority/i);
 });
+
+test('scheduled worker bootstrap fails closed before selection on invalid current control state', async () => {
+  const scheduled = await readFile(new URL('../SCHEDULED_WORKERS.md', import.meta.url), 'utf8');
+  const protocol = await readFile(new URL('../AGENT_PROTOCOL.md', import.meta.url), 'utf8');
+
+  assert.match(scheduled, /EXIT_CONTROL_PLANE_INVALID/);
+  assert.match(scheduled, /current operational[^\n]*protocol/i);
+  assert.match(scheduled, /before[^\n]*(work selection|selecting work|Session creation)/i);
+  assert.match(protocol, /EXIT_CONTROL_PLANE_INVALID/);
+  assert.match(protocol, /before[^\n]*(work selection|selecting work|Session creation)/i);
+});
