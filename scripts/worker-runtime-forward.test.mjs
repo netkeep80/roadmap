@@ -74,3 +74,16 @@ test('scheduled worker hot path is Slot-first rather than portfolio-wide Session
   assert.doesNotMatch(scheduled, /Before finishing meaningful work, leave a durable Checkpoint/i);
   assert.match(protocol, /historical[^\n]*(Session|Checkpoint)|compatib/i);
 });
+
+test('machine worker policy declares the fixed five-slot forward model', async () => {
+  const policy = JSON.parse(await readFile(new URL('../data/worker-policy.json', import.meta.url), 'utf8'));
+  assert.equal(policy.scheduled_worker_model, 'fixed-slots-v1');
+  assert.equal(policy.worker_slot_count, 5);
+  assert.equal(policy.slot_snapshot_policy, 'bounded-replace-v1');
+  assert.doesNotThrow(() => workerRuntime.validateWorkerPolicy(policy));
+
+  assert.throws(() => workerRuntime.validateWorkerPolicy({
+    ...policy,
+    worker_slot_count: 4,
+  }), /worker_slot_count|five|5/i);
+});
