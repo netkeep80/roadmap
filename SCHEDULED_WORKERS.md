@@ -40,6 +40,8 @@ The snapshot is a cache, not execution truth. `progress.next_action` is only a h
 
 Before every Slot write and before target mutation, re-read the permanent Slot and confirm both `WORKER_SLOT` and the captured `generation`. A delayed invocation whose generation is no longer current exits without Slot or target writes.
 
+Validate the complete candidate Slot snapshot before every Slot write. Do not persist a candidate that does not satisfy the canonical `roadmap-worker-slot/v1` shape. In particular, `current_pr` must be `null` or a canonical `netkeep80/<repo>#<number>` string, never a bare integer. Validation failure means zero Slot writes; keep using target GitHub state and fix the candidate snapshot instead of publishing malformed coordination state.
+
 When assigned work is already complete, clear the Slot to `idle`. If useful execution time remains, the same invocation may immediately enter idle self-dispatch.
 
 ## Cold path: idle self-dispatch
@@ -66,9 +68,13 @@ Two idle Slots may race for the same candidate. Cross-Slot arbitration exists on
 
 ## Waiting and blockers
 
-Keep an assignment in its Slot for short waits that are part of the same active implementation, such as CI running or a temporarily non-mergeable PR.
+Keep an assignment in its Slot for short waits that are part of the same active implementation, such as CI running, review, or a temporarily non-mergeable PR. CI/review waits do not count as external infrastructure blocker runs.
 
-Release the Slot for a genuinely long-lived external blocker such as a human decision, unavailable external evidence/service, or dependency work that this Slot cannot currently advance. Useful implementation remains durable in the target Issue/branch/PR. When the blocker later clears, the work can return to the normal executable candidate set.
+An external infrastructure blocker is a condition outside the target work that prevents every safe useful target step for this invocation, for example target checkout/DNS failure or an unavailable external service. On the first infrastructure-only run with zero meaningful target progress, keep the assignment and record a bounded hint in `progress`: `external_blocker` plus `external_blocker_runs: 1`.
+
+On the second consecutive run with the same external infrastructure blocker and again no safe target progress, release the Slot to `idle`. Do not create a handoff: the target Issue/branch/PR already preserve execution truth. A changed blocker starts again at `external_blocker_runs: 1`; any meaningful target progress clears the blocker counter.
+
+A blocker that is already known to be genuinely long-lived, such as a required human decision, unavailable required evidence, or dependency work that this Slot cannot currently advance, may release the Slot immediately. When the blocker later clears, the work can return to the normal executable candidate set.
 
 ## Copyable Scheduled Task prompt
 
@@ -85,6 +91,9 @@ If the Slot is assigned, continue exactly that assignment. Do not globally selec
 Use the target Issue, branch, PR, CI, repo-guard and branch-protection state as current execution truth. Slot progress/current_branch/current_pr are best-effort hints and may be stale. There is no Slot repair phase: continue useful work from current target GitHub state and update the Slot body naturally after meaningful work transitions.
 
 Before every Slot write or target-repository mutation, re-read the permanent Slot and confirm WORKER_SLOT and generation still match this invocation. If generation changed, make zero further Slot or target writes and exit.
+Before every Slot write, validate the complete candidate snapshot against canonical roadmap-worker-slot/v1. Never publish malformed Slot state. current_pr is null or a full string netkeep80/<repo>#<number>, never a bare number.
+
+If no safe target progress is possible solely because of an external infrastructure blocker, the first such run keeps the assignment and records progress.external_blocker plus external_blocker_runs=1. On the second consecutive run with the same blocker and again zero safe target progress, release the Slot to idle without a handoff. Meaningful target progress or a changed blocker resets this count. CI running, review, and temporary non-mergeability do not count as infrastructure blocker runs.
 
 If assigned work is complete, clear the Slot to idle. If the Slot is idle, run bounded deterministic self-dispatch: select only explicit executable work using declared priority P0 before P1 before P2 and so on, then declared local/dependency order, continuation within the same rank, repository lexical order, and issue number. Skip work already assigned to another Slot or covered by a pending assignment acquisition. Never invent work.
 
@@ -110,6 +119,7 @@ scheduled wake
    -> assigned: cheap resume
    -> idle: bounded deterministic self-dispatch
 -> target repository implementation
+-> validate candidate Slot snapshot
 -> concise Slot snapshot update
 -> exit
 ```
