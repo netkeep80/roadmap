@@ -75,6 +75,15 @@ test('scheduled worker hot path is Slot-first rather than portfolio-wide Session
   assert.match(protocol, /historical[^\n]*(Session|Checkpoint)|compatib/i);
 });
 
+test('scheduled worker docs validate candidate Slot snapshots before persistence and bound repeated infrastructure blockers', async () => {
+  const scheduled = await readFile(new URL('../SCHEDULED_WORKERS.md', import.meta.url), 'utf8');
+  assert.match(scheduled, /validate[^\n]*(candidate|snapshot)[^\n]*(before|prior)[^\n]*(write|persist)|before[^\n]*(write|persist)[^\n]*validate[^\n]*(candidate|snapshot)/i);
+  assert.match(scheduled, /current_pr[^\n]*netkeep80\/[^#\s]+#(?:N|<number>|[0-9]+)/i);
+  assert.match(scheduled, /external_blocker_runs/i);
+  assert.match(scheduled, /(second|2nd|two consecutive|2 consecutive)[^\n]*(same|identical)[^\n]*(blocker|infrastructure)[^\n]*(release|idle)/i);
+  assert.match(scheduled, /(CI|review)[^\n]*(does not|do not|not)[^\n]*count/i);
+});
+
 test('machine worker policy declares the fixed five-slot forward model', async () => {
   const policy = JSON.parse(await readFile(new URL('../data/worker-policy.json', import.meta.url), 'utf8'));
   assert.equal(policy.scheduled_worker_model, 'fixed-slots-v1');
