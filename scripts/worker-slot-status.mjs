@@ -77,7 +77,7 @@ export function renderWorkerSlots(slots) {
   for (const slot of slots) {
     const repository = slot.assignment?.repository ?? null;
     const workItem = slot.assignment?.work_item ?? null;
-    lines.push(`| [#${slot.slot}](${slot.url}) | ${slot.generation} | \`${esc(slot.state)}\` | ${repository ? `\`${esc(repository)}\`` : '—'} | ${workItem ? `\`${esc(workItem)}\`` : '—'} | ${slot.current_branch ? `\`${esc(slot.current_branch)}\`` : '—'} | ${slot.current_pr ? `\`${esc(slot.current_pr)}\`` : '—'} | ${progressText(slot.progress)} |`);
+    lines.push(`| ${slot.slot} ([#${slot.issue_number}](${slot.url})) | ${slot.generation} | \`${esc(slot.state)}\` | ${repository ? `\`${esc(repository)}\`` : '—'} | ${workItem ? `\`${esc(workItem)}\`` : '—'} | ${slot.current_branch ? `\`${esc(slot.current_branch)}\`` : '—'} | ${slot.current_pr ? `\`${esc(slot.current_pr)}\`` : '—'} | ${progressText(slot.progress)} |`);
   }
   lines.push('', '> Slot state is bounded current operational memory. Target Issue/Git/PR/CI remain execution truth; historical Sessions below are compatibility/history only.');
   return lines.join('\n');
