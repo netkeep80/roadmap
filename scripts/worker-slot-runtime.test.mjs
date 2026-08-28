@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import * as slotRuntime from './worker-slot-runtime.mjs';
 import {
   decideSlotEntry,
   checkSlotGeneration,
@@ -202,5 +203,91 @@ test('assignment acquisition is scoped to one exact work item', () => {
     action: 'persist_assignment',
     winner_issue: 510,
     target_writes_allowed: false,
+  });
+});
+
+test('prepareSlotWrite rejects the observed numeric current_pr before persistence', () => {
+  const roleMap = new Map([[10, { repository: 'netkeep80/alpha' }]]);
+  assert.throws(() => slotRuntime.prepareSlotWrite?.({
+    currentSlot: assigned(),
+    candidate: assigned({ current_pr: 352 }),
+    workerSlot: 3,
+    expectedGeneration: 7,
+    roleMap,
+  }), /reference must be a string/);
+});
+
+test('prepareSlotWrite accepts a canonical snapshot only after the generation fence', () => {
+  const roleMap = new Map([[10, { repository: 'netkeep80/alpha' }]]);
+  assert.deepEqual(slotRuntime.prepareSlotWrite?.({
+    currentSlot: assigned(),
+    candidate: assigned(),
+    workerSlot: 3,
+    expectedGeneration: 7,
+    roleMap,
+  }), {
+    action: 'write_slot',
+    snapshot: assigned(),
+  });
+});
+
+test('first infrastructure-only no-progress run keeps assignment and records one bounded blocker run', () => {
+  assert.deepEqual(slotRuntime.decideExternalBlockerRun?.({
+    slot: assigned(),
+    blocker: 'checkout:dns',
+    madeTargetProgress: false,
+  }), {
+    action: 'keep_assignment',
+    external_blocker: 'checkout:dns',
+    external_blocker_runs: 1,
+  });
+});
+
+test('second consecutive identical infrastructure-only no-progress run releases the Slot', () => {
+  const slot = assigned({
+    progress: {
+      phase: 'blocked',
+      next_action: 'Retry checkout',
+      external_blocker: 'checkout:dns',
+      external_blocker_runs: 1,
+    },
+  });
+  assert.deepEqual(slotRuntime.decideExternalBlockerRun?.({
+    slot,
+    blocker: 'checkout:dns',
+    madeTargetProgress: false,
+  }), {
+    action: 'release_slot',
+    reason: 'repeated_external_blocker',
+  });
+});
+
+test('meaningful target progress or a changed blocker resets the consecutive blocker count', () => {
+  const slot = assigned({
+    progress: {
+      phase: 'blocked',
+      next_action: 'Retry checkout',
+      external_blocker: 'checkout:dns',
+      external_blocker_runs: 1,
+    },
+  });
+
+  assert.deepEqual(slotRuntime.decideExternalBlockerRun?.({
+    slot,
+    blocker: 'checkout:dns',
+    madeTargetProgress: true,
+  }), {
+    action: 'continue_assignment',
+    clear_external_blocker: true,
+  });
+
+  assert.deepEqual(slotRuntime.decideExternalBlockerRun?.({
+    slot,
+    blocker: 'github:api-unavailable',
+    madeTargetProgress: false,
+  }), {
+    action: 'keep_assignment',
+    external_blocker: 'github:api-unavailable',
+    external_blocker_runs: 1,
   });
 });

@@ -1,4 +1,4 @@
-import { compareClaimPriority } from './agent-protocol.mjs';
+import { compareClaimPriority, validateWorkerSlot } from './agent-protocol.mjs';
 import { selectBoundedWork } from './worker-runtime.mjs';
 
 function fail(message) {
@@ -25,6 +25,10 @@ function assertStringArray(values, field) {
     if (typeof value !== 'string' || !value.trim()) fail(`${field} entries must be non-empty strings`);
   }
   return values;
+}
+
+function slotIssueBody(snapshot) {
+  return `<!-- roadmap-agent:start -->\n\`\`\`json\n${JSON.stringify(snapshot, null, 2)}\n\`\`\`\n<!-- roadmap-agent:end -->`;
 }
 
 export function decideSlotEntry({ slot, workerSlot }) {
@@ -73,6 +77,72 @@ export function checkSlotGeneration({ slot, workerSlot, expectedGeneration }) {
     action: 'proceed',
     target_writes_allowed: true,
     slot_writes_allowed: true,
+  };
+}
+
+export function prepareSlotWrite({
+  currentSlot,
+  candidate,
+  workerSlot,
+  expectedGeneration,
+  roleMap,
+  acquisition = false,
+}) {
+  const gate = checkSlotGeneration({ slot: currentSlot, workerSlot, expectedGeneration });
+  if (gate.action !== 'proceed') {
+    return {
+      ...gate,
+      snapshot: null,
+    };
+  }
+
+  const snapshot = structuredClone(assertSlotSnapshot(candidate));
+  if (snapshot.slot !== workerSlot) fail('candidate snapshot must belong to the Scheduled Task Slot');
+  const requiredGeneration = acquisition ? expectedGeneration + 1 : expectedGeneration;
+  if (snapshot.generation !== requiredGeneration) {
+    fail(`candidate generation must be ${requiredGeneration}`);
+  }
+  if (!(roleMap instanceof Map)) fail('roleMap must be a Map');
+
+  validateWorkerSlot({
+    number: 0,
+    state: 'open',
+    body: slotIssueBody(snapshot),
+  }, roleMap);
+
+  return {
+    action: 'write_slot',
+    snapshot,
+  };
+}
+
+export function decideExternalBlockerRun({ slot, blocker, madeTargetProgress }) {
+  const current = assertSlotSnapshot(slot);
+  if (current.state === 'idle') fail('external blocker accounting requires an assigned Slot');
+  if (typeof blocker !== 'string' || !blocker.trim()) fail('blocker must be a non-empty string');
+  if (typeof madeTargetProgress !== 'boolean') fail('madeTargetProgress must be boolean');
+
+  if (madeTargetProgress) {
+    return {
+      action: 'continue_assignment',
+      clear_external_blocker: true,
+    };
+  }
+
+  const progress = current.progress && !Array.isArray(current.progress) && typeof current.progress === 'object'
+    ? current.progress
+    : {};
+  if (progress.external_blocker === blocker && progress.external_blocker_runs === 1) {
+    return {
+      action: 'release_slot',
+      reason: 'repeated_external_blocker',
+    };
+  }
+
+  return {
+    action: 'keep_assignment',
+    external_blocker: blocker,
+    external_blocker_runs: 1,
   };
 }
 
