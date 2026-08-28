@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import * as agentProtocol from './agent-protocol.mjs';
 import {
   parseProtocolBlock,
   classifyAgentIssue,
@@ -57,6 +58,23 @@ const checkpoint = (overrides = {}) => ({
   }),
 });
 
+const workerSlot = (overrides = {}) => ({
+  number: 500,
+  state: 'open',
+  created_at: '2026-08-28T09:00:00Z',
+  body: block({
+    protocol: 'roadmap-worker-slot/v1',
+    slot: 3,
+    generation: 0,
+    state: 'idle',
+    assignment: null,
+    current_branch: null,
+    current_pr: null,
+    progress: null,
+    ...overrides,
+  }),
+});
+
 test('parseProtocolBlock parses exactly one strict JSON block', () => {
   const parsed = parseProtocolBlock(role('alpha').body);
   assert.equal(parsed.protocol, 'roadmap-agent-role/v1');
@@ -86,6 +104,83 @@ test('classifyAgentIssue recognizes finite issue protocol kinds', () => {
     }),
   };
   assert.equal(classifyAgentIssue(message).kind, 'message');
+});
+
+test('classifyAgentIssue recognizes permanent worker slots', () => {
+  assert.equal(classifyAgentIssue(workerSlot()).kind, 'worker-slot');
+});
+
+test('validateWorkerSlot accepts bounded idle and assigned snapshots', () => {
+  assert.equal(typeof agentProtocol.validateWorkerSlot, 'function');
+  const coverage = validateRoleCoverage(['alpha'], ['alpha'], [role('alpha', 10)]);
+
+  const idle = agentProtocol.validateWorkerSlot(workerSlot(), coverage.roleMap);
+  assert.equal(idle.slot, 3);
+  assert.equal(idle.generation, 0);
+  assert.equal(idle.state, 'idle');
+  assert.equal(idle.assignment, null);
+
+  const assigned = agentProtocol.validateWorkerSlot(workerSlot({
+    generation: 7,
+    state: 'working',
+    assignment: {
+      repository: 'netkeep80/alpha',
+      role_issue: 10,
+      work_item: 'netkeep80/alpha#42',
+    },
+    current_branch: 'agent/42-work',
+    current_pr: 'netkeep80/alpha#43',
+    progress: {
+      phase: 'ci',
+      next_action: 'Inspect the first failing check',
+    },
+  }), coverage.roleMap);
+  assert.equal(assigned.assignment.work_item, 'netkeep80/alpha#42');
+  assert.equal(assigned.current_branch, 'agent/42-work');
+  assert.equal(assigned.current_pr, 'netkeep80/alpha#43');
+});
+
+test('validateWorkerSlot rejects invalid identity and ambiguous idle state', () => {
+  assert.equal(typeof agentProtocol.validateWorkerSlot, 'function');
+  const coverage = validateRoleCoverage(['alpha'], ['alpha'], [role('alpha', 10)]);
+
+  assert.throws(() => agentProtocol.validateWorkerSlot(workerSlot({ slot: 0 }), coverage.roleMap), /slot.*1.*5/i);
+  assert.throws(() => agentProtocol.validateWorkerSlot(workerSlot({ slot: 6 }), coverage.roleMap), /slot.*1.*5/i);
+  assert.throws(() => agentProtocol.validateWorkerSlot(workerSlot({ generation: -1 }), coverage.roleMap), /generation/i);
+  assert.throws(() => agentProtocol.validateWorkerSlot(workerSlot({
+    assignment: {
+      repository: 'netkeep80/alpha',
+      role_issue: 10,
+      work_item: 'netkeep80/alpha#42',
+    },
+  }), coverage.roleMap), /idle|assignment/i);
+});
+
+test('validateWorkerSlot requires assignment role and work item to match repository', () => {
+  assert.equal(typeof agentProtocol.validateWorkerSlot, 'function');
+  const coverage = validateRoleCoverage(
+    ['alpha', 'beta'],
+    ['alpha', 'beta'],
+    [role('alpha', 10), role('beta', 11)],
+  );
+
+  assert.throws(() => agentProtocol.validateWorkerSlot(workerSlot({
+    state: 'working',
+    assignment: {
+      repository: 'netkeep80/alpha',
+      role_issue: 11,
+      work_item: 'netkeep80/alpha#42',
+    },
+  }), coverage.roleMap), /role|repository/i);
+
+  assert.throws(() => agentProtocol.validateWorkerSlot(workerSlot({
+    state: 'working',
+    assignment: {
+      repository: 'netkeep80/alpha',
+      role_issue: 10,
+      work_item: 'netkeep80/beta#42',
+    },
+  }), coverage.roleMap), /work_item|repository/i);
 });
 
 test('validateRoleCoverage accepts exact one-role-per-public-repository coverage', () => {
