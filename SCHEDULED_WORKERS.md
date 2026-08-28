@@ -98,7 +98,7 @@ Obey the target repository's actual CI/repo-guard/branch-protection rules before
 
 Historical Agent Sessions, Checkpoints, Claims and Handoffs remain readable evidence. They are not part of the forward Scheduled Worker hot path.
 
-For historical Session compatibility only, the old branch reconciliation invariant remains readable: `No open PR != dead branch`; Session flows persisted `current_branch` before branch create/push, and if meaningful work continued for longer than `heartbeat_target_seconds` they refreshed a structured Checkpoint. These are historical Session rules, not requirements for ordinary Slot resume.
+For historical Session compatibility only, the old branch reconciliation invariant remains readable: `No open PR != dead branch`; Session flows persisted `current_branch` before branch create/push. Historical Session rule: if meaningful work continues for longer than `heartbeat_target_seconds`, refresh a structured Checkpoint. These are historical Session rules, not requirements for ordinary Slot resume.
 
 Assigned Scheduled Workers do not reconstruct portfolio-wide Session leases, stale candidates, handoffs, or Claim winners. Historical data is consulted only when an idle self-dispatch candidate specifically depends on unfinished historical state during migration or forensic inspection.
 
