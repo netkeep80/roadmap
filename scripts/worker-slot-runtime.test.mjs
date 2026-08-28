@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import {
   decideSlotEntry,
   checkSlotGeneration,
+  selectSlotAssignment,
+  decideAssignmentAcquisition,
 } from './worker-slot-runtime.mjs';
 
 const assigned = (overrides = {}) => ({
@@ -35,6 +37,34 @@ const idle = (overrides = {}) => ({
   current_pr: null,
   progress: null,
   ...overrides,
+});
+
+const issueCandidate = ({ repository = 'netkeep80/alpha', number = 42, priority = 'P0', continuation = false } = {}) => ({
+  repository,
+  work_item: `${repository}#${number}`,
+  work_phase: 'implementation',
+  effective_priority: priority,
+  local_order: null,
+  continuation,
+  open: true,
+  portfolio_consistent: true,
+  executable_now: true,
+  blocked: false,
+  occupied_by_live_winner: false,
+  stale_recovery_required: false,
+});
+
+const handoffCandidate = ({ repository = 'netkeep80/alpha', number = 42, priority = 'P0' } = {}) => ({
+  repository,
+  work_item: `${repository}#${number}`,
+  work_phase: 'implementation',
+  effective_priority: priority,
+  local_order: null,
+  continuation: true,
+  valid: true,
+  executable_now: true,
+  occupied_by_live_winner: false,
+  stale_recovery_required: false,
 });
 
 test('assigned Slot enters cheap resume path without global selection', () => {
@@ -92,5 +122,85 @@ test('generation fence fails closed when invocation points at another Slot', () 
     action: 'exit_wrong_slot',
     target_writes_allowed: false,
     slot_writes_allowed: false,
+  });
+});
+
+test('idle self-dispatch reuses normalized priority and skips work already owned by a Slot', () => {
+  const p0Owned = issueCandidate({ repository: 'netkeep80/alpha', number: 10, priority: 'P0' });
+  const p1Continuation = handoffCandidate({ repository: 'netkeep80/beta', number: 20, priority: 'P1' });
+  const p1New = issueCandidate({ repository: 'netkeep80/gamma', number: 30, priority: 'P1' });
+
+  assert.deepEqual(selectSlotAssignment({
+    handoffs: [p1Continuation],
+    issues: [p1New, p0Owned],
+    assignedWorkItems: ['netkeep80/alpha#10'],
+    pendingWorkItems: [],
+  }), {
+    action: 'acquire_assignment',
+    candidate: p1Continuation,
+  });
+});
+
+test('idle self-dispatch treats pending acquisition as occupied and exits when nothing else is executable', () => {
+  const candidate = issueCandidate({ repository: 'netkeep80/alpha', number: 10, priority: 'P0' });
+  assert.deepEqual(selectSlotAssignment({
+    issues: [candidate],
+    assignedWorkItems: [],
+    pendingWorkItems: ['netkeep80/alpha#10'],
+  }), {
+    action: 'exit_no_work',
+    candidate: null,
+  });
+});
+
+test('assignment acquisition winner is earliest GitHub claim and later claims can never overtake it', () => {
+  const first = {
+    number: 501,
+    created_at: '2026-08-28T09:30:00Z',
+    work_item: 'netkeep80/alpha#42',
+    slot: 2,
+    base_generation: 3,
+  };
+  const second = {
+    number: 502,
+    created_at: '2026-08-28T09:30:01Z',
+    work_item: 'netkeep80/alpha#42',
+    slot: 4,
+    base_generation: 9,
+  };
+
+  assert.deepEqual(decideAssignmentAcquisition({ contender: first, claims: [first] }), {
+    action: 'persist_assignment',
+    winner_issue: 501,
+    target_writes_allowed: false,
+  });
+
+  assert.deepEqual(decideAssignmentAcquisition({ contender: second, claims: [second, first] }), {
+    action: 'close_and_reselect',
+    winner_issue: 501,
+    target_writes_allowed: false,
+  });
+});
+
+test('assignment acquisition is scoped to one exact work item', () => {
+  const contender = {
+    number: 510,
+    created_at: '2026-08-28T09:30:00Z',
+    work_item: 'netkeep80/alpha#42',
+    slot: 2,
+    base_generation: 3,
+  };
+  const unrelated = {
+    number: 500,
+    created_at: '2026-08-28T09:29:00Z',
+    work_item: 'netkeep80/beta#9',
+    slot: 1,
+    base_generation: 2,
+  };
+
+  assert.deepEqual(decideAssignmentAcquisition({ contender, claims: [unrelated, contender] }), {
+    action: 'persist_assignment',
+    winner_issue: 510,
+    target_writes_allowed: false,
   });
 });
