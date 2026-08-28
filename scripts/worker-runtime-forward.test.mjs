@@ -67,6 +67,6 @@ test('scheduled worker bootstrap fails closed before selection on invalid curren
   assert.match(scheduled, /EXIT_CONTROL_PLANE_INVALID/);
   assert.match(scheduled, /current operational[^\n]*protocol/i);
   assert.match(scheduled, /before[^\n]*(work selection|selecting work|Session creation)/i);
-  assert.match(protocol, /EXIT_CONTROL_PLANE_INVALID/);
-  assert.match(protocol, /before[^\n]*(work selection|selecting work|Session creation)/i);
+  assert.match(scheduled, /full closed-history forensic audit/i);
+  assert.match(protocol, /Malformed JSON[^\n]*fail closed/i);
 });
