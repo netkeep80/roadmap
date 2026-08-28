@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   projectWorkerSlots,
@@ -91,4 +92,10 @@ test('renders Worker Slots before historical Agent Status sections', () => {
   assert.match(markdown, /\| Slot \| Generation \| State \| Repository \| Work item \| Branch \| PR \| Progress \|/);
   assert.match(markdown, /#385/);
   assert.ok(markdown.indexOf('## Worker Slots') < markdown.indexOf('## Active sessions'));
+});
+
+test('Agent Status workflow fetches the Slot status module used by sync runtime', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/agent-status.yml', import.meta.url), 'utf8');
+  const matches = workflow.match(/scripts\/worker-slot-status\.mjs/g) ?? [];
+  assert.ok(matches.length >= 2, 'worker-slot-status.mjs must be both a push trigger input and a fetched runtime file');
 });
