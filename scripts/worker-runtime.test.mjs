@@ -199,19 +199,18 @@ test('post-Session claim refresh allows only the deterministic winner to write t
   assert.equal(reselection.candidate.ref, 'netkeep80/alpha#2');
 });
 
-test('anonymous scheduled-worker bootstrap is one parameter-free API-only control-plane prompt', async () => {
+test('scheduled-worker bootstrap is fixed-slot, Slot-first and API-only', async () => {
   const text = await readFile(new URL('../SCHEDULED_WORKERS.md', import.meta.url), 'utf8');
-  assert.doesNotMatch(text, /WORKER_SLOT|worker_slot/);
-  assert.match(text, /fresh anonymous worker/i);
+  assert.match(text, /WORKER_SLOT/i);
+  assert.match(text, /1\.\.5|1 through 5|1-5/i);
   assert.match(text, /GitHub API only/i);
-  assert.match(text, /Do NOT clone or checkout netkeep80\/roadmap/i);
-  assert.match(text, /clone\/checkout only the selected target repository/i);
-  assert.match(text, /Only if Role #49[\s\S]*roadmap[\s\S]*target repository[\s\S]*cloned\/checked out/i);
-  assert.match(text, /after Session creation[\s\S]*refresh[\s\S]*claim/i);
-  assert.match(text, /open PR[\s\S]*same work item[\s\S]*reuse/i);
-  assert.match(text, /multiple open PR[\s\S]*same work item[\s\S]*zero target/i);
-  assert.match(text, /no executable work[\s\S]*zero repository changes[\s\S]*no idle Session/i);
-  assert.match(text, /roadmap Role #49/i);
+  assert.match(text, /permanent Worker Slot|Worker Slot issue/i);
+  assert.match(text, /assigned[\s\S]*do not[\s\S]*(global|select).*work/i);
+  assert.match(text, /idle[\s\S]*self-dispatch/i);
+  assert.match(text, /generation/i);
+  assert.match(text, /no Slot comments|zero Slot comments|do not add comments/i);
+  assert.match(text, /target Issue[\s\S]*(branch|Git)[\s\S]*PR[\s\S]*CI/i);
+  assert.doesNotMatch(text, /fresh anonymous worker/i);
 });
 
 test('obvious cleanup observation without an explicit work item cannot create work', () => {
