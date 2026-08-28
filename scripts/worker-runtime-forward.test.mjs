@@ -50,9 +50,11 @@ test('forward runtime exposes no independent acceptance outcome authority', () =
   assert.equal(workerRuntime.decideAcceptanceOutcome, undefined);
 });
 
-test('scheduled worker docs use normalized rank rather than source-type queue', async () => {
+test('scheduled worker docs keep deterministic normalized rank only for idle self-dispatch', async () => {
   const text = await readFile(new URL('../SCHEDULED_WORKERS.md', import.meta.url), 'utf8');
   assert.match(text, /P0[^\n]*P1[^\n]*P2|declared priority/i);
+  assert.match(text, /idle[\s\S]*self-dispatch/i);
+  assert.match(text, /assigned[\s\S]*do not[\s\S]*(global|select).*work/i);
   assert.doesNotMatch(
     text,
     /Selection order is fixed:[\s\S]*valid executable handoff[\s\S]*actionable incoming Message[\s\S]*existing executable open local issue/i,
@@ -60,13 +62,28 @@ test('scheduled worker docs use normalized rank rather than source-type queue', 
   assert.match(text, /source type[^\n]*not[^\n]*priority|source[^\n]*not[^\n]*priority/i);
 });
 
-test('scheduled worker bootstrap fails closed before selection on invalid current control state', async () => {
+test('scheduled worker hot path is Slot-first rather than portfolio-wide Session recovery', async () => {
   const scheduled = await readFile(new URL('../SCHEDULED_WORKERS.md', import.meta.url), 'utf8');
   const protocol = await readFile(new URL('../AGENT_PROTOCOL.md', import.meta.url), 'utf8');
 
-  assert.match(scheduled, /EXIT_CONTROL_PLANE_INVALID/);
-  assert.match(scheduled, /current operational[^\n]*protocol/i);
-  assert.match(scheduled, /before[^\n]*(work selection|selecting work|Session creation)/i);
-  assert.match(scheduled, /full closed-history forensic audit/i);
-  assert.match(protocol, /Malformed JSON[^\n]*fail closed/i);
+  assert.match(scheduled, /permanent Worker Slot|Worker Slot issue/i);
+  assert.match(scheduled, /snapshot[^\n]*(best-effort|may be stale|cache)|best-effort[^\n]*snapshot/i);
+  assert.match(scheduled, /target Issue[\s\S]*(branch|Git)[\s\S]*PR[\s\S]*CI/i);
+  assert.match(scheduled, /do not[^\n]*(repair|synchroni[sz]e).*Slot|no[^\n]*repair phase/i);
+  assert.doesNotMatch(scheduled, /Reconstruct current Role\/Session\/Checkpoint\/Claim\/Message\/portfolio state/i);
+  assert.doesNotMatch(scheduled, /Before finishing meaningful work, leave a durable Checkpoint/i);
+  assert.match(protocol, /historical[^\n]*(Session|Checkpoint)|compatib/i);
+});
+
+test('machine worker policy declares the fixed five-slot forward model', async () => {
+  const policy = JSON.parse(await readFile(new URL('../data/worker-policy.json', import.meta.url), 'utf8'));
+  assert.equal(policy.scheduled_worker_model, 'fixed-slots-v1');
+  assert.equal(policy.worker_slot_count, 5);
+  assert.equal(policy.slot_snapshot_policy, 'bounded-replace-v1');
+  assert.doesNotThrow(() => workerRuntime.validateWorkerPolicy(policy));
+
+  assert.throws(() => workerRuntime.validateWorkerPolicy({
+    ...policy,
+    worker_slot_count: 4,
+  }), /worker_slot_count|five|5/i);
 });

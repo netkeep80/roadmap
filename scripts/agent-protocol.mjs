@@ -6,12 +6,14 @@ const SESSION_PROTOCOL_V1 = 'roadmap-agent-session/v1';
 const SESSION_PROTOCOL_V2 = 'roadmap-agent-session/v2';
 const CHECKPOINT_PROTOCOL_V1 = 'roadmap-agent-checkpoint/v1';
 const CHECKPOINT_PROTOCOL_V2 = 'roadmap-agent-checkpoint/v2';
+const WORKER_SLOT_PROTOCOL_V1 = 'roadmap-worker-slot/v1';
 
 const ISSUE_PROTOCOLS = new Map([
   ['roadmap-agent-role/v1', 'role'],
   [SESSION_PROTOCOL_V1, 'session'],
   [SESSION_PROTOCOL_V2, 'session'],
   ['roadmap-agent-message/v1', 'message'],
+  [WORKER_SLOT_PROTOCOL_V1, 'worker-slot'],
 ]);
 
 const CHECKPOINT_PROTOCOLS = new Set([CHECKPOINT_PROTOCOL_V1, CHECKPOINT_PROTOCOL_V2]);
@@ -29,6 +31,7 @@ const SESSION_STATES = new Set([
 ]);
 
 const TERMINAL_SESSION_STATES = new Set(['completed', 'abandoned']);
+const WORKER_SLOT_STATES = new Set(['idle', 'working', 'waiting', 'blocked']);
 
 const MESSAGE_KINDS = new Set([
   'info',
@@ -308,6 +311,65 @@ export function validateRoleCoverage(registryRepositories, publicRepositories, i
   return { roleMap, roleByRepository, missing };
 }
 
+export function validateWorkerSlot(issue, roleMap) {
+  const { kind, data } = classifyAgentIssue(issue);
+  if (kind !== 'worker-slot') fail(`issue #${issue.number} is not a worker slot`);
+  assertGitHubIssueState(issue, 'open', 'worker slot');
+
+  if (!Number.isInteger(data.slot) || data.slot < 1 || data.slot > 5) {
+    fail('worker slot must be an integer from 1 to 5');
+  }
+  if (!Number.isInteger(data.generation) || data.generation < 0) {
+    fail('worker slot generation must be a non-negative integer');
+  }
+  if (!WORKER_SLOT_STATES.has(data.state)) {
+    fail(`invalid worker slot state ${JSON.stringify(data.state)}`);
+  }
+  for (const field of ['assignment', 'current_branch', 'current_pr', 'progress']) {
+    if (!Object.hasOwn(data, field)) fail(`worker slot must declare ${field}`);
+  }
+
+  if (data.state === 'idle') {
+    if (data.assignment !== null || data.current_branch !== null || data.current_pr !== null || data.progress !== null) {
+      fail('idle worker slot cannot retain assignment, branch, PR, or progress state');
+    }
+    return data;
+  }
+
+  const assignment = assertPlainObject(data.assignment, 'worker slot assignment');
+  if (!Number.isInteger(assignment.role_issue)) fail('worker slot assignment role_issue must be an integer');
+  const role = roleMap.get(assignment.role_issue);
+  if (!role) fail(`worker slot assignment references unknown role #${assignment.role_issue}`);
+  if (assignment.repository !== role.repository) {
+    fail(`worker slot assignment repository ${assignment.repository} does not match role repository ${role.repository}`);
+  }
+
+  const repository = parseRepository(assignment.repository);
+  const publicRepositories = publicRoleRepositories(roleMap);
+  if (!publicRepositories.has(repository)) {
+    fail(`worker slot assignment repository ${assignment.repository} is outside public role scope`);
+  }
+  validatePublicIssueReference(assignment.work_item, publicRepositories, 'worker slot work_item', repository);
+
+  if (data.current_branch !== null) {
+    data.current_branch = validateBranchName(data.current_branch, 'worker slot current_branch');
+  }
+  if (data.current_pr !== null) {
+    validatePublicIssueReference(data.current_pr, publicRepositories, 'worker slot current_pr', repository);
+  }
+  if (data.progress !== null) {
+    const progress = assertPlainObject(data.progress, 'worker slot progress');
+    if (Object.hasOwn(progress, 'phase') && (typeof progress.phase !== 'string' || !progress.phase.trim())) {
+      fail('worker slot progress phase must be a non-empty string when present');
+    }
+    if (Object.hasOwn(progress, 'next_action') && (typeof progress.next_action !== 'string' || !progress.next_action.trim())) {
+      fail('worker slot progress next_action must be a non-empty string when present');
+    }
+  }
+
+  return data;
+}
+
 export function validateSession(issue, roleMap) {
   const { kind, data } = classifyAgentIssue(issue);
   if (kind !== 'session') fail(`issue #${issue.number} is not a session`);
@@ -490,6 +552,8 @@ export const AGENT_PROTOCOL = Object.freeze({
   checkpointProtocol: CHECKPOINT_PROTOCOL_V1,
   checkpointProtocols: Object.freeze([...CHECKPOINT_PROTOCOLS]),
   sessionProtocols: Object.freeze([SESSION_PROTOCOL_V1, SESSION_PROTOCOL_V2]),
+  workerSlotProtocol: WORKER_SLOT_PROTOCOL_V1,
+  workerSlotStates: Object.freeze([...WORKER_SLOT_STATES]),
   workPhases: Object.freeze([...WORK_PHASES]),
   sessionStates: Object.freeze([...SESSION_STATES]),
   messageKinds: Object.freeze([...MESSAGE_KINDS]),

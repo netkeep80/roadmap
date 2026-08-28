@@ -2,6 +2,9 @@ import { compareClaimPriority } from './agent-protocol.mjs';
 
 const EXPECTED_WORK_ORDER = ['handoff', 'message', 'local-issue'];
 const NORMALIZED_SELECTION_POLICY = 'normalized-finish-first-v1';
+const SCHEDULED_WORKER_MODEL = 'fixed-slots-v1';
+const WORKER_SLOT_COUNT = 5;
+const SLOT_SNAPSHOT_POLICY = 'bounded-replace-v1';
 const LEASED_STATES = new Set(['starting', 'working', 'waiting', 'blocked']);
 const TERMINAL_STATES = new Set(['completed', 'abandoned']);
 const WORK_PHASES = new Set(['implementation']);
@@ -51,6 +54,16 @@ export function validateWorkerPolicy(policy) {
     if (!Array.isArray(policy.work_source_order) || policy.work_source_order.length !== EXPECTED_WORK_ORDER.length || policy.work_source_order.some((value, index) => value !== EXPECTED_WORK_ORDER[index])) {
       fail(`work_source_order must be ${EXPECTED_WORK_ORDER.join(' -> ')}`);
     }
+  }
+
+  if (policy.scheduled_worker_model !== undefined && policy.scheduled_worker_model !== SCHEDULED_WORKER_MODEL) {
+    fail(`scheduled_worker_model must be ${SCHEDULED_WORKER_MODEL}`);
+  }
+  if (policy.worker_slot_count !== undefined && policy.worker_slot_count !== WORKER_SLOT_COUNT) {
+    fail(`worker_slot_count must be ${WORKER_SLOT_COUNT}`);
+  }
+  if (policy.slot_snapshot_policy !== undefined && policy.slot_snapshot_policy !== SLOT_SNAPSHOT_POLICY) {
+    fail(`slot_snapshot_policy must be ${SLOT_SNAPSHOT_POLICY}`);
   }
 
   if (policy.no_work_action !== 'exit') fail('no_work_action must be exit');
