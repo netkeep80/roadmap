@@ -26,6 +26,7 @@ Access netkeep80/roadmap through GitHub API only and bootstrap strictly through 
 Do NOT clone or checkout netkeep80/roadmap for discovery, status, coordination, checkpointing, work selection, or reading control-plane files. Read Issues through GitHub Issues API and control-plane files through GitHub Contents API. Agent Status Issue #103 is convenience presentation only; reconstruct authoritative Role/Session/Checkpoint/Claim/Message state directly from live GitHub Issues.
 
 Reconstruct current Role/Session/Checkpoint/Claim/Message/portfolio state from GitHub.
+Validate the current operational control-plane protocol state before work selection or Session creation. This validation covers active open Roles, open Sessions, unresolved open Messages, and the structured Checkpoints required to derive LIVE/stale/handoff/branch custody for those Sessions. If any such object fails canonical protocol validation, return EXIT_CONTROL_PLANE_INVALID immediately: select no work, create no Session, make zero target-repository writes, and terminate this invocation. Do not use Agent Status #103 to bypass this gate, and do not expand scheduled-worker bootstrap into a full closed-history forensic audit.
 Select only explicitly executable work permitted by the control plane, then enter the corresponding permanent Role issue.
 
 Rank executable work by one normalized selector: explicit declared priority (P0 before P1 before P2 and so on), then explicit local/dependency order when declared, then continuation before genuinely new work only within the same effective rank, then repository lexical order, then issue number. Source type is not priority. A handoff is continuation evidence, not a separate priority queue. A Message changes derived work/dependency state and is not a global queue lane. Mixed or ambiguous priority fails closed until portfolio intent is explicit.
@@ -73,6 +74,8 @@ roadmap main via GitHub API
 → Sessions + validated Checkpoints, including current_branch, via Issues API
 → LIVE claims + stale claims pending recovery
 → unresolved Messages
+→ validate current operational protocol state
+   invalid => EXIT_CONTROL_PLANE_INVALID; zero work selection, zero Session creation, zero target writes
 → candidate local GitHub facts
 → open target PRs before target mutation/integration work
 → complete target branch inventory before target mutation
