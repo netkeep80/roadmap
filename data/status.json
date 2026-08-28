@@ -2,7 +2,7 @@
   "schema_version": 1,
   "owner": "netkeep80",
   "registry_schema_version": 1,
-  "latest_observed_github_change": "2026-08-28T11:19:26Z",
+  "latest_observed_github_change": "2026-08-28T22:18:40Z",
   "repository_count": 26,
   "child_repository_count": 25,
   "verified_child_backlinks": 25,
@@ -114,8 +114,8 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-28T10:25:20Z",
-      "updated_at": "2026-08-28T10:27:47Z",
+      "pushed_at": "2026-08-28T16:56:08Z",
+      "updated_at": "2026-08-28T16:56:50Z",
       "open_issues": 45,
       "open_pull_requests": 0,
       "tracked_issues": [
@@ -145,9 +145,9 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-28T10:43:18Z",
+      "pushed_at": "2026-08-28T22:18:40Z",
       "updated_at": "2026-08-28T10:44:39Z",
-      "open_issues": 13,
+      "open_issues": 12,
       "open_pull_requests": 3,
       "tracked_issues": [
         {
@@ -162,9 +162,9 @@
         {
           "number": 415,
           "title": "Define and enforce pmap key/value object-lifetime contract",
-          "state": "open",
-          "state_reason": null,
-          "updated_at": "2026-08-27T14:19:55Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "updated_at": "2026-08-28T20:16:23Z",
           "html_url": "https://github.com/netkeep80/PersistMemoryManager/issues/415",
           "is_pull_request": false
         },
@@ -324,9 +324,9 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-28T11:19:26Z",
-      "updated_at": "2026-08-28T10:51:07Z",
-      "open_issues": 12,
+      "pushed_at": "2026-08-28T18:38:49Z",
+      "updated_at": "2026-08-28T12:20:13Z",
+      "open_issues": 10,
       "open_pull_requests": 2,
       "tracked_issues": [
         {
@@ -438,10 +438,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-28T08:21:33Z",
-      "updated_at": "2026-08-28T08:25:46Z",
-      "open_issues": 4,
-      "open_pull_requests": 0,
+      "pushed_at": "2026-08-28T22:03:57Z",
+      "updated_at": "2026-08-28T16:39:48Z",
+      "open_issues": 5,
+      "open_pull_requests": 1,
       "tracked_issues": [
         {
           "number": 153,
@@ -484,7 +484,7 @@
           "title": "[Architecture] Убрать canonical AST: direct Syntax Aset + Aset-native prover/UI",
           "state": "open",
           "state_reason": null,
-          "updated_at": "2026-08-28T00:25:35Z",
+          "updated_at": "2026-08-28T16:44:24Z",
           "html_url": "https://github.com/netkeep80/aprover/issues/183",
           "is_pull_request": false
         }
@@ -496,7 +496,7 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-24T18:23:52Z",
+      "pushed_at": "2026-08-28T15:15:19Z",
       "updated_at": "2026-08-24T18:10:08Z",
       "open_issues": 11,
       "open_pull_requests": 1,
@@ -581,10 +581,10 @@
       "default_branch": "main",
       "archived": false,
       "visibility": "public",
-      "pushed_at": "2026-08-28T11:16:33Z",
-      "updated_at": "2026-08-24T12:04:27Z",
+      "pushed_at": "2026-08-28T18:15:29Z",
+      "updated_at": "2026-08-28T18:15:42Z",
       "open_issues": 7,
-      "open_pull_requests": 1,
+      "open_pull_requests": 0,
       "tracked_issues": []
     },
     {
@@ -953,6 +953,6 @@
       "tracked_issues": []
     }
   ],
-  "checked_at": "2026-08-28T11:25:51.380Z",
-  "state_hash": "d6cbdd363b48de7f579bcbfc35bab354c1c453a012a3d5332d8f0805f443dae5"
+  "checked_at": "2026-08-28T22:22:45.662Z",
+  "state_hash": "a5bedb5b56083b909ec2ae02ddc82de19e0744e80131bb006f3e0d385d7a9016"
 }
