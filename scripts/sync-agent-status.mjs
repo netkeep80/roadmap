@@ -11,6 +11,7 @@ import {
   validateSession,
 } from './agent-protocol.mjs';
 import { buildAgentSnapshot, renderAgentStatus } from './agent-status.mjs';
+import { projectWorkerSlots, renderAgentStatusWithSlots } from './worker-slot-status.mjs';
 import { analyzeOpenPullRequests } from './pr-reconciliation.mjs';
 import {
   AGENT_MARKER,
@@ -248,12 +249,14 @@ async function main() {
     historicalIssues,
     listBranches: listRepositoryBranches,
   });
+  const workerSlots = projectWorkerSlots({ issues, roles: snapshot.roles });
 
-  console.log(`${auditHistory ? 'agent historical audit' : 'agent status live'} ok: ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.stale_candidate_session_count} stale candidates, ${snapshot.claim_count} active claims, ${snapshot.stale_claim_count} stale claims, ${snapshot.duplicate_work_item_pr_count} duplicate-work PR groups, ${snapshot.unreconciled_supersession_count} unreconciled supersessions, ${snapshot.branch_drift_count} branch drift, ${snapshot.unresolved_message_count} unresolved messages`);
+  console.log(`${auditHistory ? 'agent historical audit' : 'agent status live'} ok: ${workerSlots.length} worker slots, ${snapshot.role_count}/${snapshot.repository_count} roles, ${snapshot.active_session_count} active sessions, ${snapshot.stale_candidate_session_count} stale candidates, ${snapshot.claim_count} active claims, ${snapshot.stale_claim_count} stale claims, ${snapshot.duplicate_work_item_pr_count} duplicate-work PR groups, ${snapshot.unreconciled_supersession_count} unreconciled supersessions, ${snapshot.branch_drift_count} branch drift, ${snapshot.unresolved_message_count} unresolved messages`);
   if (validateOnly || auditHistory) return;
 
   const configuredIssueNumber = Number.parseInt(process.env.AGENT_STATUS_ISSUE_NUMBER ?? `${DEFAULT_STATUS_ISSUE_NUMBER}`, 10);
-  const issueBody = `${renderAgentStatus(snapshot).replace('GENERATED FILE — DO NOT EDIT.', 'GENERATED ISSUE VIEW — DO NOT EDIT.')}\n`;
+  const legacyMarkdown = renderAgentStatus(snapshot);
+  const issueBody = `${renderAgentStatusWithSlots({ slots: workerSlots, legacyMarkdown }).replace('GENERATED FILE — DO NOT EDIT.', 'GENERATED ISSUE VIEW — DO NOT EDIT.')}\n`;
   const updatedIssue = await updateAgentStatusIssue({
     owner: registry.owner,
     repository: registry.control_repository,
