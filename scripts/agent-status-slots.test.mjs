@@ -29,8 +29,16 @@ const slotIssue = (slot, overrides = {}) => ({
   }),
 });
 
+const proseMention = {
+  number: 378,
+  state: 'open',
+  html_url: 'https://github.com/netkeep80/roadmap/issues/378',
+  body: 'Design note: forward workers use roadmap-worker-slot/v1. This is prose, not a protocol object.',
+};
+
 test('projects exactly five permanent Worker Slots as bounded current state', () => {
   const issues = [
+    proseMention,
     slotIssue(1),
     slotIssue(2),
     slotIssue(3, {
