@@ -2,6 +2,9 @@ import { compareClaimPriority } from './agent-protocol.mjs';
 
 const EXPECTED_WORK_ORDER = ['handoff', 'message', 'local-issue'];
 const NORMALIZED_SELECTION_POLICY = 'normalized-finish-first-v1';
+const SCHEDULED_WORKER_MODEL = 'fixed-slots-v1';
+const WORKER_SLOT_COUNT = 5;
+const SLOT_SNAPSHOT_POLICY = 'bounded-replace-v1';
 const LEASED_STATES = new Set(['starting', 'working', 'waiting', 'blocked']);
 const TERMINAL_STATES = new Set(['completed', 'abandoned']);
 const WORK_PHASES = new Set(['implementation']);
@@ -51,6 +54,16 @@ export function validateWorkerPolicy(policy) {
     if (!Array.isArray(policy.work_source_order) || policy.work_source_order.length !== EXPECTED_WORK_ORDER.length || policy.work_source_order.some((value, index) => value !== EXPECTED_WORK_ORDER[index])) {
       fail(`work_source_order must be ${EXPECTED_WORK_ORDER.join(' -> ')}`);
     }
+  }
+
+  if (policy.scheduled_worker_model !== undefined && policy.scheduled_worker_model !== SCHEDULED_WORKER_MODEL) {
+    fail(`scheduled_worker_model must be ${SCHEDULED_WORKER_MODEL}`);
+  }
+  if (policy.worker_slot_count !== undefined && policy.worker_slot_count !== WORKER_SLOT_COUNT) {
+    fail(`worker_slot_count must be ${WORKER_SLOT_COUNT}`);
+  }
+  if (policy.slot_snapshot_policy !== undefined && policy.slot_snapshot_policy !== SLOT_SNAPSHOT_POLICY) {
+    fail(`slot_snapshot_policy must be ${SLOT_SNAPSHOT_POLICY}`);
   }
 
   if (policy.no_work_action !== 'exit') fail('no_work_action must be exit');
@@ -128,232 +141,187 @@ function normalizeEffectivePriority(value) {
   return Number(match[1]);
 }
 
-function normalizeWorkCandidate(candidate, source) {
+function normalizeLocalOrder(value) {
+  if (value === null || value === undefined) return null;
+  return Number.isInteger(value) && value >= 0 ? value : null;
+}
+
+function normalizeCandidate(candidate, sourceKind) {
   if (!candidate || typeof candidate !== 'object') return null;
-  if (typeof candidate.repository !== 'string' || !candidate.repository.trim()) return null;
-  if (typeof candidate.work_item !== 'string') return null;
-  const match = /^([^#]+)#([1-9]\d*)$/.exec(candidate.work_item);
-  if (!match || match[1] !== candidate.repository) return null;
-  if (!WORK_PHASES.has(candidate.work_phase)) return null;
+  if (candidate.work_phase !== undefined && candidate.work_phase !== 'implementation') return null;
+  if (candidate.work_phase !== undefined && !WORK_PHASES.has(candidate.work_phase)) return null;
 
-  const priority = normalizeEffectivePriority(candidate.effective_priority);
-  if (priority === null) return null;
-
-  const localOrder = candidate.local_order ?? null;
-  if (localOrder !== null && (!Number.isInteger(localOrder) || localOrder < 0)) return null;
-
-  const continuation = candidate.continuation === true;
-  const executable = source === 'handoff'
-    ? candidate.valid === true
-      && candidate.executable_now === true
-      && candidate.occupied_by_live_winner !== true
-      && candidate.stale_recovery_required !== true
-    : candidate.open === true
-      && candidate.portfolio_consistent === true
-      && candidate.executable_now === true
-      && candidate.blocked !== true
-      && candidate.occupied_by_live_winner !== true
-      && candidate.stale_recovery_required !== true;
-  if (!executable) return null;
-
-  return {
+  const normalized = {
+    source_kind: sourceKind,
+    source_ref: candidate.ref ?? null,
+    repository: candidate.repository ?? null,
+    work_item: candidate.work_item ?? candidate.ref ?? null,
+    effective_priority: normalizeEffectivePriority(candidate.effective_priority),
+    local_order: normalizeLocalOrder(candidate.local_order),
+    continuation: candidate.continuation === true || sourceKind === 'handoff',
+    open: candidate.open !== false,
+    portfolio_consistent: candidate.portfolio_consistent !== false,
+    executable_now: candidate.executable_now !== false,
+    blocked: candidate.blocked === true,
+    occupied_by_live_winner: candidate.occupied_by_live_winner === true,
+    stale_recovery_required: candidate.stale_recovery_required === true,
     original: candidate,
-    source,
-    priority,
-    local_order: localOrder,
-    continuation,
-    repository: candidate.repository,
-    issue_number: Number(match[2]),
   };
+
+  if (!normalized.repository || !normalized.work_item || normalized.effective_priority === null) return null;
+  return normalized;
+}
+
+function normalizedExecutable(candidate) {
+  return candidate.open
+    && candidate.portfolio_consistent
+    && candidate.executable_now
+    && !candidate.blocked
+    && !candidate.occupied_by_live_winner
+    && !candidate.stale_recovery_required;
 }
 
 function compareNormalizedCandidates(left, right) {
-  if (left.priority !== right.priority) return left.priority - right.priority;
+  if (left.effective_priority !== right.effective_priority) return left.effective_priority - right.effective_priority;
 
-  const leftOrder = left.local_order ?? Number.POSITIVE_INFINITY;
-  const rightOrder = right.local_order ?? Number.POSITIVE_INFINITY;
-  if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+  if (left.local_order !== null || right.local_order !== null) {
+    if (left.local_order === null) return 1;
+    if (right.local_order === null) return -1;
+    if (left.local_order !== right.local_order) return left.local_order - right.local_order;
+  }
 
   if (left.continuation !== right.continuation) return left.continuation ? -1 : 1;
+  if (left.repository !== right.repository) return left.repository.localeCompare(right.repository);
 
-  const repositoryOrder = left.repository.localeCompare(right.repository, 'en');
-  if (repositoryOrder !== 0) return repositoryOrder;
-  return left.issue_number - right.issue_number;
+  const leftMatch = /#(\d+)$/.exec(left.work_item);
+  const rightMatch = /#(\d+)$/.exec(right.work_item);
+  const leftNumber = leftMatch ? Number(leftMatch[1]) : Number.MAX_SAFE_INTEGER;
+  const rightNumber = rightMatch ? Number(rightMatch[1]) : Number.MAX_SAFE_INTEGER;
+  if (leftNumber !== rightNumber) return leftNumber - rightNumber;
+  return left.work_item.localeCompare(right.work_item);
 }
 
-function selectNormalizedWork({ handoffs, issues }) {
-  const ranked = [];
-  for (const candidate of assertArray(handoffs, 'handoffs')) {
-    const normalized = normalizeWorkCandidate(candidate, 'handoff');
-    if (normalized) ranked.push(normalized);
+export function selectNormalizedWork({ handoffs = [], messages = [], issues = [] } = {}) {
+  const normalized = [];
+  for (const handoff of assertArray(handoffs, 'handoffs')) {
+    const candidate = normalizeCandidate(handoff, 'handoff');
+    if (candidate && normalizedExecutable(candidate)) normalized.push(candidate);
   }
-  for (const candidate of assertArray(issues, 'issues')) {
-    const normalized = normalizeWorkCandidate(candidate, 'issue');
-    if (normalized) ranked.push(normalized);
+  for (const issue of assertArray(issues, 'issues')) {
+    const candidate = normalizeCandidate(issue, 'local-issue');
+    if (candidate && normalizedExecutable(candidate)) normalized.push(candidate);
+  }
+  for (const message of assertArray(messages, 'messages')) {
+    if (!message || typeof message !== 'object') continue;
+    const candidate = normalizeCandidate(message.work_candidate ?? null, 'message');
+    if (candidate && normalizedExecutable(candidate)) normalized.push(candidate);
   }
 
-  ranked.sort(compareNormalizedCandidates);
-  const winner = ranked[0];
-  if (!winner) return { action: 'exit_no_work', candidate: null };
-  return {
-    action: winner.continuation ? 'resume_handoff' : 'claim_issue',
-    candidate: winner.original,
-  };
+  normalized.sort(compareNormalizedCandidates);
+  const selected = normalized[0] ?? null;
+  return selected
+    ? { action: selected.source_kind === 'handoff' ? 'resume_handoff' : 'claim_issue', candidate: selected.original }
+    : { action: 'exit_no_work', candidate: null };
 }
 
-export function selectBoundedWork({ handoffs = [], messages = [], issues = [] } = {}) {
-  assertArray(handoffs, 'handoffs');
-  assertArray(messages, 'messages');
-  assertArray(issues, 'issues');
+export function selectBoundedWork({ handoffs = [], messages = [], issues = [], observations = [] } = {}) {
+  const normalizedPresent = [
+    ...handoffs,
+    ...issues,
+    ...messages.map((message) => message?.work_candidate),
+  ].some(hasNormalizedCandidateMetadata);
 
-  const normalizedMode = [...handoffs, ...issues].some(hasNormalizedCandidateMetadata);
-  if (normalizedMode) {
-    // Messages are state/evidence inputs in v3 and never form a competing queue.
-    return selectNormalizedWork({ handoffs, issues });
-  }
+  if (normalizedPresent) return selectNormalizedWork({ handoffs, messages, issues });
 
-  // Historical v1/v2 runtime fixtures remain migration-readable only. New v3
-  // autonomous selection always supplies normalized WorkCandidate metadata.
-  const handoff = firstMatching(handoffs, (candidate) => (
-    candidate.valid === true
-    && candidate.executable_now === true
-    && candidate.occupied_by_live_winner !== true
-  ));
+  const handoff = firstMatching(handoffs, (item) => item.valid === true && item.executable_now === true && item.occupied_by_live_winner !== true);
   if (handoff) return { action: 'resume_handoff', candidate: handoff };
 
-  const message = firstMatching(messages, (candidate) => candidate.actionable === true);
+  const message = firstMatching(messages, (item) => item.actionable === true);
   if (message) return { action: 'process_message', candidate: message };
 
-  const issue = firstMatching(issues, (candidate) => (
-    candidate.open === true
-    && candidate.portfolio_consistent === true
-    && candidate.executable_now === true
-    && candidate.blocked !== true
-    && candidate.occupied_by_live_winner !== true
-    && candidate.stale_recovery_required !== true
-  ));
+  const issue = firstMatching(issues, (item) => item.open === true
+    && item.portfolio_consistent === true
+    && item.executable_now === true
+    && item.blocked !== true
+    && item.occupied_by_live_winner !== true
+    && item.stale_recovery_required !== true);
   if (issue) return { action: 'claim_issue', candidate: issue };
 
+  assertArray(observations, 'observations');
   return { action: 'exit_no_work', candidate: null };
 }
 
-export function decidePostSessionClaim({ claim, contender, liveClaimers = [] }) {
-  if (typeof claim !== 'string' || !claim.trim()) fail('post-Session claim must be a non-empty string');
-  if (!contender || !Number.isInteger(contender.number) || !Number.isFinite(Date.parse(contender.created_at ?? ''))) {
-    fail('post-Session contender requires GitHub Session issue number and created_at');
+export function decideStaleRecovery({ leaseStatus, revalidation }) {
+  if (leaseStatus !== 'stale_candidate') return { action: 'not_applicable' };
+  if (!revalidation || revalidation.complete !== true) return { action: 'revalidate' };
+  if (revalidation.work_still_executable !== true || revalidation.occupied_by_live_winner === true) {
+    return { action: 'abandon_without_resume' };
   }
+  return { action: 'abandon_then_replace' };
+}
 
-  const claimers = assertArray(liveClaimers, 'live claimers').filter((session) => (
-    session
-    && Number.isInteger(session.number)
-    && Number.isFinite(Date.parse(session.created_at ?? ''))
-    && Array.isArray(session.data?.claims)
-    && session.data.claims.includes(claim)
-  ));
-  if (!claimers.some((session) => session.number === contender.number)) {
-    fail('post-Session contender must be present in refreshed live claimers');
-  }
-
-  const ordered = [...claimers].sort((left, right) => compareClaimPriority(
-    { created_at: left.created_at, number: left.number },
-    { created_at: right.created_at, number: right.number },
-  ));
-  const winner = ordered[0];
-  if (winner.number === contender.number) {
-    return {
-      action: 'proceed',
-      winner_session_issue: winner.number,
-      target_writes_allowed: true,
-    };
-  }
-  return {
-    action: 'release_and_reselect_or_exit',
-    winner_session_issue: winner.number,
-    target_writes_allowed: false,
-  };
+export function decidePostSessionClaim({ claim, contender, liveClaimers }) {
+  if (typeof claim !== 'string' || !claim.trim()) fail('claim must be a non-empty string');
+  if (!contender || typeof contender !== 'object') fail('contender Session is required');
+  const matching = assertArray(liveClaimers, 'liveClaimers')
+    .filter((session) => Array.isArray(session?.data?.claims) && session.data.claims.includes(claim))
+    .sort(compareClaimPriority);
+  if (!matching.length) fail('post-Session refresh must include at least one LIVE claimer for the claim');
+  const winner = matching[0];
+  const contenderNumber = contender.number;
+  const winnerNumber = winner.number;
+  if (!Number.isInteger(contenderNumber) || !Number.isInteger(winnerNumber)) fail('Session issue numbers are required');
+  return contenderNumber === winnerNumber
+    ? { action: 'proceed', winner_session_issue: winnerNumber, target_writes_allowed: true }
+    : { action: 'release_and_reselect_or_exit', winner_session_issue: winnerNumber, target_writes_allowed: false };
 }
 
 export function decideBranchPreparation({
   claimWon,
   workPhase = 'implementation',
-  currentBranch = null,
+  currentBranch,
   intendedBranch,
   branchExists,
-  matchingOpenPr = null,
+  matchingOpenPr,
 }) {
-  if (workPhase !== 'implementation') fail('workPhase must be implementation');
-
-  const intended = normalizeBranch(intendedBranch, 'intendedBranch');
-  const current = currentBranch === null ? null : normalizeBranch(currentBranch, 'currentBranch');
-  if (typeof branchExists !== 'boolean') fail('branchExists must be boolean');
-
   if (claimWon !== true) {
     return {
-      action: 'claim_not_won',
-      current_branch: current ?? intended,
-      branch_creation_allowed: false,
+      action: 'stop_collision_loser',
       target_writes_allowed: false,
+      branch_create_allowed: false,
+      branch_reuse_allowed: false,
     };
   }
+  if (!WORK_PHASES.has(workPhase)) fail('branch preparation is implementation-only');
 
-  if (current === null) {
-    return {
-      action: 'persist_current_branch',
-      current_branch: intended,
-      branch_creation_allowed: false,
-      target_writes_allowed: false,
-    };
+  if (currentBranch) {
+    const owned = normalizeBranch(currentBranch, 'currentBranch');
+    if (matchingOpenPr?.head_branch && matchingOpenPr.head_branch !== owned.name) {
+      return { action: 'fail_closed_branch_pr_mismatch', target_writes_allowed: false, current_branch: owned };
+    }
+    return branchExists
+      ? { action: 'reuse_owned_branch', target_writes_allowed: true, branch_create_allowed: false, branch_reuse_allowed: true, current_branch: owned }
+      : { action: 'create_owned_branch', target_writes_allowed: true, branch_create_allowed: true, branch_reuse_allowed: false, current_branch: owned };
   }
 
-  if (!sameBranch(current, intended)) {
-    fail('intended branch must match durable currentBranch ownership before target writes');
-  }
-
-  if (!branchExists) {
-    if (matchingOpenPr !== null) fail('open PR cannot be reused while its owned branch is absent');
-    return {
-      action: 'create_owned_branch',
-      current_branch: current,
-      branch_creation_allowed: true,
-      target_writes_allowed: true,
-    };
-  }
-
-  if (matchingOpenPr === null) {
-    return {
-      action: 'reuse_owned_pre_pr_branch',
-      current_branch: current,
-      branch_creation_allowed: false,
-      target_writes_allowed: true,
-    };
-  }
-
+  const intended = normalizeBranch(intendedBranch, 'intendedBranch');
   return {
-    action: 'reuse_owned_branch_and_pr',
-    current_branch: current,
-    branch_creation_allowed: false,
-    target_writes_allowed: true,
+    action: 'persist_branch_before_target_write',
+    target_writes_allowed: false,
+    branch_create_allowed: false,
+    branch_reuse_allowed: false,
+    current_branch: intended,
   };
 }
 
-export function decideImplementationBranchTakeover({
-  predecessor,
-  successor,
-  revalidatedAfterAdoption = false,
-}) {
-  if (!predecessor || predecessor.work_phase !== 'implementation' || predecessor.state !== 'handoff') {
-    fail('implementation takeover requires an implementation handoff predecessor');
-  }
-  if (!Array.isArray(predecessor.claims) || predecessor.claims.length !== 0) {
-    fail('implementation handoff predecessor must be claim-free');
-  }
+export function decideImplementationBranchTakeover({ predecessor, successor }) {
+  if (!predecessor || !successor || typeof predecessor !== 'object' || typeof successor !== 'object') fail('predecessor and successor are required');
+  if (predecessor.work_phase !== 'implementation' || successor.work_phase !== 'implementation') fail('implementation branch takeover is implementation-only');
+  if (predecessor.state !== 'handoff' || !Array.isArray(predecessor.claims) || predecessor.claims.length !== 0) fail('predecessor must be claim-free handoff');
+  if (successor.claim_won !== true) fail('successor must be winning claimant');
+
   const predecessorBranch = normalizeBranch(predecessor.current_branch, 'predecessor.current_branch');
-
-  if (!successor || successor.work_phase !== 'implementation' || successor.claim_won !== true) {
-    fail('implementation takeover requires a winning implementation successor');
-  }
-
-  if (successor.current_branch === null || successor.current_branch === undefined) {
+  if (!successor.current_branch) {
     return {
       action: 'persist_successor_branch',
       current_branch: predecessorBranch,
@@ -364,36 +332,25 @@ export function decideImplementationBranchTakeover({
 
   const successorBranch = normalizeBranch(successor.current_branch, 'successor.current_branch');
   if (!sameBranch(predecessorBranch, successorBranch)) {
-    fail('implementation successor must adopt the exact predecessor branch');
+    return {
+      action: 'fail_closed_branch_mismatch',
+      predecessor_clear_allowed: false,
+      target_writes_allowed: false,
+    };
   }
 
-  if (revalidatedAfterAdoption !== true) {
+  if (successor.post_adoption_refreshed !== true || predecessor.still_handoff !== true || predecessor.claims_still_empty !== true || successor.still_winning_claimant !== true) {
     return {
-      action: 'refresh_before_predecessor_clear',
-      current_branch: successorBranch,
+      action: 'refresh_after_adoption',
       predecessor_clear_allowed: false,
       target_writes_allowed: false,
     };
   }
 
   return {
-    action: 'clear_predecessor_branch',
-    current_branch: successorBranch,
+    action: 'complete_predecessor_then_continue',
     predecessor_clear_allowed: true,
-    target_writes_allowed: false,
+    target_writes_allowed: true,
+    current_branch: successorBranch,
   };
-}
-
-export function decideStaleRecovery({ leaseStatus, revalidation }) {
-  if (leaseStatus !== 'stale_candidate') fail('stale recovery requires stale_candidate lease status');
-  if (!revalidation || revalidation.complete !== true) {
-    return { action: 'revalidate', reason: 'current GitHub state must be completely revalidated' };
-  }
-  if (revalidation.work_still_executable !== true) {
-    return { action: 'abandon_without_resume', reason: 'current GitHub state no longer permits the stale work' };
-  }
-  if (revalidation.occupied_by_live_winner === true) {
-    return { action: 'abandon_without_resume', reason: 'a live winning Session currently occupies the work' };
-  }
-  return { action: 'abandon_then_replace', reason: 'work remains executable after complete GitHub revalidation' };
 }
