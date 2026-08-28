@@ -3,6 +3,9 @@ import {
   validateWorkerSlot,
 } from './agent-protocol.mjs';
 
+const AGENT_START = '<!-- roadmap-agent:start -->';
+const AGENT_END = '<!-- roadmap-agent:end -->';
+
 function roleMapFromProjection(roles) {
   if (!Array.isArray(roles)) throw new Error('worker slot status: roles must be an array');
   const map = new Map();
@@ -18,7 +21,13 @@ function roleMapFromProjection(roles) {
 
 function slotIssueCandidates(issues) {
   if (!Array.isArray(issues)) throw new Error('worker slot status: issues must be an array');
-  return issues.filter((issue) => typeof issue?.body === 'string' && issue.body.includes('roadmap-worker-slot/v1'));
+  return issues.filter((issue) => {
+    const body = issue?.body;
+    return typeof body === 'string'
+      && body.includes(AGENT_START)
+      && body.includes(AGENT_END)
+      && body.includes('roadmap-worker-slot/v1');
+  });
 }
 
 export function projectWorkerSlots({ issues, roles }) {
