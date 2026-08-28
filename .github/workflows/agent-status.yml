@@ -15,6 +15,7 @@ on:
       - "scripts/agent-status.mjs"
       - "scripts/validate-agents.mjs"
       - "scripts/sync-agent-status.mjs"
+      - "scripts/worker-slot-status.mjs"
       - "scripts/agent-evidence-integrity.mjs"
       - ".github/workflows/agent-status.yml"
   issues:
@@ -70,6 +71,7 @@ jobs:
             scripts/agent-status.mjs
             scripts/validate-agents.mjs
             scripts/sync-agent-status.mjs
+            scripts/worker-slot-status.mjs
             scripts/agent-evidence-integrity.mjs
             data/portfolio.json
             data/worker-policy.json
