@@ -12,8 +12,9 @@
 
 | Что нужно узнать | Куда смотреть |
 |---|---|
+| **Scheduled Workers / fixed Slots** | [`SCHEDULED_WORKERS.md`](SCHEDULED_WORKERS.md) |
 | **Запустить AI-агента по одной role URL** | [`AGENTS.md`](AGENTS.md) |
-| **Role / Session / Message / Claim protocol** | [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md) |
+| **Worker Slot + historical Role / Session / Message / Claim protocol** | [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md) |
 | **Текущее состояние worker pool** | [Agent Status Issue #103](https://github.com/netkeep80/roadmap/issues/103) — disposable human-readable projection |
 | **Текущее состояние portfolio** | [`STATUS.md`](STATUS.md) — generated portfolio board |
 | **Что делать раньше/позже** | [`EXECUTION.md`](EXECUTION.md) — dependency lanes and gates |
@@ -26,7 +27,7 @@
 | **Machine-readable portfolio intent** | [`data/portfolio.json`](data/portfolio.json) |
 | **Machine-readable observed portfolio state** | [`data/status.json`](data/status.json) |
 
-> `STATUS.md` / `data/status.json` относятся к portfolio snapshot. Оперативное состояние worker pool не хранится в Git: source of truth — live Role / Session / Checkpoint / Claim / Message Issues, а [Issue #103](https://github.com/netkeep80/roadmap/issues/103) является только удобной производной проекцией для человека.
+> `STATUS.md` / `data/status.json` относятся к portfolio snapshot. Для Scheduled Workers durable ownership хранится в пяти permanent Worker Slot Issues #385–#389. Slot body — bounded current snapshot; target Issue/Git/PR/CI остаются execution truth. [Issue #103](https://github.com/netkeep80/roadmap/issues/103) является удобной производной проекцией, а historical Role / Session / Checkpoint / Claim / Message state сохраняется для совместимости и аудита.
 
 ## Authority model
 
@@ -49,13 +50,16 @@ GitHub API
 STATUS.md + data/status.json
 (observed portfolio facts)
 
-Agent Role issue
+Scheduled Task WORKER_SLOT=1..5
         ↓
-Agent Session / Checkpoints / Messages / Claims
-(authoritative durable execution coordination)
+Permanent Worker Slot Issue
+(durable assignment + bounded best-effort snapshot)
+        ↓
+target Issue / branch / PR / CI
+(execution truth + integration authority)
         ↓
 Agent Status Issue #103
-(disposable human-readable projection; never authority)
+(disposable human-readable projection; never merge authority)
 ```
 
 Это означает:
@@ -63,12 +67,29 @@ Agent Status Issue #103
 - `roadmap` владеет **portfolio direction** и public Agent Control Plane;
 - local repositories владеют **implementation backlog**;
 - GitHub API владеет наблюдаемыми фактами;
+- permanent Worker Slot владеет только текущим Scheduled Worker assignment, но не заменяет target repository truth;
 - repo-guard / local CI остаётся authority для change/integration correctness там, где он реально настроен;
 - автоматика **не меняет архитектурные приоритеты сама**;
 - новый public repository, не зарегистрированный в `data/portfolio.json`, считается control-plane drift;
 - non-public repositories находятся вне этого public control plane и не должны упоминаться в его agent state.
 
 Подробно: [`OPERATING_MODEL.md`](OPERATING_MODEL.md).
+
+## Scheduled Worker bootstrap
+
+Scheduled Workers используют ровно пять permanent Slots:
+
+```text
+WORKER_SLOT=1 -> roadmap#385
+WORKER_SLOT=2 -> roadmap#386
+WORKER_SLOT=3 -> roadmap#387
+WORKER_SLOT=4 -> roadmap#388
+WORKER_SLOT=5 -> roadmap#389
+```
+
+Assigned Slot дешёво продолжает ровно свой assignment и не выполняет глобальный выбор работы. Только idle Slot запускает bounded deterministic self-dispatch. Snapshot может быть stale: worker принимает решения по текущему target Issue/branch/PR/CI и естественно обновляет Slot body по ходу полезной работы; отдельного metadata-repair этапа нет.
+
+Полный алгоритм и copyable prompt: [`SCHEDULED_WORKERS.md`](SCHEDULED_WORKERS.md).
 
 ## One URL agent bootstrap
 
@@ -78,33 +99,31 @@ Agent Status Issue #103
 [Agent Role] <repository> developer
 ```
 
-Пользователь может дать новому агенту только URL этой issue. Агент сам:
+Этот вход остаётся доступным для role-scoped interactive/manual agents и historical protocol compatibility. Он не является Scheduled Worker hot path.
+
+Пользователь может дать агенту только URL этой issue. Агент сам:
 
 ```text
 role issue
 → reads roadmap control-plane data through GitHub API
 → validates public role identity
 → reads portfolio intent + fresh observed state
-→ restores active session/handoff
-→ reads inbox + claims
 → inspects exact local repository state
 → checks out/clones only the selected target repository when code work requires it
 → works under local CI/repo-guard rules
-→ checkpoints and coordinates cross-repo changes through GitHub Issues API
+→ coordinates durable cross-repo facts through GitHub Issues API when needed
 ```
 
 ### API-only control-plane invariant
 
-Обычный worker **не клонирует и не checkout-ит `netkeep80/roadmap`** только ради bootstrap, выбора работы, чтения статуса, claim, checkpoint или coordination. Для этого используются GitHub Issues / Contents API.
+Обычный worker **не клонирует и не checkout-ит `netkeep80/roadmap`** только ради bootstrap, выбора работы, чтения статуса или coordination. Для этого используются GitHub Issues / Contents API.
 
 ```text
 roadmap control plane = API-only
 selected target repo  = checkout/clone only when implementation requires it
 ```
 
-Единственное исключение: если worker под permanent roadmap developer Role #49 выбрал executable работу **в самом `netkeep80/roadmap`**, тогда `roadmap` становится его обычным target repository и может быть checkout-нут как любой другой target.
-
-Полный алгоритм: [`AGENTS.md`](AGENTS.md).
+Единственное исключение: если executable работа сама относится к `netkeep80/roadmap`, тогда `roadmap` становится обычным target repository и может быть checkout-нут как любой другой target.
 
 ## Общий замысел
 
@@ -170,22 +189,24 @@ GitHub repository/issues/PR facts
 → portfolio-sync
 → STATUS.md + data/status.json
 
-GitHub Role/Session/Checkpoint/Claim/Message state
+GitHub Worker Slots + historical Role/Session/Checkpoint/Claim/Message state
 → agent-status (GitHub API only; no checkout)
 → permanent Agent Status Issue #103
 ```
 
-### 3. Agent coordination loop
+### 3. Scheduled Worker execution loop
 
 ```text
-Role URL
-→ API-only roadmap bootstrap
-→ Session / Claim
-→ selected target repository work
-→ cross-repo Message when needed
-→ Checkpoint / Handoff
-→ fresh agent can resume from the same Role URL
+Scheduled wake + WORKER_SLOT=N
+→ read own permanent Slot first
+→ assigned: continue exact assignment
+→ idle: bounded deterministic self-dispatch
+→ target repository work
+→ opportunistic bounded Slot snapshot update
+→ next invocation resumes same assignment generation
 ```
+
+Historical Sessions/Checkpoints/Handoffs remain readable but ordinary assigned Scheduled Worker runs do not reconstruct them globally.
 
 ### 4. Dependency loop
 
@@ -220,17 +241,18 @@ upstream gate closes / new blocker appears
 
 1. **One canonical owner per layer.**
 2. **One public repository = one permanent repository-developer Agent Role.**
-3. **Public Agent Control Plane must not expose non-public repositories.**
-4. **Worker control-plane access is API-only; cloning `roadmap` is reserved for actual Role #49 roadmap implementation work.**
-5. **Git is the archive.** После migration obsolete implementation удаляется.
-6. **No compatibility layer without a named removal gate.**
-7. **Research ≠ accepted production contract.**
-8. **Persistence identity ≠ process address.**
-9. **Frontend syntax ≠ runtime semantic universe.**
-10. **Interpret/find/inspect ≠ realize/mutate.**
-11. **Engineering and physical safety evidence outranks feature growth.**
-12. **Optimization/hardware ≠ second semantics.**
-13. **Future vision never bypasses current correctness gates.**
+3. **Scheduled Workers = exactly five persistent Worker Slots; assigned Slot resumes instead of globally reselecting work.**
+4. **Public Agent Control Plane must not expose non-public repositories.**
+5. **Worker control-plane access is API-only; cloning `roadmap` is reserved for actual roadmap implementation work.**
+6. **Git is the archive.** После migration obsolete implementation удаляется.
+7. **No compatibility layer without a named removal gate.**
+8. **Research ≠ accepted production contract.**
+9. **Persistence identity ≠ process address.**
+10. **Frontend syntax ≠ runtime semantic universe.**
+11. **Interpret/find/inspect ≠ realize/mutate.**
+12. **Engineering and physical safety evidence outranks feature growth.**
+13. **Optimization/hardware ≠ second semantics.**
+14. **Future vision never bypasses current correctness gates.**
 
 ## Актуальность
 
@@ -244,10 +266,10 @@ upstream gate closes / new blocker appears
 
 `agent-status` обновляет [permanent Issue #103](https://github.com/netkeep80/roadmap/issues/103):
 
-- на lifecycle-событиях структурированных Role / Session / Message issues;
-- на Checkpoint comments;
+- на lifecycle/body-событиях structured Worker Slot / Role / Session / Message issues;
+- на historical Checkpoint comments;
 - после изменения agent-status runtime на `main`;
-- каждые 15 минут для lease / `STALE_CANDIDATE` aging;
+- каждые 15 минут для compatibility lease / stale aging;
 - вручную через `workflow_dispatch`.
 
 `agent-status` **не использует `actions/checkout`**: минимальный runtime читается через GitHub Contents API, а status body обновляется через GitHub Issues API.
@@ -258,11 +280,11 @@ upstream gate closes / new blocker appears
 
 ## Для автоматических агентов
 
-Нормальный вход — permanent Agent Role issue URL. Получив её, следовать [`AGENTS.md`](AGENTS.md) и [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md).
+Scheduled Task начинает с [`SCHEDULED_WORKERS.md`](SCHEDULED_WORKERS.md) и своего permanent Slot #385–#389. Interactive/manual role-scoped agent может начинать с permanent Agent Role issue URL и [`AGENTS.md`](AGENTS.md).
 
-Все bootstrap/control-plane reads из `netkeep80/roadmap` выполнять через GitHub API. Не клонировать `roadmap` ради orientation/status/coordination. Checkout `roadmap` допустим только если выбранная executable работа сама относится к Role #49 / `netkeep80/roadmap`.
+Все bootstrap/control-plane reads из `netkeep80/roadmap` выполнять через GitHub API. Не клонировать `roadmap` ради orientation/status/coordination. Checkout `roadmap` допустим только когда выбранная executable работа сама относится к `netkeep80/roadmap`.
 
-Если агент ещё не получил Role URL, для portfolio orientation через GitHub Contents API читать:
+Для portfolio orientation через GitHub Contents API читать:
 
 ```text
 data/portfolio.json
