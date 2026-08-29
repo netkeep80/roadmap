@@ -1,23 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 
 import { validateMessage, validateRoleCoverage, validateSession } from './agent-protocol.mjs';
 import { buildAgentSnapshot, renderAgentStatus } from './agent-status.mjs';
 
 const block = (value) => `before\n<!-- roadmap-agent:start -->\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\`\n<!-- roadmap-agent:end -->\nafter`;
-
-const workerPolicy = {
-  schema_version: 1,
-  scope: 'public-owner-repositories',
-  lease_seconds: 7200,
-  heartbeat_target_seconds: 3600,
-  work_source_order: ['handoff', 'message', 'local-issue'],
-  no_work_action: 'exit',
-  allow_speculative_work: false,
-  coordinator_requires_declared_trigger: true,
-  pr_reconciliation_required: true,
-};
 
 const role = {
   number: 10,
@@ -85,7 +72,7 @@ test('validateSession rejects claims on handoff sessions', () => {
   );
 });
 
-test('historical worker_slot remains parseable but has no generated operational surface', () => {
+test('historical worker_slot remains parseable but has no generated operational surface and needs no scheduled-worker policy', () => {
   const coverage = validateRoleCoverage(['alpha'], ['alpha'], [role]);
   const parsed = validateSession(sessionIssue(sessionData({ worker_slot: 7 })), coverage.roleMap);
   assert.equal(parsed.worker_slot, 7);
@@ -102,7 +89,6 @@ test('historical worker_slot remains parseable but has no generated operational 
     roles: [{ issue_number: 10, repository: 'netkeep80/alpha', portfolio_authority: 'propose' }],
     sessions: [session],
     messages: [],
-    workerPolicy,
   });
 
   assert.equal('worker_slot' in snapshot.active_sessions[0], false);
@@ -146,17 +132,36 @@ test('resolved Messages close while unresolved Messages stay open', () => {
   );
 });
 
-test('forward policy bounds orphaned working Sessions and tells long executions to refresh the existing Checkpoint heartbeat', async () => {
-  const policy = JSON.parse(await readFile(new URL('../data/worker-policy.json', import.meta.url), 'utf8'));
-  assert.equal(policy.lease_seconds, 3600);
-  assert.equal(policy.heartbeat_target_seconds, 1800);
+test('historical active Session aging uses a fixed one-hour display lease independent of scheduled observers', () => {
+  const session = {
+    number: 102,
+    html_url: 'https://github.com/netkeep80/roadmap/issues/102',
+    created_at: '2026-08-24T10:00:00Z',
+    updated_at: '2026-08-24T10:10:00Z',
+    data: {
+      role_issue: 10,
+      repository: 'netkeep80/alpha',
+      state: 'working',
+      claims: ['netkeep80/alpha#7'],
+      current_pr: null,
+      blocked_by: [],
+    },
+  };
 
-  const scheduledWorkers = await readFile(new URL('../SCHEDULED_WORKERS.md', import.meta.url), 'utf8');
-  assert.match(
-    scheduledWorkers,
-    /meaningful work continues for longer than `heartbeat_target_seconds`[\s\S]*structured Checkpoint/i,
-  );
+  const live = buildAgentSnapshot({
+    checkedAt: '2026-08-24T11:00:00Z',
+    roles: [{ issue_number: 10, repository: 'netkeep80/alpha', portfolio_authority: 'propose' }],
+    sessions: [session],
+    messages: [],
+  });
+  assert.equal(live.active_session_count, 1);
 
-  const protocol = await readFile(new URL('../AGENT_PROTOCOL.md', import.meta.url), 'utf8');
-  assert.match(protocol, /lease_seconds = 3600[\s\S]*heartbeat_target_seconds = 1800/);
+  const stale = buildAgentSnapshot({
+    checkedAt: '2026-08-24T11:00:01Z',
+    roles: [{ issue_number: 10, repository: 'netkeep80/alpha', portfolio_authority: 'propose' }],
+    sessions: [session],
+    messages: [],
+  });
+  assert.equal(stale.active_session_count, 0);
+  assert.equal(stale.stale_candidate_session_count, 1);
 });
