@@ -1,259 +1,133 @@
-# Порядок исполнения
+# Execution ordering
 
-Срез: 2026-08-24.
+This document defines **how portfolio gates are interpreted**, not a queue for scheduled workers.
 
-Центральный roadmap не означает, что вся работа сериализована. Ниже выделены независимые lanes и hard dependency gates.
+Current repository priority, lifecycle, objectives, dependencies and next gates are maintained in `data/portfolio.json`. Current public GitHub facts are generated into `STATUS.md` / `data/status.json`.
 
-> **Актуальность:** factual open/closed state всегда читать в [`STATUS.md`](STATUS.md). Этот документ хранит **осознанный порядок исполнения**. Если live status выявляет новый blocker, `data/portfolio.json` и этот документ обновляются отдельным portfolio decision.
-
-## PRIMARY FOCUS — МТС / aprover
-
-До следующего явного portfolio decision `roadmap#3` является **единственным P0 workstream**.
-
-При выборе **новой** работы действует порядок:
+## 1. Source of current ordering
 
 ```text
-1. сохранить корректность уже существующих LIVE Sessions / valid handoffs / actionable Messages;
-2. для fresh unclaimed local-issue work сначала выбирать executable work из P0;
-3. P1/P2/P3 рассматривать как residual queue только если нет доступного executable unclaimed P0 work;
-4. priority не разрешает invent work, обход blockers или дублирование LIVE claims.
+data/portfolio.json
+  explicit priority + lifecycle + objective + next_gate + depends_on
+        ↓
+STATUS.md / data/status.json
+  current observed public facts
+        ↓
+reasoning-capable decision
+  is a declared gate executable now?
+        ↓
+local repository issue
+  exact implementation requirements
 ```
 
-Текущий P0 focus:
+Do not maintain a second hard-coded list of current issue numbers here. It becomes stale faster than the registry and local repositories.
+
+## 2. Priority is intent, not permission
+
+Declared priority (`P0`, `P1`, and so on) orders **explicit executable work**. It does not authorize:
+
+- inventing work;
+- bypassing blockers;
+- creating speculative cleanup;
+- changing architecture;
+- duplicating an already active implementation;
+- treating an observed fact as a new portfolio decision.
+
+No explicit executable work means no work.
+
+## 3. Dependency gates
+
+A downstream gate is executable only when its declared upstream requirements are satisfied by current evidence.
 
 ```text
-anum_docs   — normative МТС/Anum semantics
-aprover     — главный proof/search consumer
-mts_visual  — standalone visual support lane
-avm         — link-native runtime lane, связанный с accepted МТС boundary
-anum_parser — P0/P1 supporting laboratory/consumer lane
+upstream contract / evidence
+        ↓
+explicit downstream gate
+        ↓
+consumer implementation
+        ↓
+consumer validation
+        ↓
+obsolete path removal when declared
 ```
 
-Внутри этого focus основной product/theory delivery — `anum_docs + aprover`; `mts_visual`, `avm` и `anum_parser` выполняются как связанные support/runtime/consumer lanes по их явным local gates.
+Do not build downstream workarounds for a blocker already localized upstream.
 
-PMM→pjson, mast-calculator и остальные направления **не отменены и не заморожены**: их backlog и dependency gates сохраняются, но до следующего решения они относятся к остаточной очереди.
+Dependency Watchdog may report explicit gate/pin drift but cannot decide how to resolve it.
 
-## Dependency lanes — focus and residual queues
+## 4. Interactive engineering agents
 
-### Lane A — PMM → pjson (P1 residual)
+Only reasoning-capable interactive/manual repository agents perform engineering work.
+
+When choosing new work they use:
+
+1. current explicit portfolio priority;
+2. declared dependency/local order;
+3. current local issue executability;
+4. live target repository state;
+5. optional current Session/Claim coordination if another interactive execution is active.
+
+Historical or resumable context never outranks fresh GitHub evidence.
+
+The target repository's actual CI, repo-guard and branch protection remain integration authority.
+
+## 5. Scheduled observers do not execute this queue
+
+Scheduled automation is defined by [`SCHEDULED_OBSERVERS.md`](SCHEDULED_OBSERVERS.md).
+
+Observers never select work from portfolio priority. They only observe their fixed factual domain and publish bounded roadmap-only diagnostics.
 
 ```text
-PMM #410/#415/#416/#426
-        ↓
-      #421
-        ↓
-pjson #55 → #34
-        ↓
-#35 → #36 → #37 → #38 → #39 → #40 → #41 → #42/#43 → #44
+priority/gates -> reasoning-capable engineering agent
+CI facts       -> CI Sentinel
+PR facts       -> PR Watchdog
+dependency drift -> Dependency Watchdog
+intent/fact contradictions -> Portfolio Auditor
 ```
 
-**Hard rule:** пока `PMM#421` не закрыт, не реализовывать pjson object storage через временный compatibility container.
+## 6. Concurrency
 
-### Lane B — accepted MTS v0.7 → downstream consumers (P0 focus)
+Independent explicit work may proceed concurrently when the declared dependencies and local repository evidence permit it.
 
-Foundation-reset и production migration больше не являются текущим blocker. Эта цепочка завершена в `anum_docs`:
+Concurrency does not create repository-wide locks. Optional interactive Claims coordinate one concrete issue/PR only.
+
+When evidence is insufficient to establish safe parallelism, fail closed and require reasoning/coordination rather than inventing a global lock.
+
+## 7. Gate completion
+
+A gate is complete because its declared acceptance evidence exists, not because time passed or because a model produced a plausible implementation.
+
+Typical evidence classes:
+
+- accepted upstream contract;
+- green required CI/conformance;
+- exact consumer migration;
+- independent engineering/safety evidence;
+- explicit research accept/reject decision;
+- obsolete implementation removed when the migration contract requires it.
+
+## 8. Portfolio decision after a fact changes
+
+A merged PR or closed issue is an observed fact.
+
+If that fact implies a change to priority, lifecycle, canonical owner, dependency direction, objective or next gate, make an explicit reviewed roadmap change to `data/portfolio.json` (and `DECISIONS.md` when the decision class requires it).
+
+Scheduled observers must not perform this semantic transition.
+
+## 9. Continuous factual maintenance
+
+Roadmap factual maintenance is deterministic:
 
 ```text
-#200 / #201 / #202
-foundation reset
-        ↓
-новые rooted Foundation-v2 gates
-        ↓
-#237 / #271 Gate P
-        ↓
-#401 atomic C7+C8+C9
-        ↓
-accepted mts-contract/v0.7
-+ mts-conformance/v0.7
-+ один rooted production runtime
+public GitHub state
+-> portfolio-sync
+-> STATUS.md + data/status.json
 ```
 
-Historical Python semantic runtime удалён без compatibility path. `mts-contract/v0.6` и его corpus остаются immutable previous-release evidence, но не current production owner.
+This loop is independent of product backlog and runs hourly.
 
-Текущий downstream gate:
+## 10. Safety rule
 
-```text
-accepted anum_docs MTS v0.7
-        ↓
-aprover #152 exact pin + consumer conformance
-        ↓
-current-upstream pointer / historical replay remains version-scoped
-```
+Future architecture never bypasses current correctness, migration, proof, physical-safety, or integration gates.
 
-Параллельно AVM может продолжать frontend-neutral migration; MTS-dependent frontend теперь может exact-repin v0.7 только тогда, когда этого требует конкретный local gate.
-
-**Hard rules:**
-
-- не возвращать historical parser/AST/interpreter как selectable runtime;
-- не создавать compatibility occurrence semantics;
-- downstream consumer pin должен указывать на exact accepted v0.7 artifacts/provenance;
-- accepted v0.7 не даёт aprover права самостоятельно добавлять proof rules;
-- `anum_docs#122/#123` — отдельные research/versioned extension tracks и не мутируют v0.7 задним числом;
-- Link identity остаётся только функцией упорядоченных semantic poles; runtime/storage/source/path ids не создают тождество связи.
-
-### Lane C — AVM 1.5 (P0 related runtime lane)
-
-AVM может идти параллельно МТС work там, где contract frontend-neutral. Теперь accepted MTS v0.7 существует, поэтому ожидание Foundation-v2 acceptance снято; однако repin не нужен gates, которые вообще не зависят от MTS frontend.
-
-Завершённый foundation текущей migration-линии:
-
-- `#125` — immutable semantic contexts и functional state lineage;
-- `#126` — canonical references + adapter-компилятор `$ent/$$obj/...` без runtime JSON-pointer;
-- `#127` — sequence/projection/foreach semantics и детерминированный порядок эффектов;
-- `#128` — минимальный value-denotation v1: singleton identities, canonical Integer, byte-string Text и ordered link-list;
-- `#173` — Native JSON leaf/value resolver;
-- `#187` — deterministic foreach по canonical ordered link-list;
-- `#188` — independent execution projection и deterministic effect-order contract;
-- `#191` — устранён скрытый `$rel := result` в pure Integer arithmetic.
-
-Текущий tracked slice:
-
-- `#122` — основной AVM 1.5 epic;
-- `#169` — umbrella Native Duplet JSON boundary и migration work;
-- `#174` — semantic migrator из frozen jsonRVM corpus;
-- `#131` — финальный differential end-to-end gate.
-
-Текущий frontend-neutral migration path:
-
-```text
-#174 semantic migrator
-        ↓
-#131 differential end-to-end slice
-```
-
-`#174` обязан использовать уже принятые contracts, а не возвращать старую mutable JSON VM:
-
-- canonical Integer/Text/value denotations;
-- explicit result vs semantic-state transition;
-- canonical references;
-- ordered sequence;
-- deterministic foreach;
-- independent projection;
-- frozen jsonRVM oracle как behavioral evidence.
-
-Поддержка migrator-а расширяется construct-by-construct только вместе с oracle fixture/evidence. Float/Object/Map/BigInt и другие value domains не реализуются speculative заранее: новый domain добавляется отдельным gate только когда migration corpus или реальный consumer доказывает необходимость.
-
-Если MTS-dependent frontend действительно нужен конкретному AVM шагу, использовать exact accepted `anum_docs` v0.7 boundary, а не дублировать semantics внутри AVM.
-
-### Lane D — mast-calculator physics (P1 residual)
-
-```text
-modal/eigen validation
-→ SP20 pulsation/dynamic contract (#97/#102)
-→ erection/load-stage contracts (#72/#98)
-→ integrated engineering provenance/verification
-```
-
-Web UI 2.0 может развиваться параллельно, если не меняет physics и сохраняет direct/CLI/Web/Desktop equivalence.
-
-## NEXT — consolidation after first gates
-
-### pjson extraction completion
-
-После objects/path/codec/persistence:
-- перенести meaningful BinDiffSynchronizer fixtures (`pjson#41`);
-- стабилизировать public package surface (`#42`);
-- поставить performance/memory baselines (`#43`);
-- закрыть extraction/handoff (`#44`);
-- удалить migrated pjson implementation из BinDiffSynchronizer.
-
-### MTS consumers
-
-Текущий upstream production contract уже принят как MTS v0.7. Следующий consumer-shaped этап:
-
-- `aprover#152` — exact pin v0.7 contract/conformance/C9 provenance;
-- replay portable identity/transport/read-only invariants непосредственно в consumer tests;
-- сохранить historical version-scoped replay без compatibility runtime;
-- только после отдельно принятого upstream proof contract расширять multi-step untrusted search/UI;
-- AVM/Anum frontend repin выполнять только по реальной локальной зависимости, не как ритуальный version bump.
-
-`anum_docs#122` (proof calculus) и `#123` (relative Anum) продолжаются независимо как будущие versioned research tracks.
-
-### isocubic core recovery
-
-```text
-#300 strict CI
-→ #301 canonical domain
-→ #302/#303/#304
-→ #305 browser E2E
-→ boundary decision God Mode vs MetaMode
-→ #306/#307 extraction/product cleanup
-→ #308/#312/#310 performance/security/docs
-```
-
-## CONTINUOUS — portfolio quality
-
-### Central control plane
-
-`roadmap` уже имеет live registry validation, generated status и непрерывно проверяемые backlinks всех child repositories.
-
-```text
-23 child repositories
-→ stable PORTFOLIO.md pointer
-→ central roadmap discoverable from every repo
-→ portfolio-sync detects factual drift
-→ semantic drift reconciled отдельным portfolio decision
-```
-
-Файл в child repo не копирует priority/lifecycle/next gate: эти данные остаются только в central control-plane.
-
-### repo-guard rollout
-
-Rollout выполнять небольшими consumer PR:
-1. audit existing CI/policy;
-2. advisory/dry-run where needed;
-3. immutable Action pin;
-4. blocking mode only after known-good baseline;
-5. cross-repo bug in repo-guard оформлять как reproducer, затем обновлять consumers на fixed immutable commit.
-
-### Safety/commissioning
-
-`termowood` и `aes` не ждут software foundation lanes. Их внутренний ordering остаётся safety-first, но как portfolio work они сейчас находятся ниже P0 focus:
-
-```text
-failure modes → protection → test procedure → measured evidence → as-built → new features
-```
-
-## LATER — evidence-driven research and cleanup
-
-### Research
-
-- `NNets`: benchmarks/baselines before more algorithms.
-- `meta_rm`: use cases + compile-time cost before promotion.
-- `mts-genesis`: publication + upstream research questions, no parallel contracts.
-- `anum_docs#122/#123`: новые proof/relative-Anum semantics только как отдельные versioned candidates поверх принятого v0.7 baseline.
-
-### Portfolio hygiene
-
-- `jsonRVM`: freeze/oracle until AVM migration exit.
-- `phprvm`, `associative_proofs`, `a-num-`: status/provenance then archive.
-- `sample_cmake`, `jgit`, `jhub`: charter or archive.
-- `usefull`: maintenance only for real consumers.
-
-## Decision gates вместо календарных обещаний
-
-Roadmap намеренно ориентирован на gates, а не на произвольные даты. Переход в следующий этап происходит, когда выполнены проверяемые условия:
-
-- upstream contract accepted;
-- CI/conformance green;
-- consumer migrated;
-- legacy path deleted;
-- independent engineering/safety evidence obtained;
-- research candidate explicitly accepted/rejected.
-
-## Что можно делать одновременно
-
-Concurrency сохраняется, но **не отменяет priority ordering**. Если есть executable unclaimed P0 work, fresh workers сначала выбирают его.
-
-Текущий практический порядок:
-
-1. `anum_docs` normative MTS work + `aprover` consumer/proof work;
-2. связанные `mts_visual` и `anum_parser` gates;
-3. AVM gates, включая frontend-neutral `#174 → #131`, а MTS-dependent work — только через accepted v0.7;
-4. PMM/pjson foundation как P1 residual;
-5. mast-calculator physical validation как P1 residual;
-6. isocubic, termowood/aes, repo-guard и прочие P1 lanes как residual capacity;
-7. P2/P3 research/hygiene после более высоких приоритетов;
-8. central portfolio drift reconciliation по явному trigger независимо от product backlog, но без invent strategy.
-
-Главная оптимизация portfolio — **не запускать downstream workaround, когда blocker уже локализован upstream**, и не расходовать свободный worker slot на lower-priority backlog, пока есть доступная P0 работа.
+Git is the archive: when a forward path is explicitly retired, remove it from the current tree rather than keeping multiple executable models alive for history.
