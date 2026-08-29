@@ -8,7 +8,7 @@ on:
       - "scripts/agent-evidence-integrity-acceptance.test.mjs"
       - "scripts/agent-evidence-integrity-provenance.test.mjs"
       - ".github/workflows/agent-evidence-integrity.yml"
-      - ".github/workflows/agent-status.yml"
+      - ".github/workflows/agent-evidence-events.yml"
   workflow_dispatch:
 
 permissions:
