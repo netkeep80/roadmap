@@ -12,7 +12,9 @@
     ],
     "canonical_docs": [
       "README.md",
+      "AGENTS.md",
       "AGENT_PROTOCOL.md",
+      "SCHEDULED_OBSERVERS.md",
       "OPERATING_MODEL.md"
     ],
     "governance_paths": [
