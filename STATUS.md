@@ -5,9 +5,9 @@
 - Owner: `netkeep80`
 - Registered repositories: **26**
 - Verified child roadmap backlinks: **25/25**
-- Last successful GitHub check: **2026-08-29T07:06:51.894Z**
-- Latest observed GitHub change in snapshot: **2026-08-29T06:37:49Z**
-- State hash (excluding check time): `dede3fceaabae6af629ea678170f791cc66c8ecd550d478c425968e94e70d6de`
+- Last successful GitHub check: **2026-08-29T16:44:32.547Z**
+- Latest observed GitHub change in snapshot: **2026-08-29T16:04:06Z**
+- State hash (excluding check time): `f384c4ea5a5cea3d5fe581f3288481bcf1d844d8dd6f90c8486c20f535fa48ac`
 
 ## Control-plane health
 
@@ -35,7 +35,7 @@
 | Priority | Repository | Lifecycle | Current objective | Next portfolio gate | GitHub | Roadmap |
 |---:|---|---|---|---|---|---|
 | **P0** | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `active` | поддерживать accepted MTS v0.11 как единственный current production/reference semantic+proof baseline; package/identity и SyntaxAset work развивается через явные bounded/versioned gates, а visualization package authority находится отдельно в mts_visual | #925 portable theorem reuse + #926 untrusted producer facade завершить поверх accepted v0.11; #944 SyntaxAset architecture продолжает независимый S1+ migration path; #122/#123 остаются versioned research extensions; visual consumers repin independently | 10 issues / 2 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
-| **P0** | [`aprover`](https://github.com/netkeep80/aprover) | `active` | стать functional mathematical MTS prover: exact consumer accepted anum_docs proof semantics, trusted exact-Theory replay/approval, untrusted theorem/search/import tooling и независимая presentation lane через exact mts_visual consumer boundary | anum_docs#925/#926 accepted → ONE exact @mts/core repin → trusted expected-Theory binding → #181 theorem record → theorem repository/index → deterministic untrusted search → C1-C6 corpus; #168/#183 source/visual migration proceeds independently without AST authority | 5 issues / 1 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
+| **P0** | [`aprover`](https://github.com/netkeep80/aprover) | `active` | стать functional mathematical MTS prover: exact consumer accepted anum_docs proof semantics, trusted exact-Theory replay/approval, untrusted theorem/search/import tooling и независимая presentation lane через exact mts_visual consumer boundary | anum_docs#925/#926 accepted → ONE exact @mts/core repin → trusted expected-Theory binding → #181 theorem record → theorem repository/index → deterministic untrusted search → C1-C6 corpus; #168/#183 source/visual migration proceeds independently without AST authority | 4 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`avm`](https://github.com/netkeep80/avm) | `active` | закрыть AVM 1.5 перенос существенной jsonRVM semantics в единый link-native execution path, не форкая accepted МТС semantics | #174 semantic migrator → #131 differential end-to-end; #169 remains Native JSON umbrella; MTS-dependent frontend exact-repins только явный current accepted anum_docs boundary, без local alternative semantics | 1 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0** | [`mts_visual`](https://github.com/netkeep80/mts_visual) | `active` | быть единственным forward-looking owner standalone @mts/visual, независимо развивая presentation/rendering infrastructure без владения нормативной МТС semantics и без зависимости от @mts/core | продолжать M4 independent visual development; consumers exact-pin accepted visual commits independently of MTS semantic releases | 2 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
 | **P0/P1** | [`anum_parser`](https://github.com/netkeep80/anum_parser) | `research` | экспериментировать с сериализацией, десериализацией и parser/Aset UX без создания второго нормативного источника МТС или второго visual package authority | сохранять accepted anum_docs semantic provenance и exact mts_visual consumer lock; parser-owned adapters map domain/Aset state into standalone @mts/visual | 2 issues / 0 PRs | [#3](https://github.com/netkeep80/roadmap/issues/3) |
@@ -119,18 +119,18 @@
 
 | Repository | Branch | Archived | Last push | Open issues | Open PRs |
 |---|---|---:|---|---:|---:|
-| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-28T18:38:49Z | 10 | 2 |
-| [`aprover`](https://github.com/netkeep80/aprover) | `main` | no | 2026-08-28T22:59:48Z | 5 | 1 |
+| [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-29T16:04:06Z | 10 | 2 |
+| [`aprover`](https://github.com/netkeep80/aprover) | `main` | no | 2026-08-29T08:23:38Z | 4 | 0 |
 | [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-15T09:13:18Z | 1 | 0 |
 | [`mts_visual`](https://github.com/netkeep80/mts_visual) | `main` | no | 2026-08-24T11:09:04Z | 2 | 0 |
 | [`anum_parser`](https://github.com/netkeep80/anum_parser) | `main` | no | 2026-08-24T12:32:48Z | 2 | 0 |
 | [`aes`](https://github.com/netkeep80/aes) | `main` | no | 2026-08-09T09:58:37Z | 0 | 0 |
-| [`isocubic`](https://github.com/netkeep80/isocubic) | `main` | no | 2026-08-09T09:58:08Z | 13 | 1 |
+| [`isocubic`](https://github.com/netkeep80/isocubic) | `main` | no | 2026-08-29T15:42:08Z | 13 | 1 |
 | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `main` | no | 2026-08-28T15:15:19Z | 11 | 1 |
-| [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-29T06:37:49Z | 12 | 3 |
+| [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-29T12:40:41Z | 12 | 3 |
 | [`pjson`](https://github.com/netkeep80/pjson) | `main` | no | 2026-08-09T09:56:53Z | 17 | 0 |
 | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-28T18:15:29Z | 7 | 0 |
-| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-28T22:22:46Z | 45 | 0 |
+| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-29T07:06:53Z | 45 | 0 |
 | [`termowood`](https://github.com/netkeep80/termowood) | `main` | no | 2026-08-09T09:58:27Z | 0 | 0 |
 | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `main` | no | 2026-08-09T09:57:59Z | 6 | 0 |
 | [`god-mode`](https://github.com/netkeep80/god-mode) | `main` | no | 2026-08-09T09:58:17Z | 0 | 0 |
