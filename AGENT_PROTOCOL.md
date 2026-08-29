@@ -10,13 +10,13 @@ All structured repository references are public-only and must resolve through `d
 
 Role, Session, Message issues and Checkpoint comments use exactly one structured block:
 
-```text
+````text
 <!-- roadmap-agent:start -->
 ```json
 { ... }
 ```
 <!-- roadmap-agent:end -->
-```
+````
 
 Malformed JSON, duplicate blocks, unknown protocol versions, inconsistent issue lifecycle, or out-of-scope repository references fail closed.
 
