@@ -17,18 +17,6 @@ const registry = {
   repositories: [{ name: 'roadmap' }],
 };
 
-const workerPolicy = {
-  schema_version: 1,
-  scope: 'public-owner-repositories',
-  lease_seconds: 7200,
-  heartbeat_target_seconds: 3600,
-  work_source_order: ['handoff', 'message', 'local-issue'],
-  no_work_action: 'exit',
-  allow_speculative_work: false,
-  coordinator_requires_declared_trigger: true,
-  pr_reconciliation_required: true,
-};
-
 const repositories = [
   { name: 'roadmap', private: false, visibility: 'public' },
 ];
@@ -129,12 +117,11 @@ test('explicit historical audit preserves full Session history collection', asyn
   assert.strictEqual(result.historicalIssues, historicalIssues);
 });
 
-test('terminal Session marked comments are still validated fail-closed', async () => {
+test('terminal Session marked comments are still validated fail-closed without scheduled-worker policy', async () => {
   let commentReads = 0;
   await assert.rejects(
     () => buildLiveAgentSnapshot({
       registry,
-      workerPolicy,
       repositories,
       issues: [roleIssue],
       historicalIssues: [roleIssue, terminalSessionIssue],
@@ -166,7 +153,6 @@ test('terminal Session marked comments are still validated fail-closed', async (
 test('valid terminal Checkpoint history is validated but closed Session is not projected active', async () => {
   const snapshot = await buildLiveAgentSnapshot({
     registry,
-    workerPolicy,
     repositories,
     issues: [roleIssue],
     historicalIssues: [roleIssue, terminalSessionIssue],
@@ -194,7 +180,6 @@ test('valid terminal Checkpoint history is validated but closed Session is not p
 test('historical status audit dual-reads a valid v2 Session and v2 Checkpoint', async () => {
   const snapshot = await buildLiveAgentSnapshot({
     registry,
-    workerPolicy,
     repositories,
     issues: [roleIssue],
     historicalIssues: [roleIssue, terminalV2SessionIssue],
@@ -226,7 +211,6 @@ test('closed historical protocol Session comments are audited without resurrecti
   await assert.rejects(
     () => buildLiveAgentSnapshot({
       registry,
-      workerPolicy,
       repositories,
       issues: [roleIssue],
       historicalIssues: [roleIssue, closedHistoricalSessionIssue],
