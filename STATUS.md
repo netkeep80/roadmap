@@ -5,9 +5,9 @@
 - Owner: `netkeep80`
 - Registered repositories: **26**
 - Verified child roadmap backlinks: **25/25**
-- Last successful GitHub check: **2026-08-28T22:22:45.662Z**
-- Latest observed GitHub change in snapshot: **2026-08-28T22:18:40Z**
-- State hash (excluding check time): `a5bedb5b56083b909ec2ae02ddc82de19e0744e80131bb006f3e0d385d7a9016`
+- Last successful GitHub check: **2026-08-29T07:06:51.894Z**
+- Latest observed GitHub change in snapshot: **2026-08-29T06:37:49Z**
+- State hash (excluding check time): `dede3fceaabae6af629ea678170f791cc66c8ecd550d478c425968e94e70d6de`
 
 ## Control-plane health
 
@@ -120,17 +120,17 @@
 | Repository | Branch | Archived | Last push | Open issues | Open PRs |
 |---|---|---:|---|---:|---:|
 | [`anum_docs`](https://github.com/netkeep80/anum_docs) | `main` | no | 2026-08-28T18:38:49Z | 10 | 2 |
-| [`aprover`](https://github.com/netkeep80/aprover) | `main` | no | 2026-08-28T22:03:57Z | 5 | 1 |
+| [`aprover`](https://github.com/netkeep80/aprover) | `main` | no | 2026-08-28T22:59:48Z | 5 | 1 |
 | [`avm`](https://github.com/netkeep80/avm) | `main` | no | 2026-08-15T09:13:18Z | 1 | 0 |
 | [`mts_visual`](https://github.com/netkeep80/mts_visual) | `main` | no | 2026-08-24T11:09:04Z | 2 | 0 |
 | [`anum_parser`](https://github.com/netkeep80/anum_parser) | `main` | no | 2026-08-24T12:32:48Z | 2 | 0 |
 | [`aes`](https://github.com/netkeep80/aes) | `main` | no | 2026-08-09T09:58:37Z | 0 | 0 |
 | [`isocubic`](https://github.com/netkeep80/isocubic) | `main` | no | 2026-08-09T09:58:08Z | 13 | 1 |
 | [`mast-calculator`](https://github.com/netkeep80/mast-calculator) | `main` | no | 2026-08-28T15:15:19Z | 11 | 1 |
-| [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-28T22:18:40Z | 12 | 3 |
+| [`PersistMemoryManager`](https://github.com/netkeep80/PersistMemoryManager) | `main` | no | 2026-08-29T06:37:49Z | 12 | 3 |
 | [`pjson`](https://github.com/netkeep80/pjson) | `main` | no | 2026-08-09T09:56:53Z | 17 | 0 |
 | [`repo-guard`](https://github.com/netkeep80/repo-guard) | `main` | no | 2026-08-28T18:15:29Z | 7 | 0 |
-| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-28T16:56:08Z | 45 | 0 |
+| [`roadmap`](https://github.com/netkeep80/roadmap) | `main` | no | 2026-08-28T22:22:46Z | 45 | 0 |
 | [`termowood`](https://github.com/netkeep80/termowood) | `main` | no | 2026-08-09T09:58:27Z | 0 | 0 |
 | [`BinDiffSynchronizer`](https://github.com/netkeep80/BinDiffSynchronizer) | `main` | no | 2026-08-09T09:57:59Z | 6 | 0 |
 | [`god-mode`](https://github.com/netkeep80/god-mode) | `main` | no | 2026-08-09T09:58:17Z | 0 | 0 |
